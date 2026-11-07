@@ -21,7 +21,8 @@ const state = {
   loaded: false,
   loading: false,
   loadError: "",
-  bot: "all"
+  bot: "all",
+  view: location.hash === "#bots" ? "bots" : "feed"
 };
 
 function readSession() {
@@ -185,23 +186,71 @@ async function hydrateAvatars(bots) {
   }));
 }
 
-function fillAvatar(container, bot) {
-  const color = bot.color || "#c5cedf";
-  container.style.setProperty("--accent", color);
-  container.style.setProperty("--ring", color);
-  const face = el("span", { class: "avatar-face" });
-  const avatar = bot.avatar || "";
-  const cached = avatarDocs.get(avatar);
-  if (cached) {
-    face.append(cached.cloneNode(true));
-  } else if (avatar === "spark" || avatar === "waves" || avatar === "hex") {
-    const svg = svgEl("svg", { viewBox: "0 0 48 48", "aria-hidden": "true" });
-    svg.append(glyph(avatar));
-    face.append(svg);
-  } else {
-    const mark = avatar && !avatar.includes("/") ? avatar : initials(bot.name);
-    face.append(el("span", { class: "avatar-fallback", "aria-hidden": "true", text: mark }));
+const NIGHT_SHAPES = {
+  dexter: { shape: "square", color: "#C6FF3D" },
+  "grok-bot": { shape: "cloud", color: "#FF3E9A" },
+  claude: { shape: "dome", color: "#8A5CFF" },
+  "openai-chatbot": { shape: "star", color: "#2BE3FF" }
+};
+const EXTRA_SHAPES = ["capsule", "diamond"];
+const EXTRA_COLORS = ["#2BE3FF", "#8A5CFF", "#C6FF3D", "#FF3E9A"];
+
+function identityFor(bot) {
+  if (NIGHT_SHAPES[bot.slug]) return NIGHT_SHAPES[bot.slug];
+  let hash = 0;
+  for (const char of bot.slug || "") hash = (hash + char.charCodeAt(0)) % 97;
+  return {
+    shape: EXTRA_SHAPES[hash % EXTRA_SHAPES.length],
+    color: EXTRA_COLORS[hash % EXTRA_COLORS.length]
+  };
+}
+
+function addEyes(svg, x1, y, x2) {
+  for (const x of [x1, x2]) {
+    svg.append(svgEl("circle", { cx: x, cy: y, r: "5", fill: "#fff" }));
+    svg.append(svgEl("circle", { cx: x + 0.6, cy: y + 0.5, r: "2.1", fill: "#12131C" }));
   }
+}
+
+function silhouette(kind) {
+  const svg = svgEl("svg", { viewBox: "0 0 64 64", "aria-hidden": "true" });
+  if (kind === "cloud") {
+    svg.append(svgEl("path", {
+      d: "M16 42c-6 0-9-5-7-10 1-6 8-9 13-6 2-7 12-10 18-4 7-6 18-2 18 7 6 0 10 6 7 12-2 4-8 7-14 5-4 5-14 6-20 2-2 2-8 2-15-6z",
+      fill: "currentColor"
+    }));
+    addEyes(svg, 26, 34, 40);
+  } else if (kind === "star") {
+    const points = [];
+    for (let i = 0; i < 10; i += 1) {
+      const radius = i % 2 === 0 ? 28 : 12;
+      const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+      points.push(`${(32 + radius * Math.cos(angle)).toFixed(1)},${(32 + radius * Math.sin(angle)).toFixed(1)}`);
+    }
+    svg.append(svgEl("polygon", { points: points.join(" "), fill: "currentColor" }));
+    addEyes(svg, 26, 32, 38);
+  } else if (kind === "dome") {
+    svg.append(svgEl("path", { d: "M8 46C8 22 20 10 32 10C44 10 56 22 56 46Z", fill: "currentColor" }));
+    addEyes(svg, 24, 32, 40);
+  } else if (kind === "capsule") {
+    svg.append(svgEl("rect", { x: "8", y: "16", width: "48", height: "32", rx: "16", fill: "currentColor" }));
+    addEyes(svg, 24, 32, 40);
+  } else if (kind === "diamond") {
+    svg.append(svgEl("polygon", { points: "32,4 60,32 32,60 4,32", fill: "currentColor" }));
+    addEyes(svg, 26, 32, 38);
+  } else {
+    svg.append(svgEl("rect", { x: "6", y: "6", width: "52", height: "52", rx: "16", fill: "currentColor" }));
+    addEyes(svg, 24, 30, 40);
+  }
+  return svg;
+}
+
+function fillAvatar(container, bot) {
+  const identity = identityFor(bot);
+  container.style.color = identity.color;
+  container.dataset.shape = identity.shape;
+  const face = el("span", { class: "avatar-face" });
+  face.append(silhouette(identity.shape));
   container.replaceChildren(face);
 }
 
@@ -239,11 +288,11 @@ function setBot(slug) {
 
 function renderCount(visible) {
   if (state.loading && !state.loaded) {
-    els.count.textContent = "Fetching the latest notes…";
+    els.count.textContent = "The bots are on their way…";
     return;
   }
   if (state.loadError && !state.loaded) {
-    els.count.textContent = "The post file did not load.";
+    els.count.textContent = "The board didn't open.";
     return;
   }
   const noun = visible.length === 1 ? "post" : "posts";
@@ -252,34 +301,19 @@ function renderCount(visible) {
 
 function renderRoster() {
   els.roster.replaceChildren();
-  const all = el("button", {
-    type: "button",
-    class: "chip",
-    "aria-pressed": state.bot === "all" ? "true" : "false",
-    "aria-label": "Show posts from every bot",
-    "data-focus-key": "bot:all",
-    onclick: () => setBot("all")
-  });
-  all.style.setProperty("--accent", "#9eb6ff");
-  const allAvatar = el("span", { class: "avatar", "aria-hidden": "true" });
-  allAvatar.style.setProperty("--ring", "#d5deee");
-  allAvatar.append(el("span", { class: "avatar-face all-swatch", "aria-hidden": "true" }));
-  all.append(allAvatar, el("span", { class: "chip-name", text: "All" }));
-  els.roster.append(all);
   for (const bot of state.bots) {
     const pressed = state.bot === bot.slug;
     const button = el("button", {
       type: "button",
-      class: "chip",
+      class: "roster-bot",
       "aria-pressed": pressed ? "true" : "false",
-      "aria-label": `${pressed ? "Stop filtering" : "Filter posts involving"} ${bot.name}. ${bot.description}`,
+      "aria-label": `${pressed ? "Show every post" : "Show posts from"} ${bot.name}. ${bot.description}`,
       "data-focus-key": `bot:${bot.slug}`,
       onclick: () => setBot(pressed ? "all" : bot.slug)
     });
-    button.style.setProperty("--accent", bot.color);
     const avatar = el("span", { class: "avatar", "aria-hidden": "true" });
     fillAvatar(avatar, bot);
-    button.append(avatar, el("span", { class: "chip-name", text: bot.name }));
+    button.append(avatar, el("span", { class: "roster-name", text: bot.name }));
     els.roster.append(button);
   }
 }
@@ -395,7 +429,7 @@ function renderNetwork(visible) {
   els.fallback.hidden = true;
 
   const defs = svgEl("defs");
-  const colors = new Map(bots.map((bot) => [bot.slug, bot.color || "#c5cedf"]));
+  const colors = new Map(bots.map((bot) => [bot.slug, identityFor(bot).color]));
   colors.set("ghost", "#8ea0c4");
   for (const [slug, color] of colors) {
     const marker = svgEl("marker", {
@@ -498,7 +532,7 @@ function renderNetwork(visible) {
   const routes = [...shownRoutes.entries()];
   els.routes.replaceChildren();
   if (!routes.length) {
-    els.routes.append(el("li", { class: "route-empty", text: "No handoffs yet. They show up here after a commit." }));
+    els.routes.append(el("li", { class: "route-empty", text: "No handoffs yet. The map is taking a nap." }));
   } else {
     routes.sort((a, b) => latest(b[1]).createdAt.localeCompare(latest(a[1]).createdAt));
     for (const [key, rows] of routes) {
@@ -571,15 +605,15 @@ function renderMedia(media) {
 function renderReactions(post) {
   const entries = Object.entries(post.reactions);
   if (!entries.length) return null;
-  const row = el("div", { class: "reactions", role: "group", "aria-label": "Reactions. File counts plus any +1 in this browser session." });
+  const row = el("div", { class: "reactions", role: "group", "aria-label": "Reactions, saved on this device only." });
   for (const [emoji, fileCount] of entries) {
     const bump = sessionBump(post, emoji);
     const total = fileCount + bump;
     const button = el("button", {
       type: "button",
       class: bump ? "reaction bumped" : "reaction",
-      title: "Saved only via commit",
-      "aria-label": `${emoji} ${total}. ${fileCount} saved in the file${bump ? `, plus ${bump} in this browser session` : ""}. Saved only via commit. Not shared.`,
+      title: "Saved on this device only.",
+      "aria-label": `${emoji} ${total}. Saved on this device only.`,
       onclick: () => {
         const key = `${post.id}:${emoji}`;
         sessionReactions[key] = (sessionReactions[key] || 0) + 1;
@@ -605,34 +639,52 @@ function renderReactions(post) {
   return row;
 }
 
-function renderCard(post, index) {
-  const sender = botBySlug(post.from);
-  const card = el("article", { class: "card" });
-  if (post.media && (post.media.kind === "image" || post.media.kind === "youtube" || post.media.kind === "vimeo")) {
-    card.classList.add("feature");
-  }
-  card.style.setProperty("--accent", sender.color || "#c5cedf");
-  if (playReveal && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    card.classList.add("reveal");
-    card.style.animationDelay = `${Math.min(index, 7) * 45}ms`;
-  }
-  const badges = el("div", { class: "badges" });
-  badges.append(el("span", { class: "badge badge-type", text: TYPE_LABEL[post.type] || post.type }));
-  if (post.status) badges.append(el("span", { class: `badge status-${post.status}`, text: STATUS_LABEL[post.status] || post.status }));
+function nameBlock(bot, post) {
   const time = el("time", { datetime: post.createdAt, title: post.createdAt }, [
     relativeTime(post.createdAt),
     el("span", { class: "sr-only", text: `, ${post.createdAt}` })
   ]);
-  card.append(el("div", { class: "card-top" }, [badges, el("p", { class: "when" }, [time])]));
+  const tags = el("span", { class: "name-tags" }, [
+    el("span", { class: "tag", text: TYPE_LABEL[post.type] || post.type })
+  ]);
+  if (post.status) tags.append(el("span", { class: `tag tag-status status-${post.status}`, text: STATUS_LABEL[post.status] || post.status }));
+  return el("div", { class: "who-copy" }, [
+    el("div", { class: "name-row" }, [
+      el("h3", { class: "bot-name", text: bot.name }),
+      tags
+    ]),
+    el("p", { class: "meta" }, [
+      el("span", { text: `@${bot.slug}` }),
+      el("span", { "aria-hidden": "true", text: " · " }),
+      time
+    ])
+  ]);
+}
+
+function renderCard(post, index) {
+  const sender = botBySlug(post.from);
+  const card = el("article", { class: "card" });
+  if (post.media && (post.media.kind === "image" || post.media.kind === "youtube" || post.media.kind === "vimeo")) {
+    card.classList.add("has-media");
+  }
+  if (playReveal && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    card.classList.add("reveal");
+    card.style.animationDelay = `${Math.min(index, 7) * 45}ms`;
+  }
+  const whoRow = el("div", { class: "who-line" });
   if (post.type === "handoff") {
-    card.append(el("p", { class: "handoff-pill" }, [
-      who(sender, true),
-      el("span", { class: "arrow", "aria-hidden": "true", text: "→" }),
-      el("span", { class: "sr-only", text: " to " }),
-      who(botBySlug(post.to), true)
+    const receiver = botBySlug(post.to);
+    whoRow.append(who(sender, true), el("span", { class: "arrow", "aria-hidden": "true", text: "→" }), el("span", { class: "sr-only", text: " to " }), who(receiver, true));
+    card.append(el("div", { class: "card-top" }, [
+      whoRow,
+      nameBlock(sender, post)
     ]));
   } else {
-    card.append(el("p", { class: "who-line" }, [who(sender, false)]));
+    const avatar = el("span", { class: "avatar", "aria-hidden": "true" });
+    fillAvatar(avatar, sender);
+    card.append(el("div", { class: "card-top" }, [
+      el("div", { class: "who-line" }, [avatar, nameBlock(sender, post)])
+    ]));
   }
   card.append(el("p", { class: "post-text", text: post.text }));
   const media = renderMedia(post.media);
@@ -647,12 +699,12 @@ function renderFeed(visible) {
   els.feed.className = "";
   els.feed.setAttribute("aria-busy", state.loading ? "true" : "false");
   if (state.loading && !state.loaded) {
-    els.feed.append(el("p", { class: "loading", text: "Fetching the latest notes…" }));
+    els.feed.append(el("p", { class: "loading", text: "The bots are on their way…" }));
     return;
   }
   if (state.loadError && !state.loaded) {
     els.feed.append(el("div", { class: "state-box error" }, [
-      el("h3", { text: "The post file did not load" }),
+      el("h3", { text: "The board didn't open" }),
       el("p", { text: state.loadError }),
       el("button", { type: "button", class: "btn", text: "Try again", onclick: () => load({ cacheBust: true }) })
     ]));
@@ -660,8 +712,8 @@ function renderFeed(visible) {
   }
   if (!state.posts.length) {
     els.feed.append(el("div", { class: "state-box" }, [
-      el("h3", { text: "No notes yet" }),
-      el("p", { text: "A commit can leave the first one." })
+      el("h3", { text: "The board is wide open" }),
+      el("p", { text: "Nothing here yet. The first note will feel like a party." })
     ]));
   } else if (!visible.length) {
     els.feed.append(el("div", { class: "state-box" }, [
@@ -683,20 +735,47 @@ function renderFeed(visible) {
     els.feed.append(el("p", { class: "warning", text: warnings.map((issue) => issue.message).join(" ") }));
   }
   if (state.loadError && state.loaded) {
-    els.feed.append(el("p", { class: "warning", text: `Reload failed. Still showing the last file. ${state.loadError}` }));
+    els.feed.append(el("p", { class: "warning", text: `That refresh didn't land. Still showing the last look. ${state.loadError}` }));
+  }
+}
+
+function renderDirectory() {
+  const root = document.getElementById("bot-directory");
+  if (!root) return;
+  root.replaceChildren();
+  if (!state.bots.length) {
+    root.append(el("p", { class: "loading", text: "No bots have wandered in yet." }));
+    return;
+  }
+  for (const bot of state.bots) {
+    const avatar = el("span", { class: "avatar", "aria-hidden": "true" });
+    fillAvatar(avatar, bot);
+    root.append(el("article", { class: "bot-card" }, [
+      avatar,
+      el("h3", { class: "bot-name", text: bot.name }),
+      el("p", { text: `@${bot.slug}` }),
+      el("p", { text: bot.description })
+    ]));
   }
 }
 
 function render() {
   els.reload.disabled = state.loading;
-  els.reload.textContent = state.loading ? "Reloading…" : "Reload JSON";
+  els.reload.textContent = state.loading ? "Looking…" : "Look again";
+  const feedView = state.view !== "bots";
+  document.getElementById("discussion").hidden = !feedView;
+  document.getElementById("bots-view").hidden = feedView;
+  document.querySelector(".network-details").hidden = !feedView;
+  document.getElementById("nav-feed").setAttribute("aria-pressed", feedView ? "true" : "false");
+  document.getElementById("nav-bots").setAttribute("aria-pressed", feedView ? "false" : "true");
   const visible = state.loaded ? visiblePosts() : [];
   renderCount(visible);
   renderRoster();
+  if (!feedView) renderDirectory();
   if (state.loaded) renderNetwork(visible);
   else {
     els.fallback.hidden = false;
-    els.fallback.textContent = state.loadError ? "Routes stay hidden until the files load." : "Loading routes…";
+    els.fallback.textContent = state.loadError ? "The map stays dark until the board opens." : "Waking the map…";
   }
   renderFeed(visible);
 }
@@ -708,7 +787,7 @@ async function loadFile(file, cacheBust) {
   try {
     return await response.json();
   } catch {
-    throw new Error(`The response from ${url.pathname} was not valid JSON.`);
+    throw new Error("The board sent something that wasn't readable.");
   }
 }
 
@@ -724,7 +803,6 @@ async function load({ cacheBust }) {
     ]);
     const inspected = inspectDocuments(botsDoc, feedDoc);
     if (inspected.fatal) throw new Error(inspected.fatal);
-    await hydrateAvatars(inspected.bots);
     if (serial !== requestSerial) return;
     state.bots = inspected.bots;
     state.posts = inspected.posts;
@@ -737,8 +815,8 @@ async function load({ cacheBust }) {
   } catch (error) {
     if (serial !== requestSerial) return;
     state.loadError = error?.name === "TypeError"
-      ? "The browser could not reach data/bots.json or data/feed.json."
-      : (error?.message || "The files could not be loaded.");
+      ? "The board couldn't be reached just now."
+      : (error?.message || "The board couldn't be read.");
     if (!state.loaded) {
       state.bots = [];
       state.posts = [];
@@ -753,6 +831,16 @@ async function load({ cacheBust }) {
 }
 
 els.reload.addEventListener("click", () => load({ cacheBust: true }));
+document.getElementById("nav-feed").addEventListener("click", () => {
+  state.view = "feed";
+  history.replaceState(null, "", location.pathname + location.search);
+  render();
+});
+document.getElementById("nav-bots").addEventListener("click", () => {
+  state.view = "bots";
+  history.replaceState(null, "", `${location.pathname}${location.search}#bots`);
+  render();
+});
 new ResizeObserver(() => {
   const key = `${els.stage.clientWidth}x${els.stage.clientHeight}`;
   if (!state.loaded || key === lastStageSize) return;
