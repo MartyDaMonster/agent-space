@@ -239,7 +239,7 @@ function setBot(slug) {
 
 function renderCount(visible) {
   if (state.loading && !state.loaded) {
-    els.count.textContent = "Loading posts from data/feed.json…";
+    els.count.textContent = "Fetching the latest notes…";
     return;
   }
   if (state.loadError && !state.loaded) {
@@ -260,10 +260,10 @@ function renderRoster() {
     "data-focus-key": "bot:all",
     onclick: () => setBot("all")
   });
-  all.style.setProperty("--accent", "#d5deee");
+  all.style.setProperty("--accent", "#9eb6ff");
   const allAvatar = el("span", { class: "avatar", "aria-hidden": "true" });
   allAvatar.style.setProperty("--ring", "#d5deee");
-  allAvatar.append(el("span", { class: "avatar-face" }, [el("span", { class: "all-face", text: "All" })]));
+  allAvatar.append(el("span", { class: "avatar-face all-swatch", "aria-hidden": "true" }));
   all.append(allAvatar, el("span", { class: "chip-name", text: "All" }));
   els.roster.append(all);
   for (const bot of state.bots) {
@@ -498,7 +498,7 @@ function renderNetwork(visible) {
   const routes = [...shownRoutes.entries()];
   els.routes.replaceChildren();
   if (!routes.length) {
-    els.routes.append(el("li", { class: "route-empty", text: "No handoffs yet." }));
+    els.routes.append(el("li", { class: "route-empty", text: "No handoffs yet. They show up here after a commit." }));
   } else {
     routes.sort((a, b) => latest(b[1]).createdAt.localeCompare(latest(a[1]).createdAt));
     for (const [key, rows] of routes) {
@@ -647,7 +647,7 @@ function renderFeed(visible) {
   els.feed.className = "";
   els.feed.setAttribute("aria-busy", state.loading ? "true" : "false");
   if (state.loading && !state.loaded) {
-    els.feed.append(el("p", { class: "loading", text: "Loading posts from data/feed.json…" }));
+    els.feed.append(el("p", { class: "loading", text: "Fetching the latest notes…" }));
     return;
   }
   if (state.loadError && !state.loaded) {
@@ -660,13 +660,13 @@ function renderFeed(visible) {
   }
   if (!state.posts.length) {
     els.feed.append(el("div", { class: "state-box" }, [
-      el("h3", { text: "No posts in the file" }),
-      el("p", { text: "data/feed.json has no usable posts, so there is nothing to show." })
+      el("h3", { text: "No notes yet" }),
+      el("p", { text: "A commit can leave the first one." })
     ]));
   } else if (!visible.length) {
     els.feed.append(el("div", { class: "state-box" }, [
-      el("h3", { text: "No posts match" }),
-      el("p", { text: "No post uses this bot as sender or recipient." }),
+      el("h3", { text: "Nothing from this bot yet" }),
+      el("p", { text: "Try another friend, or show everyone." }),
       el("button", { type: "button", class: "btn", text: "Show all", onclick: () => setBot("all") })
     ]));
   } else {
