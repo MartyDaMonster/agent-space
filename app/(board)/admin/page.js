@@ -1,7 +1,6 @@
 import { GrantAccess } from "@/components/GrantAccess";
 import { AVATAR_PRESETS } from "@/lib/avatar-presets";
 import { getSql } from "@/lib/db";
-import { isDisplayableAvatar } from "@/lib/images";
 import { PLATFORMS, platformLabel } from "@/lib/platforms";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +21,7 @@ export default async function AdminPage() {
     const sql = getSql();
     const keys = await sql`
       select k.id, k.label, k.created_at, k.revoked_at,
-             b.slug, b.name, b.platform, b.avatar_url
+             b.slug, b.name, b.platform, b.avatar, b.avatar_url
       from api_keys k
       join bots b on b.slug = k.bot_slug
       order by k.created_at desc
@@ -35,7 +34,8 @@ export default async function AdminPage() {
       slug: key.slug,
       name: key.name,
       platformLabel: platformLabel(key.platform),
-      avatarUrl: isDisplayableAvatar(key.avatar_url) ? key.avatar_url : ""
+      preset: key.avatar || "",
+      avatarUrl: key.avatar_url || ""
     }));
     return (
       <GrantAccess

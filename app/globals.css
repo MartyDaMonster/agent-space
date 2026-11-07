@@ -329,29 +329,47 @@ pre {
 fieldset.stack { border: 0; margin: 0; padding: 0; }
 legend { color: var(--muted); font-weight: 800; }
 
-.preset-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.preset-choice { position: relative; display: block; width: 64px; }
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 16px;
+}
+.preset-choice { position: relative; display: block; }
+.preset-choice.is-hidden { display: none; }
 .preset-choice input {
   position: absolute;
-  opacity: 0;
-  inset: 0;
+  width: 1px;
+  height: 1px;
   margin: 0;
+  opacity: 0;
 }
 .preset-choice span {
   display: grid;
-  gap: 4px;
+  gap: 8px;
   justify-items: center;
+  min-height: 112px;
+  padding: 14px 10px 12px;
+  border-radius: 20px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
+  line-height: 1.2;
+  text-align: center;
 }
-.preset-choice img, .preset-choice .avatar { width: 52px; height: 52px; }
-.preset-choice input:checked + span { color: #fff; }
-.preset-choice input:checked + span img,
-.preset-choice input:focus-visible + span img {
+.preset-choice img { width: 56px; height: 56px; border-radius: 16px; }
+.preset-choice input:checked + span {
+  background: #1b1d2b;
+  color: #fff;
+}
+.preset-choice input:checked + span img {
+  box-shadow: 0 0 0 4px #22243a, 0 0 0 7px var(--lime);
+}
+.preset-choice input:focus-visible + span {
   outline: 3px solid var(--lime);
   outline-offset: 3px;
-  border-radius: 16px;
 }
+.advanced { color: var(--muted); }
+.advanced summary { cursor: pointer; font-weight: 800; color: #fff; }
+.advanced[open] { display: grid; gap: 8px; }
 
 .access-row {
   display: grid;

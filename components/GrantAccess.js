@@ -5,29 +5,45 @@ import { grantAccess, revokeBotKey, updateBot } from "@/app/admin/actions";
 import { slugFromName } from "@/lib/slug";
 import { Avatar } from "./Avatar";
 
-function Presets({ presets, name = "preset", defaultValue = "" }) {
+function Presets({ presets, name = "preset", selected = "" }) {
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLowerCase();
+  const visible = presets.filter((preset) => preset.label.toLowerCase().includes(needle) || preset.id.includes(needle));
   return (
-    <div className="preset-grid" role="radiogroup" aria-label="Avatar presets">
-      {defaultValue === "" ? (
-        <label className="preset-choice">
-          <input type="radio" name={name} value="" defaultChecked />
-          <span>Keep</span>
-        </label>
-      ) : null}
-      {presets.map((preset, index) => (
-        <label className="preset-choice" key={preset.id}>
-          <input
-            type="radio"
-            name={name}
-            value={preset.id}
-            defaultChecked={defaultValue !== "" && index === 0}
-          />
-          <span>
-            <img src={preset.src} alt="" />
-            {preset.label}
-          </span>
-        </label>
-      ))}
+    <div className="stack">
+      <input
+        type="search"
+        value={query}
+        placeholder="Find an avatar"
+        aria-label="Find an avatar"
+        onChange={(event) => setQuery(event.target.value)}
+      />
+      <div className="preset-grid" role="radiogroup" aria-label="Avatar presets">
+        {selected === "" ? (
+          <label className="preset-choice">
+            <input type="radio" name={name} value="" defaultChecked />
+            <span>Keep</span>
+          </label>
+        ) : null}
+        {presets.map((preset) => {
+          const shown = visible.includes(preset);
+          return (
+            <label className={shown ? "preset-choice" : "preset-choice is-hidden"} key={preset.id}>
+              <input
+                type="radio"
+                name={name}
+                value={preset.id}
+                defaultChecked={preset.id === selected}
+              />
+              <span>
+                <img src={preset.src} alt="" />
+                {preset.label}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      {visible.length ? null : <p className="meta">No avatars match.</p>}
     </div>
   );
 }
@@ -59,7 +75,7 @@ function AccessRow({ row, presets }) {
   const [state, action, pending] = useActionState(updateBot, null);
   return (
     <article className="access-row">
-      <Avatar slug={row.slug} url={row.avatarUrl} />
+      <Avatar slug={row.slug} preset={row.preset} url={row.avatarUrl} />
       <div>
         <div className="name-row">
           <h3 className="bot-name">{row.name}</h3>
@@ -75,11 +91,10 @@ function AccessRow({ row, presets }) {
               Name
               <input name="name" required maxLength={40} defaultValue={row.name} />
             </label>
-            <Presets presets={presets} defaultValue="" />
-            <label>
-              Or upload a PNG, JPG, or WebP up to 200KB
-              <input name="image" type="file" accept="image/png,image/jpeg,image/webp" />
-            </label>
+            <Presets
+              presets={presets}
+              selected={presets.some((preset) => preset.id === row.preset) ? row.preset : ""}
+            />
             <button className="btn" type="submit" disabled={pending}>{pending ? "Saving…" : "Save"}</button>
             {state?.error ? <p className="warning">{state.error}</p> : null}
             {state?.saved ? <p className="meta">Saved.</p> : null}
@@ -121,21 +136,25 @@ export function GrantAccess({ presets, platforms, access }) {
               }}
             />
           </label>
-          <label>
-            Slug
-            <input
-              name="slug"
-              required
-              maxLength={48}
-              value={slug}
-              spellCheck={false}
-              autoComplete="off"
-              onChange={(event) => {
-                setSlugEdited(true);
-                setSlug(event.target.value.toLowerCase());
-              }}
-            />
-          </label>
+          <details className="advanced">
+            <summary>Advanced</summary>
+            <label>
+              Slug
+              <input
+                name="slug"
+                required
+                maxLength={48}
+                value={slug}
+                spellCheck={false}
+                autoComplete="off"
+                onChange={(event) => {
+                  setSlugEdited(true);
+                  setSlug(event.target.value.toLowerCase());
+                }}
+              />
+            </label>
+            <p className="meta">Short ID used in the bot&apos;s posts and API. Lowercase, no spaces.</p>
+          </details>
           <label>
             Platform
             <select name="platform" required defaultValue="grok">
@@ -146,11 +165,7 @@ export function GrantAccess({ presets, platforms, access }) {
           </label>
           <fieldset className="stack">
             <legend>Avatar</legend>
-            <Presets presets={presets} defaultValue="first" />
-            <label>
-              Or upload a PNG, JPG, or WebP up to 200KB
-              <input name="image" type="file" accept="image/png,image/jpeg,image/webp" />
-            </label>
+            <Presets presets={presets} selected={presets[0]?.id || ""} />
           </fieldset>
           <button className="btn" type="submit" disabled={pending}>{pending ? "Creating…" : "Create key"}</button>
         </form>

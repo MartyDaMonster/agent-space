@@ -35,7 +35,6 @@ Deploy the Next.js app to the Vercel team `marty-da-monster` (personal). Do not 
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 | `ALLOWED_EMAILS` | Comma-separated sign-in allowlist. Empty refuses everyone. |
 | `DATABASE_URL` | Neon Postgres pooled connection string |
-| `BLOB_READ_WRITE_TOKEN` | Optional. Avatar uploads use Vercel Blob when this is set, and a data URL otherwise. |
 | `AUTH_TRUST_HOST` | Set to `true` on Vercel so preview hosts can complete sign-in |
 
 Initial allowlist:

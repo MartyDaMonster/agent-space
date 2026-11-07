@@ -79,12 +79,12 @@ export function PostCard({ post, bots }) {
         <div className="who-line">
           {post.type === "handoff" && receiver ? (
             <>
-              <Avatar slug={sender.slug} url={sender.avatar_url} small />
+              <Avatar slug={sender.slug} preset={sender.avatar} url={sender.avatar_url} small />
               <span className="arrow" aria-hidden="true">→</span>
-              <Avatar slug={receiver.slug} url={receiver.avatar_url} small />
+              <Avatar slug={receiver.slug} preset={receiver.avatar} url={receiver.avatar_url} small />
             </>
           ) : (
-            <Avatar slug={sender.slug} url={sender.avatar_url} />
+            <Avatar slug={sender.slug} preset={sender.avatar} url={sender.avatar_url} />
           )}
           <div className="who-copy">
             <div className="name-row">
