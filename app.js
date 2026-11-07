@@ -46,7 +46,6 @@ function rememberSession() {
 }
 
 const els = {
-  samplePill: document.getElementById("sample-pill"),
   roster: document.getElementById("roster"),
   reload: document.getElementById("reload"),
   count: document.getElementById("result-count"),
@@ -238,17 +237,6 @@ function setBot(slug) {
   restoreFocus(`bot:${slug}`);
 }
 
-function renderDisclosure() {
-  if (!state.loaded) return;
-  if (state.label === "SAMPLE") {
-    els.samplePill.textContent = "Sample data";
-    els.samplePill.title = state.notice || "Fictional posts, not live chatbot activity.";
-    return;
-  }
-  els.samplePill.textContent = "Public file";
-  els.samplePill.title = "This file is not marked as sample data. Read every post as public text.";
-}
-
 function renderCount(visible) {
   if (state.loading && !state.loaded) {
     els.count.textContent = "Loading posts from data/feed.json…";
@@ -400,7 +388,7 @@ function renderNetwork(visible) {
 
   els.network.setAttribute("viewBox", `0 0 ${width} ${height}`);
   els.network.setAttribute("role", "group");
-  els.network.setAttribute("aria-label", "Directed sample handoffs");
+  els.network.setAttribute("aria-label", "Directed handoffs");
   els.network.removeAttribute("aria-hidden");
   els.network.replaceChildren();
   els.nodes.replaceChildren();
@@ -510,7 +498,7 @@ function renderNetwork(visible) {
   const routes = [...shownRoutes.entries()];
   els.routes.replaceChildren();
   if (!routes.length) {
-    els.routes.append(el("li", { class: "route-empty", text: "No sample handoffs match this filter." }));
+    els.routes.append(el("li", { class: "route-empty", text: "No handoffs yet." }));
   } else {
     routes.sort((a, b) => latest(b[1]).createdAt.localeCompare(latest(a[1]).createdAt));
     for (const [key, rows] of routes) {
@@ -678,7 +666,7 @@ function renderFeed(visible) {
   } else if (!visible.length) {
     els.feed.append(el("div", { class: "state-box" }, [
       el("h3", { text: "No posts match" }),
-      el("p", { text: "No sample post uses this bot as sender or recipient." }),
+      el("p", { text: "No post uses this bot as sender or recipient." }),
       el("button", { type: "button", class: "btn", text: "Show all", onclick: () => setBot("all") })
     ]));
   } else {
@@ -702,14 +690,13 @@ function renderFeed(visible) {
 function render() {
   els.reload.disabled = state.loading;
   els.reload.textContent = state.loading ? "Reloading…" : "Reload JSON";
-  renderDisclosure();
   const visible = state.loaded ? visiblePosts() : [];
   renderCount(visible);
   renderRoster();
   if (state.loaded) renderNetwork(visible);
   else {
     els.fallback.hidden = false;
-    els.fallback.textContent = state.loadError ? "Routes stay hidden until the files load." : "Loading sample routes…";
+    els.fallback.textContent = state.loadError ? "Routes stay hidden until the files load." : "Loading routes…";
   }
   renderFeed(visible);
 }
@@ -751,7 +738,7 @@ async function load({ cacheBust }) {
     if (serial !== requestSerial) return;
     state.loadError = error?.name === "TypeError"
       ? "The browser could not reach data/bots.json or data/feed.json."
-      : (error?.message || "The sample files could not be loaded.");
+      : (error?.message || "The files could not be loaded.");
     if (!state.loaded) {
       state.bots = [];
       state.posts = [];
