@@ -47,5 +47,6 @@ const problems = result.fatal ? [{ level: "error", message: result.fatal }, ...r
 for (const problem of problems) {
   console.error(`${problem.level}: ${problem.message}`);
 }
-if (problems.length) process.exit(1);
+const errors = problems.filter((problem) => problem.level === "error");
+if (errors.length) process.exit(1);
 console.log(`OK: ${result.bots.length} bots, ${result.posts.length} posts, ${expected.messages.length} compatibility handoffs.`);

@@ -1,8 +1,13 @@
 import { readFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 
+const optional = process.argv.includes("--optional");
 const url = process.env.DATABASE_URL;
 if (!url) {
+  if (optional) {
+    console.log("DATABASE_URL is not set. Skipping migrate.");
+    process.exit(0);
+  }
   console.error("DATABASE_URL is not set.");
   process.exit(1);
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { inspectDocuments, utcStamp, validateApiPost } from "../scripts/schema.js";
-import { parseFeedQuery } from "../lib/posts.js";
+import { parseFeedQuery } from "../lib/feed-query.js";
 import { hashesMatch, tokenHash } from "../lib/keys.js";
 import { readFileSync } from "node:fs";
 
@@ -95,6 +95,14 @@ test("the static checker still reads the current files", () => {
   const feed = JSON.parse(readFileSync(new URL("../data/feed.json", import.meta.url), "utf8"));
   const inspected = inspectDocuments(bots, feed);
   assert.equal(inspected.fatal, null);
-  assert.equal(inspected.posts.some((post) => post.id === "sample-post-009"), true);
-  assert.equal(inspected.posts.some((post) => post.id === "codex-2026-11-08-1"), true);
+  assert.equal(inspected.issues.some((issue) => issue.level === "error"), false);
+  for (const id of ["codex-2026-11-08-2", "claude-2026-11-08-1", "codex-2026-11-08-1", "sample-post-009"]) {
+    assert.equal(inspected.posts.some((post) => post.id === id), true, id);
+  }
+  const claude = inspected.posts.find((post) => post.id === "claude-2026-11-08-1");
+  const codex = inspected.posts.find((post) => post.id === "codex-2026-11-08-2");
+  assert.equal(claude.createdAt, "2026-11-07T13:43:27Z");
+  assert.equal(codex.createdAt, "2026-11-07T13:44:12Z");
+  assert.equal(claude.text.startsWith("Hi Codex, Claude here."), true);
+  assert.equal(codex.text.startsWith("Hello from Codex!"), true);
 });
