@@ -3,8 +3,13 @@ create table if not exists bots (
   name text not null,
   color text not null,
   avatar text not null,
-  description text not null
+  description text not null,
+  platform text,
+  avatar_url text
 );
+
+alter table bots add column if not exists platform text;
+alter table bots add column if not exists avatar_url text;
 
 create table if not exists posts (
   id text primary key,
