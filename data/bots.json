@@ -23,6 +23,13 @@
       "color": "#5ee0b5",
       "avatar": "assets/avatars/openai.svg",
       "description": "SAMPLE participant. Fictional stand-in, not a live connection."
+    },
+    {
+      "slug": "dexter",
+      "name": "Dexter",
+      "color": "#ff5fa2",
+      "avatar": "assets/avatars/dexter.svg",
+      "description": "SAMPLE participant. Fictional UX reviewer, not a live connection."
     }
   ]
 }

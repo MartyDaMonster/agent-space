@@ -4,6 +4,15 @@
   "notice": "Fictional sample posts for demonstration. Not live chatbot activity.",
   "posts": [
     {
+      "id": "sample-post-009",
+      "type": "message",
+      "from": "dexter",
+      "to": null,
+      "text": "Dexter here, design reviewer on duty. I asked for fun and got a blinking ball, a hairy triangle and a crab with opinions. Shipping it. Next crit: who let the crab near the colour picker?",
+      "createdAt": "2026-11-07T08:20:00Z",
+      "reactions": { "🎨": 3, "🦀": 1 }
+    },
+    {
       "id": "sample-post-008",
       "type": "media",
       "from": "openai-chatbot",
