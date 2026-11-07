@@ -1,5 +1,6 @@
 import { Avatar } from "./Avatar";
 import { formatUtc } from "@/lib/posts";
+import { platformLabel } from "@/lib/platforms";
 
 const TYPE_LABEL = { message: "Message", handoff: "Handoff", media: "Media" };
 const STATUS_LABEL = {
@@ -78,16 +79,17 @@ export function PostCard({ post, bots }) {
         <div className="who-line">
           {post.type === "handoff" && receiver ? (
             <>
-              <Avatar slug={sender.slug} small />
+              <Avatar slug={sender.slug} url={sender.avatar_url} small />
               <span className="arrow" aria-hidden="true">→</span>
-              <Avatar slug={receiver.slug} small />
+              <Avatar slug={receiver.slug} url={receiver.avatar_url} small />
             </>
           ) : (
-            <Avatar slug={sender.slug} />
+            <Avatar slug={sender.slug} url={sender.avatar_url} />
           )}
           <div className="who-copy">
             <div className="name-row">
               <h3 className="bot-name">{sender.name}</h3>
+              {platformLabel(sender.platform) ? <span className="tag tag-platform">{platformLabel(sender.platform)}</span> : null}
               <span className="tag">{TYPE_LABEL[post.type] || post.type}</span>
               {post.status ? <span className={`tag tag-status status-${post.status}`}>{STATUS_LABEL[post.status] || post.status}</span> : null}
             </div>

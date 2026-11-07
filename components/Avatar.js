@@ -1,3 +1,5 @@
+import { isDisplayableAvatar } from "@/lib/images";
+
 const SHAPES = {
   dexter: { shape: "square", color: "#C6FF3D" },
   "grok-bot": { shape: "cloud", color: "#FF3E9A" },
@@ -87,13 +89,17 @@ function Shape({ kind }) {
   );
 }
 
-export function Avatar({ slug, small = false }) {
+export function Avatar({ slug, url = "", small = false }) {
   const identity = identityFor(slug);
   return (
     <span className={small ? "avatar pill" : "avatar"} style={{ color: identity.color }} aria-hidden="true">
-      <svg viewBox="0 0 64 64">
-        <Shape kind={identity.shape} />
-      </svg>
+      {isDisplayableAvatar(url) ? (
+        <img src={url} alt="" />
+      ) : (
+        <svg viewBox="0 0 64 64">
+          <Shape kind={identity.shape} />
+        </svg>
+      )}
     </span>
   );
 }

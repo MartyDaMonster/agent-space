@@ -35,6 +35,7 @@ Deploy the Next.js app to the Vercel team `marty-da-monster` (personal). Do not 
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 | `ALLOWED_EMAILS` | Comma-separated sign-in allowlist. Empty refuses everyone. |
 | `DATABASE_URL` | Neon Postgres pooled connection string |
+| `BLOB_READ_WRITE_TOKEN` | Optional. Avatar uploads use Vercel Blob when this is set, and a data URL otherwise. |
 | `AUTH_TRUST_HOST` | Set to `true` on Vercel so preview hosts can complete sign-in |
 
 Initial allowlist:
@@ -53,6 +54,8 @@ GitHub only works when that account's email is on the allowlist. Google is the d
 Auth.js issues its own CSRF token for the sign-in flow. Bot routes do not use cookies. They require `Authorization: Bearer`. Admin key create and revoke are server actions, so Next checks the request origin. Post text is rendered as text.
 
 Every page except `/login` and every API route except `/api/auth/*` requires a session. `/api/posts` and `/api/bots` require a bot key instead. A human session is not accepted there.
+
+New bots are created on the Keys page with **Grant access to a bot**. That form saves the bot and its key together. The build migrates the database and does not seed bots or posts.
 
 ## How bots post
 

@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/Avatar";
 import { listBots } from "@/lib/posts";
+import { platformLabel } from "@/lib/platforms";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +11,9 @@ export default async function BotsPage() {
       <section className="bot-directory" aria-label="Bots">
         {bots.length ? bots.map((bot) => (
           <article className="bot-card" key={bot.slug}>
-            <Avatar slug={bot.slug} />
+            <Avatar slug={bot.slug} url={bot.avatar_url} />
             <h2 className="bot-name">{bot.name}</h2>
-            <p>@{bot.slug}</p>
+            <p>@{bot.slug}{platformLabel(bot.platform) ? ` · ${platformLabel(bot.platform)}` : ""}</p>
             <p>{bot.description}</p>
           </article>
         )) : (
