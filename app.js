@@ -139,18 +139,66 @@ function botBySlug(slug) {
   return state.bots.find((bot) => bot.slug === slug) || fallbackBot(slug);
 }
 
+const avatarDocs = new Map();
+
+function isSvgAsset(avatar) {
+  return /^assets\/avatars\/[A-Za-z0-9._-]+\.svg$/.test(avatar);
+}
+
+function sanitizeSvg(markup) {
+  const doc = new DOMParser().parseFromString(markup, "image/svg+xml");
+  if (!doc || doc.querySelector("parsererror")) return null;
+  const svg = doc.documentElement;
+  if (!svg || svg.localName !== "svg") return null;
+  const blocked = /^(script|foreignobject|iframe|object|embed|audio|video|image|link|set|style)$/i;
+  const nodes = [...svg.querySelectorAll("*")];
+  for (const node of nodes) {
+    if (blocked.test(node.localName)) {
+      node.remove();
+      continue;
+    }
+    for (const attr of [...node.attributes]) {
+      const name = attr.name.toLowerCase();
+      const value = attr.value.trim().toLowerCase();
+      const isHref = name === "href" || name.endsWith(":href");
+      if (name.startsWith("on") || value.startsWith("javascript:") || (isHref && value && !value.startsWith("#"))) {
+        node.removeAttribute(attr.name);
+      }
+    }
+  }
+  const clean = document.importNode(svg, true);
+  clean.setAttribute("aria-hidden", "true");
+  clean.classList.add("avatar-art");
+  return clean;
+}
+
+async function hydrateAvatars(bots) {
+  await Promise.all(bots.map(async (bot) => {
+    if (!isSvgAsset(bot.avatar) || avatarDocs.has(bot.avatar)) return;
+    try {
+      const response = await fetch(new URL(bot.avatar, pageDir()));
+      if (!response.ok) return;
+      const svg = sanitizeSvg(await response.text());
+      if (svg) avatarDocs.set(bot.avatar, svg);
+    } catch {
+      /* Missing art falls back to initials. */
+    }
+  }));
+}
+
 function fillAvatar(container, bot) {
   const color = bot.color || "#c5cedf";
   container.style.setProperty("--accent", color);
   container.style.setProperty("--ring", color);
   const face = el("span", { class: "avatar-face" });
   const avatar = bot.avatar || "";
-  if (avatar === "spark" || avatar === "waves" || avatar === "hex") {
+  const cached = avatarDocs.get(avatar);
+  if (cached) {
+    face.append(cached.cloneNode(true));
+  } else if (avatar === "spark" || avatar === "waves" || avatar === "hex") {
     const svg = svgEl("svg", { viewBox: "0 0 48 48", "aria-hidden": "true" });
     svg.append(glyph(avatar));
     face.append(svg);
-  } else if (/^(assets|avatars)\/[A-Za-z0-9._/-]+$/.test(avatar) && !avatar.includes("..")) {
-    face.append(el("img", { src: avatar, alt: "" }));
   } else {
     const mark = avatar && !avatar.includes("/") ? avatar : initials(bot.name);
     face.append(el("span", { class: "avatar-fallback", "aria-hidden": "true", text: mark }));
@@ -448,8 +496,8 @@ function renderNetwork(visible) {
       "data-label-side": point.label || "below",
       onclick: () => setBot(pressed ? "all" : bot.slug)
     });
-    button.style.left = `${point.x - 20}px`;
-    button.style.top = `${point.y - 20}px`;
+    button.style.left = `${point.x - 22}px`;
+    button.style.top = `${point.y - 22}px`;
     const avatar = el("span", { class: "avatar compact", "aria-hidden": "true" });
     fillAvatar(avatar, bot);
     button.append(avatar, el("span", { class: "agent-copy", text: bot.name }));
@@ -686,6 +734,7 @@ async function load({ cacheBust }) {
     ]);
     const inspected = inspectDocuments(botsDoc, feedDoc);
     if (inspected.fatal) throw new Error(inspected.fatal);
+    await hydrateAvatars(inspected.bots);
     if (serial !== requestSerial) return;
     state.bots = inspected.bots;
     state.posts = inspected.posts;

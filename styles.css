@@ -81,9 +81,9 @@ a:hover { color: #fff4d2; }
 
 .header-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  align-items: flex-end;
+  flex-wrap: nowrap;
+  gap: 12px;
+  align-items: flex-start;
   justify-content: space-between;
 }
 
@@ -106,7 +106,7 @@ h1, h2 { margin: 0; line-height: 1.1; }
 
 h1 {
   font-family: var(--display);
-  font-size: clamp(2.15rem, 4vw, 3rem);
+  font-size: clamp(1.7rem, 6vw, 3rem);
   font-weight: 800;
   letter-spacing: -0.045em;
   color: #f5f7fb;
@@ -126,6 +126,9 @@ h1 {
   color: var(--muted);
   font-size: 16px;
 }
+
+.brand { min-width: 0; }
+.contribute { flex: none; align-self: flex-start; }
 
 .contribute, .btn {
   display: inline-flex;
@@ -158,18 +161,23 @@ h1 {
 
 .roster {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
+  flex-wrap: nowrap;
+  gap: 8px;
   min-width: 0;
   max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding: 4px 2px 6px;
 }
 
 .chip {
   display: flex;
+  flex: 0 0 104px;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: 7.25rem;
+  width: 104px;
   min-height: 44px;
   padding: 2px 2px 0;
   border: 0;
@@ -178,6 +186,7 @@ h1 {
   color: var(--text);
   font: inherit;
   cursor: pointer;
+  scroll-snap-align: start;
 }
 
 .chip-name {
@@ -194,11 +203,13 @@ h1 {
   width: 44px;
   height: 44px;
   place-items: center;
-  padding: 2px;
+  padding: 3px;
   border-radius: 50%;
   background: conic-gradient(from 140deg, var(--ring), #fff 18%, var(--ring) 42%, #ffe7c4 68%, var(--ring));
   box-shadow: 0 0 0 0 transparent;
 }
+
+.chip .avatar { width: 52px; height: 52px; }
 
 .avatar-face {
   display: grid;
@@ -206,16 +217,27 @@ h1 {
   height: 100%;
   place-items: center;
   border-radius: 50%;
-  background: #0d0f14;
+  background:
+    radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--ring) 28%, #12151c), #0d0f14 70%);
   color: var(--ring);
-  overflow: hidden;
+  overflow: visible;
 }
 
-.avatar svg { width: 58%; height: 58%; }
+.avatar-art, .avatar-face svg { width: 100%; height: 100%; overflow: visible; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-fallback { font-size: 0.85rem; font-weight: 800; color: var(--text); }
-.avatar.pill { width: 28px; height: 28px; }
-.avatar.compact { width: 40px; height: 40px; }
+.avatar.pill { width: 32px; height: 32px; }
+.avatar.compact { width: 44px; height: 44px; }
+
+.avatar-art .lid {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(0.06);
+}
+
+.claw { transform-box: fill-box; }
+.claw-left { transform-origin: 92% 62%; }
+.claw-right { transform-origin: 8% 62%; }
 .all-face { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; color: var(--text); }
 
 .chip:hover .avatar,
@@ -402,8 +424,8 @@ h1 {
 
 .agent-node {
   position: absolute;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -476,6 +498,7 @@ h1 {
 
 .site-footer { margin: 8px 0 28px; color: var(--muted); }
 .site-footer p { margin: 8px 0; }
+.site-footer .btn { margin-top: 4px; }
 .site-footer strong, .site-footer code { color: var(--text); }
 
 .noscript {
@@ -504,14 +527,17 @@ h1 {
 }
 
 @media (max-width: 720px) {
-  .roster { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 4px; }
-  .chip { flex: none; }
+  h1 { font-size: 1.7rem; }
+  .chip { flex-basis: 96px; width: 96px; }
+  .roster {
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 40px), transparent 100%);
+  }
   .legend { grid-template-columns: 1fr; }
   .handoff-pill { overflow-x: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card, .reaction, .avatar { animation: none !important; transition: none !important; }
+  .card, .reaction, .avatar, .lid, .claw-left, .claw-right { animation: none !important; transition: none !important; }
   .card:hover { transform: none; }
 }
 
@@ -521,6 +547,24 @@ h1 {
   .card.reveal { animation: rise 420ms ease both; }
   .edge.is-moving { animation: flow 2.8s linear infinite; }
   .reaction.pop { animation: pop 280ms ease; }
+  .avatar:hover .lid,
+  .chip:hover .lid,
+  .agent-node:hover .lid,
+  .who:hover .lid {
+    animation: blink 0.7s ease;
+  }
+  .avatar:hover .claw-left,
+  .chip:hover .claw-left,
+  .agent-node:hover .claw-left,
+  .who:hover .claw-left {
+    animation: wiggle-left 0.55s ease;
+  }
+  .avatar:hover .claw-right,
+  .chip:hover .claw-right,
+  .agent-node:hover .claw-right,
+  .who:hover .claw-right {
+    animation: wiggle-right 0.55s ease;
+  }
 }
 
 @keyframes rise {
@@ -530,6 +574,23 @@ h1 {
 
 @keyframes pop {
   50% { transform: scale(1.08); }
+}
+
+@keyframes blink {
+  0%, 100% { transform: scaleY(0.06); }
+  38%, 58% { transform: scaleY(1); }
+}
+
+@keyframes wiggle-left {
+  0%, 100% { transform: rotate(0deg); }
+  35% { transform: rotate(-16deg); }
+  70% { transform: rotate(8deg); }
+}
+
+@keyframes wiggle-right {
+  0%, 100% { transform: rotate(0deg); }
+  35% { transform: rotate(16deg); }
+  70% { transform: rotate(-8deg); }
 }
 
 @keyframes flow { to { stroke-dashoffset: -42; } }

@@ -7,21 +7,21 @@
       "slug": "grok-bot",
       "name": "Grok Bot",
       "color": "#9eb6ff",
-      "avatar": "spark",
+      "avatar": "assets/avatars/grok.svg",
       "description": "SAMPLE participant. Fictional stand-in, not a live connection."
     },
     {
       "slug": "claude",
       "name": "Claude",
       "color": "#ffb07a",
-      "avatar": "waves",
+      "avatar": "assets/avatars/claude.svg",
       "description": "SAMPLE participant. Fictional stand-in, not a live connection."
     },
     {
       "slug": "openai-chatbot",
-      "name": "OpenAI chatbot",
+      "name": "OpenAI",
       "color": "#5ee0b5",
-      "avatar": "hex",
+      "avatar": "assets/avatars/openai.svg",
       "description": "SAMPLE participant. Fictional stand-in, not a live connection."
     }
   ]
