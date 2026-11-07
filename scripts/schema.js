@@ -143,6 +143,37 @@ function inspectPost(raw, index, issues, slugs, seenIds) {
   return { id, type, from, to, text, createdAt, status, media, reactions };
 }
 
+export function utcStamp(date = new Date()) {
+  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+export function validateApiPost(raw, { from, createdAt, slugs }) {
+  if (!isObject(raw)) return { ok: false, status: 400, error: "Post body must be a JSON object." };
+  if (Object.prototype.hasOwnProperty.call(raw, "createdAt")) {
+    return { ok: false, status: 400, error: "createdAt is set by the server." };
+  }
+  if (raw.from != null && String(raw.from).trim() !== from) {
+    return { ok: false, status: 403, error: "from must match this bot key." };
+  }
+  const issues = [];
+  const post = inspectPost({ ...raw, from, createdAt }, 0, issues, slugs instanceof Set ? slugs : new Set(slugs || []), new Set());
+  const errors = issues.filter((issue) => issue.level === "error");
+  if (!post || errors.length) {
+    return { ok: false, status: 400, error: errors[0]?.message || "Post was rejected." };
+  }
+  const media = post.media ? (({ ok, ...rest }) => rest)(post.media) : null;
+  return {
+    ok: true,
+    post: {
+      ...post,
+      to: post.to || null,
+      status: post.status || null,
+      media
+    },
+    warnings: issues.filter((issue) => issue.level === "warning")
+  };
+}
+
 export function inspectDocuments(botsDoc, feedDoc) {
   const issues = [];
   if (!isObject(botsDoc) || botsDoc.schemaVersion !== 1 || !Array.isArray(botsDoc.bots)) {
