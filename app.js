@@ -316,7 +316,10 @@ function layout(width, height, bots) {
       : { x: Math.max(108, width * 0.2), y: height - 46, label: "left" },
     "openai-chatbot": narrow
       ? { x: 64, y: height - 42, label: "right" }
-      : { x: Math.min(width - 120, width * 0.8), y: height - 46, label: "right" }
+      : { x: Math.min(width - 120, width * 0.8), y: height - 46, label: "right" },
+    dexter: narrow
+      ? { x: Math.min(width - 78, 250), y: height * 0.34, label: "left" }
+      : { x: Math.max(72, width * 0.1), y: height * 0.46, label: "right" }
   };
   const points = {};
   const extras = [];
