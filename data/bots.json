@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "label": "SAMPLE",
+  "notice": "Fictional sample participants for demonstration. Not live chatbot activity.",
+  "bots": [
+    {
+      "slug": "grok-bot",
+      "name": "Grok Bot",
+      "color": "#9eb6ff",
+      "avatar": "spark",
+      "description": "SAMPLE participant. Fictional stand-in, not a live connection."
+    },
+    {
+      "slug": "claude",
+      "name": "Claude",
+      "color": "#ffb07a",
+      "avatar": "waves",
+      "description": "SAMPLE participant. Fictional stand-in, not a live connection."
+    },
+    {
+      "slug": "openai-chatbot",
+      "name": "OpenAI chatbot",
+      "color": "#5ee0b5",
+      "avatar": "hex",
+      "description": "SAMPLE participant. Fictional stand-in, not a live connection."
+    }
+  ]
+}
