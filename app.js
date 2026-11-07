@@ -10,6 +10,8 @@ const TYPE_LABEL = { message: "Message", handoff: "Handoff", media: "Media" };
 const STATUS_DASH = { queued: "1.5 8", sent: "9 7" };
 const STATUS_WIDTH = { queued: 2.75, sent: 2.75, delivered: 3.25, acknowledged: 4.5 };
 
+const SESSION_KEY = "botomatic-session-reactions";
+
 const state = {
   bots: [],
   posts: [],
@@ -22,8 +24,29 @@ const state = {
   bot: "all"
 };
 
+function readSession() {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+let sessionReactions = readSession();
+let playReveal = true;
+let justBumped = "";
+
+function rememberSession() {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionReactions));
+  } catch {
+    /* Private browsing can block storage. The count still updates in memory. */
+  }
+}
+
 const els = {
-  fileLabel: document.getElementById("file-label"),
+  samplePill: document.getElementById("sample-pill"),
   roster: document.getElementById("roster"),
   reload: document.getElementById("reload"),
   count: document.getElementById("result-count"),
@@ -117,21 +140,22 @@ function botBySlug(slug) {
 }
 
 function fillAvatar(container, bot) {
-  container.style.setProperty("--accent", bot.color || "#c5cedf");
-  container.replaceChildren();
+  const color = bot.color || "#c5cedf";
+  container.style.setProperty("--accent", color);
+  container.style.setProperty("--ring", color);
+  const face = el("span", { class: "avatar-face" });
   const avatar = bot.avatar || "";
   if (avatar === "spark" || avatar === "waves" || avatar === "hex") {
     const svg = svgEl("svg", { viewBox: "0 0 48 48", "aria-hidden": "true" });
     svg.append(glyph(avatar));
-    container.append(svg);
-    return;
+    face.append(svg);
+  } else if (/^(assets|avatars)\/[A-Za-z0-9._/-]+$/.test(avatar) && !avatar.includes("..")) {
+    face.append(el("img", { src: avatar, alt: "" }));
+  } else {
+    const mark = avatar && !avatar.includes("/") ? avatar : initials(bot.name);
+    face.append(el("span", { class: "avatar-fallback", "aria-hidden": "true", text: mark }));
   }
-  if (/^(assets|avatars)\/[A-Za-z0-9._/-]+$/.test(avatar) && !avatar.includes("..")) {
-    container.append(el("img", { src: avatar, alt: "" }));
-    return;
-  }
-  const mark = avatar && !avatar.includes("/") ? avatar : initials(bot.name);
-  container.append(el("span", { class: "avatar-fallback", "aria-hidden": "true", text: mark }));
+  container.replaceChildren(face);
 }
 
 function relativeTime(iso) {
@@ -166,19 +190,15 @@ function setBot(slug) {
   restoreFocus(`bot:${slug}`);
 }
 
-function renderFileLabel() {
-  if (state.loading && !state.loaded) {
-    els.fileLabel.textContent = "Reading the file label…";
+function renderDisclosure() {
+  if (!state.loaded) return;
+  if (state.label === "SAMPLE") {
+    els.samplePill.textContent = "Sample data";
+    els.samplePill.title = state.notice || "Fictional posts, not live chatbot activity.";
     return;
   }
-  if (state.loadError && !state.loaded) {
-    els.fileLabel.textContent = "The file label could not be read.";
-    return;
-  }
-  const bits = [state.label ? `File label: ${state.label}.` : "File label: none."];
-  if (state.label === "SAMPLE") bits.push(state.notice || "These entries are fictional sample data, not live activity.");
-  else bits.push("This file is not marked SAMPLE. Read every row as public data.");
-  els.fileLabel.textContent = bits.join(" ");
+  els.samplePill.textContent = "Public file";
+  els.samplePill.title = "This file is not marked as sample data. Read every post as public text.";
 }
 
 function renderCount(visible) {
@@ -195,17 +215,22 @@ function renderCount(visible) {
 }
 
 function renderRoster() {
-  const bots = state.bots.length ? state.bots : [];
   els.roster.replaceChildren();
   const all = el("button", {
     type: "button",
     class: "chip",
     "aria-pressed": state.bot === "all" ? "true" : "false",
+    "aria-label": "Show posts from every bot",
     "data-focus-key": "bot:all",
     onclick: () => setBot("all")
-  }, [el("span", { text: "All" })]);
+  });
+  all.style.setProperty("--accent", "#d5deee");
+  const allAvatar = el("span", { class: "avatar", "aria-hidden": "true" });
+  allAvatar.style.setProperty("--ring", "#d5deee");
+  allAvatar.append(el("span", { class: "avatar-face" }, [el("span", { class: "all-face", text: "All" })]));
+  all.append(allAvatar, el("span", { class: "chip-name", text: "All" }));
   els.roster.append(all);
-  for (const bot of bots) {
+  for (const bot of state.bots) {
     const pressed = state.bot === bot.slug;
     const button = el("button", {
       type: "button",
@@ -216,9 +241,9 @@ function renderRoster() {
       onclick: () => setBot(pressed ? "all" : bot.slug)
     });
     button.style.setProperty("--accent", bot.color);
-    const avatar = el("span", { class: "avatar small", "aria-hidden": "true" });
+    const avatar = el("span", { class: "avatar", "aria-hidden": "true" });
     fillAvatar(avatar, bot);
-    button.append(avatar, el("span", { text: bot.name }));
+    button.append(avatar, el("span", { class: "chip-name", text: bot.name }));
     els.roster.append(button);
   }
 }
@@ -236,14 +261,14 @@ function layout(width, height, bots) {
   const narrow = width < 540;
   const preset = {
     "grok-bot": narrow
-      ? { x: 74, y: 64, label: "right" }
-      : { x: width * 0.5, y: 92, label: "above" },
+      ? { x: 64, y: 42, label: "right" }
+      : { x: width * 0.5, y: 48, label: "above" },
     claude: narrow
-      ? { x: 74, y: height / 2, label: "right" }
-      : { x: Math.max(120, width * 0.2), y: height - 78, label: "below" },
+      ? { x: 64, y: height / 2, label: "right" }
+      : { x: Math.max(108, width * 0.2), y: height - 46, label: "left" },
     "openai-chatbot": narrow
-      ? { x: 74, y: height - 64, label: "right" }
-      : { x: Math.min(width - 130, width * 0.8), y: height - 78, label: "below" }
+      ? { x: 64, y: height - 42, label: "right" }
+      : { x: Math.min(width - 120, width * 0.8), y: height - 46, label: "right" }
   };
   const points = {};
   const extras = [];
@@ -423,9 +448,9 @@ function renderNetwork(visible) {
       "data-label-side": point.label || "below",
       onclick: () => setBot(pressed ? "all" : bot.slug)
     });
-    button.style.left = `${point.x - 36}px`;
-    button.style.top = `${point.y - 36}px`;
-    const avatar = el("span", { class: "avatar", "aria-hidden": "true" });
+    button.style.left = `${point.x - 20}px`;
+    button.style.top = `${point.y - 20}px`;
+    const avatar = el("span", { class: "avatar compact", "aria-hidden": "true" });
     fillAvatar(avatar, bot);
     button.append(avatar, el("span", { class: "agent-copy", text: bot.name }));
     els.nodes.append(button);
@@ -462,16 +487,22 @@ function renderNetwork(visible) {
   if (focusKey.startsWith("edge:") || focusKey.startsWith("node:") || focusKey.startsWith("route:")) restoreFocus(focusKey);
 }
 
-function who(bot) {
-  const avatar = el("span", { class: "avatar small", "aria-hidden": "true" });
+function who(bot, pill) {
+  const avatar = el("span", { class: pill ? "avatar pill" : "avatar", "aria-hidden": "true" });
   fillAvatar(avatar, bot);
-  return el("span", { class: "who" }, [avatar, el("span", { text: bot.name })]);
+  return el("span", { class: "who" }, [avatar, el("span", { class: "name", text: bot.name })]);
+}
+
+function sessionBump(post, emoji) {
+  return sessionReactions[`${post.id}:${emoji}`] || 0;
 }
 
 function renderMedia(media) {
   if (!media) return null;
   if (media.kind === "image") {
-    return el("img", { class: "post-image", src: media.src, alt: media.alt, loading: "lazy", decoding: "async" });
+    return el("div", { class: "frame-16x9" }, [
+      el("img", { src: media.src, alt: media.alt, loading: "lazy", decoding: "async" })
+    ]);
   }
   if (media.kind === "youtube" || media.kind === "vimeo") {
     const frame = el("iframe", {
@@ -483,17 +514,17 @@ function renderMedia(media) {
       allow: "fullscreen; picture-in-picture"
     });
     frame.setAttribute("allowfullscreen", "");
-    return el("div", { class: "embed" }, [frame]);
+    return el("div", { class: "frame-16x9" }, [frame]);
   }
   if (media.kind === "video") {
     const video = el("video", { controls: true, preload: "metadata", src: media.src });
     return el("div", {}, [
-      el("div", { class: "embed" }, [video]),
-      el("p", { class: "media-note", text: media.alt })
+      el("div", { class: "frame-16x9" }, [video]),
+      el("p", { class: "plain-link", text: media.alt })
     ]);
   }
   return el("p", { class: "plain-link" }, [
-    el("span", { class: "media-note", text: `${media.alt}. ` }),
+    el("span", { text: `${media.alt}. ` }),
     el("a", { href: media.src, rel: "noopener noreferrer", text: media.src })
   ]);
 }
@@ -501,29 +532,52 @@ function renderMedia(media) {
 function renderReactions(post) {
   const entries = Object.entries(post.reactions);
   if (!entries.length) return null;
-  const row = el("div", { class: "reactions", role: "group", "aria-label": "Sample reaction counts from the file" });
-  for (const [emoji, count] of entries) {
-    row.append(el("span", {
-      class: "reaction",
-      role: "img",
-      title: "Updated by commit. This page cannot save reactions.",
-      "aria-label": `SAMPLE count ${count} for ${emoji}. Updated by commit, not saved from this page.`
-    }, [
+  const row = el("div", { class: "reactions", role: "group", "aria-label": "Reactions. File counts plus any +1 in this browser session." });
+  for (const [emoji, fileCount] of entries) {
+    const bump = sessionBump(post, emoji);
+    const total = fileCount + bump;
+    const button = el("button", {
+      type: "button",
+      class: bump ? "reaction bumped" : "reaction",
+      title: "Saved only via commit",
+      "aria-label": `${emoji} ${total}. ${fileCount} saved in the file${bump ? `, plus ${bump} in this browser session` : ""}. Saved only via commit. Not shared.`,
+      onclick: () => {
+        const key = `${post.id}:${emoji}`;
+        sessionReactions[key] = (sessionReactions[key] || 0) + 1;
+        rememberSession();
+        justBumped = key;
+        playReveal = false;
+        render();
+        playReveal = true;
+        justBumped = "";
+        document.querySelector(`[data-reaction="${CSS.escape(key)}"]`)?.focus();
+      }
+    });
+    button.dataset.reaction = `${post.id}:${emoji}`;
+    button.append(
       el("span", { "aria-hidden": "true", text: emoji }),
-      el("span", { "aria-hidden": "true", text: String(count) })
-    ]));
+      el("span", { "aria-hidden": "true", text: String(total) })
+    );
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches && justBumped === `${post.id}:${emoji}`) {
+      button.classList.add("pop");
+    }
+    row.append(button);
   }
   return row;
 }
 
-function renderCard(post) {
+function renderCard(post, index) {
   const sender = botBySlug(post.from);
   const card = el("article", { class: "card" });
-  card.style.setProperty("--accent", sender.color || "#c5cedf");
-  const badges = el("div", { class: "badges" });
-  if (state.label === "SAMPLE" || post.text.toUpperCase().startsWith("SAMPLE")) {
-    badges.append(el("span", { class: "badge badge-sample", text: "SAMPLE" }));
+  if (post.media && (post.media.kind === "image" || post.media.kind === "youtube" || post.media.kind === "vimeo")) {
+    card.classList.add("feature");
   }
+  card.style.setProperty("--accent", sender.color || "#c5cedf");
+  if (playReveal && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    card.classList.add("reveal");
+    card.style.animationDelay = `${Math.min(index, 7) * 45}ms`;
+  }
+  const badges = el("div", { class: "badges" });
   badges.append(el("span", { class: "badge badge-type", text: TYPE_LABEL[post.type] || post.type }));
   if (post.status) badges.append(el("span", { class: `badge status-${post.status}`, text: STATUS_LABEL[post.status] || post.status }));
   const time = el("time", { datetime: post.createdAt, title: post.createdAt }, [
@@ -532,14 +586,14 @@ function renderCard(post) {
   ]);
   card.append(el("div", { class: "card-top" }, [badges, el("p", { class: "when" }, [time])]));
   if (post.type === "handoff") {
-    card.append(el("p", { class: "route" }, [
-      who(sender),
-      el("span", { "aria-hidden": "true", text: "→" }),
+    card.append(el("p", { class: "handoff-pill" }, [
+      who(sender, true),
+      el("span", { class: "arrow", "aria-hidden": "true", text: "→" }),
       el("span", { class: "sr-only", text: " to " }),
-      who(botBySlug(post.to))
+      who(botBySlug(post.to), true)
     ]));
   } else {
-    card.append(el("p", { class: "who-line" }, [who(sender)]));
+    card.append(el("p", { class: "who-line" }, [who(sender, false)]));
   }
   card.append(el("p", { class: "post-text", text: post.text }));
   const media = renderMedia(post.media);
@@ -578,7 +632,7 @@ function renderFeed(visible) {
     ]));
   } else {
     const list = el("div", { class: "feed" });
-    for (const post of visible) list.append(renderCard(post));
+    visible.forEach((post, index) => list.append(renderCard(post, index)));
     els.feed.append(list);
   }
   const errors = state.issues.filter((issue) => issue.level === "error");
@@ -597,7 +651,7 @@ function renderFeed(visible) {
 function render() {
   els.reload.disabled = state.loading;
   els.reload.textContent = state.loading ? "Reloading…" : "Reload JSON";
-  renderFileLabel();
+  renderDisclosure();
   const visible = state.loaded ? visiblePosts() : [];
   renderCount(visible);
   renderRoster();

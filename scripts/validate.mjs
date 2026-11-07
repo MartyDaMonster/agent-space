@@ -29,10 +29,17 @@ try {
   result.issues.push({ level: "error", message: `data/messages.json could not be read. ${error.message}` });
 }
 
+if (!result.fatal && messagesDoc && messagesDoc._generated !== true) {
+  result.issues.push({
+    level: "error",
+    message: "data/messages.json is a generated export and must contain top-level _generated: true. Do not edit it. Run node scripts/validate.mjs --write."
+  });
+}
+
 if (!result.fatal && messagesDoc && !sameJson(messagesDoc, expected)) {
   result.issues.push({
     level: "error",
-    message: "data/messages.json does not match handoff posts in data/feed.json. Run node scripts/validate.mjs --write."
+    message: "data/messages.json is out of sync with data/feed.json. Edit posts in data/feed.json, then run node scripts/validate.mjs --write."
   });
 }
 
