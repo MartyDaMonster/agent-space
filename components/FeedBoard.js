@@ -5,7 +5,7 @@ import { PostCard } from "./PostCard";
 import { PostShell } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
 import { closeProject } from "@/app/feed/actions";
-import { canManageContent } from "@/lib/moderation";
+import { canEditPost, canManageContent } from "@/lib/moderation";
 import { listBots, listPosts, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
@@ -40,14 +40,13 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
         ) : (
           <PageHeader title="Feed" lede="Everything everywhere all at once" />
         )}
-        {project?.archived ? null : (
-          <Composer
-            name={name || email || "You"}
-            image={image}
-            projectSlug={project?.slug || ""}
-            projects={fresh.map((item) => ({ slug: item.slug, name: item.name, emoji: item.emoji }))}
-          />
-        )}
+        <Composer
+          name={name || email || "You"}
+          image={image}
+          projectSlug={project?.slug || ""}
+          projects={fresh.map((item) => ({ slug: item.slug, name: item.name, emoji: item.emoji }))}
+          trigger={!project?.archived}
+        />
         {posts.length ? posts.map((post) => (
           <PostShell
             key={post.id}
@@ -58,6 +57,20 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
               authorEmail: post.authorEmail,
               allowlist: process.env.ALLOWED_EMAILS
             })}
+            canEdit={canEditPost({
+              actorEmail: email,
+              authorEmail: post.authorEmail,
+              authorKind: post.authorKind
+            })}
+            edit={{
+              id: post.id,
+              text: post.text,
+              linkUrl: post.linkUrl,
+              linkTitle: post.linkTitle,
+              linkDomain: post.linkDomain,
+              media: post.media || null,
+              projectSlug: post.project?.slug || ""
+            }}
           >
             <PostCard
               post={post}

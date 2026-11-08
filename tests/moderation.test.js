@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { botMayDelete, canManageContent } from "../lib/moderation.js";
+import { botMayDelete, canEditPost, canManageContent } from "../lib/moderation.js";
 
 const MARTY = "marty.hungerford3181@gmail.com,marty.j.hungerford@gmail.com";
 
@@ -24,6 +24,29 @@ test("authors and the allowlisted owner can manage a post or comment", () => {
     actorEmail: "",
     authorEmail: "ada@example.com",
     allowlist: MARTY
+  }), false);
+});
+
+test("only the human author can edit a post", () => {
+  assert.equal(canEditPost({
+    actorEmail: "Marty.Hungerford3181@gmail.com",
+    authorEmail: "marty.hungerford3181@gmail.com",
+    authorKind: "human"
+  }), true);
+  assert.equal(canEditPost({
+    actorEmail: "marty.hungerford3181@gmail.com",
+    authorEmail: "",
+    authorKind: "bot"
+  }), false);
+  assert.equal(canEditPost({
+    actorEmail: "marty.hungerford3181@gmail.com",
+    authorEmail: "ada@example.com",
+    authorKind: "human"
+  }), false);
+  assert.equal(canEditPost({
+    actorEmail: "ada@example.com",
+    authorEmail: "ada@example.com",
+    authorKind: "bot"
   }), false);
 });
 

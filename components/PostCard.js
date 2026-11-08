@@ -113,6 +113,7 @@ export function PostCard({ post, bots, comments = [], reactionRows = [], email =
             <p className="meta">
               {human ? null : <><span>@{sender.slug}</span><span aria-hidden="true"> · </span></>}
               <time dateTime={when} title={when}>{relativeTime(when)}</time>
+              {post.editedAt ? <span className="edited-mark">edited</span> : null}
             </p>
           </div>
         </div>

@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 import { emailAllowed } from "@/lib/access";
 import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo, readPageTitle } from "@/lib/compose";
 import { dismissOnboarding } from "@/lib/humans";
-import { canManageContent } from "@/lib/moderation";
+import { canEditPost, canManageContent } from "@/lib/moderation";
 import {
   destroyComment,
   destroyPost,
@@ -21,10 +21,10 @@ import {
   postExists,
   publicId,
   toggleReaction,
-  updatePostText
+  updateEditedPost
 } from "@/lib/posts";
 import { prepareProject } from "@/lib/project-fields";
-import { archiveProject, createProject, projectBySlug } from "@/lib/projects";
+import { archiveProject, createProject, projectBySlug, touchProject } from "@/lib/projects";
 import { classifyMedia } from "@/scripts/media.js";
 import { utcStamp } from "@/scripts/schema.js";
 
@@ -218,19 +218,65 @@ export async function purgePost(postId) {
   return { ok: true };
 }
 
-export async function revisePost(postId, text) {
+export async function saveEdit(_previous, formData) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const post = await findPost(String(postId || ""));
+  const post = await findPost(String(formData.get("postId") || ""));
   if (!post || post.deleted_at) return { error: "That post is gone." };
-  if (!manages(person, post.author_email)) return { error: "You can't edit that post." };
-  const clean = cleanPostText(text);
-  if (!clean.ok) return { error: clean.error };
-  const saved = await updatePostText(post.id, clean.text);
-  if (!saved) return { error: "That post is gone." };
+  if (!canEditPost({
+    actorEmail: person.email,
+    authorEmail: post.author_email,
+    authorKind: post.author_kind
+  })) return { error: "You can only edit your own posts." };
+  const text = cleanPostText(formData.get("text"));
+  if (!text.ok) return { error: text.error };
+  const link = inspectLink(formData.get("link"));
+  if (!link.ok) return { error: link.error };
+  const image = inspectImage(formData.get("image"));
+  if (!image.ok) return { error: image.error };
+  const video = inspectVideo(formData.get("video"));
+  if (!video.ok) return { error: video.error };
+  let media = null;
+  let type = "message";
+  if (!image.empty) {
+    const classified = classifyMedia({ kind: "image", url: image.url, alt: text.text.slice(0, 200) });
+    if (!classified.ok) return { error: classified.reason };
+    const { ok, ...rest } = classified;
+    media = rest;
+    type = "media";
+  } else if (!video.empty) {
+    const classified = classifyMedia({ kind: video.kind, url: video.url, alt: video.alt });
+    if (!classified.ok) return { error: classified.reason };
+    const { ok, ...rest } = classified;
+    media = rest;
+    type = "media";
+  }
+  let linkTitle = "";
+  if (!link.empty && !media) linkTitle = (await readPageTitle(link.url)) || link.domain;
+  const requested = String(formData.get("projectSlug") || "");
+  let projectId = null;
+  if (requested) {
+    const project = await projectBySlug(requested);
+    if (!project) return { error: "That project is not open." };
+    if (project.archived && project.id !== post.project_id) return { error: "That project is archived." };
+    projectId = project.id;
+  }
+  const saved = await updateEditedPost({
+    id: post.id,
+    email: person.email,
+    text: text.text,
+    type,
+    media,
+    linkUrl: link.empty || media ? "" : link.url,
+    linkTitle: link.empty || media ? "" : linkTitle,
+    linkDomain: link.empty || media ? "" : link.domain,
+    projectId
+  });
+  if (!saved) return { error: "You can only edit your own posts." };
+  if (projectId) await touchProject(projectId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
-  return { text: clean.text };
+  return { saved: true };
 }
 
 export async function retireComment(commentId) {

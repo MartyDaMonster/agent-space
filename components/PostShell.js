@@ -5,22 +5,24 @@ import { PostMenu } from "./PostMenu";
 
 const ShellContext = createContext(null);
 
-export function PostShell({ postId, text, canManage, children }) {
+export function PostShell({ postId, text, canManage, canEdit, edit, children }) {
   const [hidden, setHidden] = useState(false);
   const [draft, setDraft] = useState(text);
   const alive = useRef(true);
   useEffect(() => () => {
     alive.current = false;
   }, []);
+  useEffect(() => { setDraft(text); }, [text]);
   if (hidden) return null;
   return (
     <ShellContext.Provider value={{
       draft,
       postId,
       canManage,
+      canEdit,
+      edit: { ...edit, text: draft },
       hide: () => { if (alive.current) setHidden(true); },
-      show: () => { if (alive.current) setHidden(false); },
-      setDraft: (next) => { if (alive.current) setDraft(next); }
+      show: () => { if (alive.current) setHidden(false); }
     }}>
       {children}
     </ShellContext.Provider>
@@ -29,14 +31,14 @@ export function PostShell({ postId, text, canManage, children }) {
 
 export function PostActions() {
   const shell = useContext(ShellContext);
-  if (!shell?.canManage) return null;
+  if (!shell?.canManage && !shell?.canEdit) return null;
   return (
     <PostMenu
       postId={shell.postId}
-      text={shell.draft}
+      canEdit={shell.canEdit}
+      edit={shell.edit}
       onHide={shell.hide}
       onShow={shell.show}
-      onText={shell.setDraft}
     />
   );
 }

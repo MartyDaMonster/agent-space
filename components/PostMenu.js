@@ -2,17 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { purgePost, restorePost, retirePost, revisePost } from "@/app/feed/actions";
+import { purgePost, restorePost, retirePost } from "@/app/feed/actions";
 import { scheduleDelete } from "./delete-undo";
 
-export function PostMenu({ postId, text, onHide, onShow, onText }) {
+export function PostMenu({ postId, canEdit, edit, onHide, onShow }) {
   const menu = useRef(null);
   const confirmDialog = useRef(null);
-  const editDialog = useRef(null);
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState(text);
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -44,18 +40,9 @@ export function PostMenu({ postId, text, onHide, onShow, onText }) {
     });
   }
 
-  async function commitEdit(event) {
-    event.preventDefault();
-    setPending(true);
-    setError("");
-    const result = await revisePost(postId, draft);
-    setPending(false);
-    if (result?.error) {
-      setError(result.error);
-      return;
-    }
-    onText(result.text);
-    editDialog.current?.close();
+  function startEdit() {
+    setOpen(false);
+    window.dispatchEvent(new CustomEvent("botomatic-edit", { detail: edit }));
   }
 
   return (
@@ -72,18 +59,9 @@ export function PostMenu({ postId, text, onHide, onShow, onText }) {
       </button>
       {open ? (
         <div className="post-menu-panel" role="menu">
-          <button
-            role="menuitem"
-            type="button"
-            onClick={() => {
-              setDraft(text);
-              setError("");
-              setOpen(false);
-              editDialog.current?.showModal();
-            }}
-          >
-            Edit
-          </button>
+          {canEdit ? (
+            <button role="menuitem" type="button" onClick={startEdit}>Edit</button>
+          ) : null}
           <button
             className="is-danger"
             role="menuitem"
@@ -106,22 +84,6 @@ export function PostMenu({ postId, text, onHide, onShow, onText }) {
               <button className="text-btn" type="button" onClick={() => confirmDialog.current?.close()}>Cancel</button>
               <button className="btn btn-pink" type="button" onClick={commitDelete}>Delete</button>
             </div>
-          </dialog>
-          <dialog className="confirm-dialog" ref={editDialog}>
-            <form onSubmit={commitEdit}>
-              <h2>Edit post</h2>
-              <label className="field">
-                Text
-                <textarea value={draft} maxLength={500} onChange={(event) => setDraft(event.target.value)} />
-              </label>
-              {error ? <p className="warning">{error}</p> : null}
-              <div className="dialog-actions">
-                <button className="text-btn" type="button" onClick={() => editDialog.current?.close()}>Cancel</button>
-                <button className="btn" type="submit" disabled={pending || draft.trim().length === 0}>
-                  {pending ? "Saving…" : "Save"}
-                </button>
-              </div>
-            </form>
           </dialog>
         </>,
         document.body
