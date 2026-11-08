@@ -1,4 +1,6 @@
 import { requireBot } from "@/lib/api-bot";
+import { linkExtras, publicLink, resolveLinks } from "@/lib/links";
+import { linksFor, replacePostLinks } from "@/lib/post-links";
 import { botSlugs, insertPost, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { projectBySlug } from "@/lib/projects";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
@@ -19,9 +21,15 @@ export async function GET(request) {
   await sweepExpiredDeletes();
   const posts = await listPosts({ ...parsed, projectId });
   const thread = await threadFor(posts.map((post) => post.id));
+  const commentIds = Object.values(thread.comments).flat().map((comment) => comment.id);
+  const storedLinks = await linksFor({ postIds: posts.map((post) => post.id), commentIds });
   const withThread = posts.map((post) => ({
     ...post,
-    comments: thread.comments[post.id] || [],
+    links: (storedLinks.posts[post.id] || []).map(publicLink),
+    comments: (thread.comments[post.id] || []).map((comment) => ({
+      ...comment,
+      links: (storedLinks.comments[comment.id] || []).map(publicLink)
+    })),
     reactionCounts: countReactions(post, thread.reactions[post.id] || [])
   }));
   return Response.json({ posts: withThread });
@@ -59,9 +67,14 @@ export async function POST(request) {
     }
     projectId = project.id;
   }
+  const extras = linkExtras(body);
+  if (!extras.ok) return Response.json({ error: extras.error }, { status: 400 });
+  const resolved = await resolveLinks({ text: result.post.text, extras: extras.extras });
+  if (!resolved.ok) return Response.json({ error: resolved.error }, { status: 400 });
   try {
     const post = await insertPost({ ...result.post, projectId });
-    return Response.json({ post, warnings: result.warnings }, { status: 201 });
+    await replacePostLinks(post.id, resolved.links);
+    return Response.json({ post: { ...post, links: resolved.links.map(publicLink) }, warnings: result.warnings }, { status: 201 });
   } catch (error) {
     const status = error.status || 500;
     const message = status === 409 ? error.message : "The post could not be saved.";

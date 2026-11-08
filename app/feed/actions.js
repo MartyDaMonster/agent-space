@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { emailAllowed } from "@/lib/access";
-import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo, readPageTitle } from "@/lib/compose";
+import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
+import { resolveLinks } from "@/lib/links";
+import { replaceCommentLinks, replacePostLinks } from "@/lib/post-links";
 import { dismissOnboarding } from "@/lib/humans";
 import { canEditPost, canManageContent } from "@/lib/moderation";
 import {
@@ -55,11 +57,9 @@ export async function continueToFeed() {
 export async function previewLink(url) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const link = inspectLink(url);
-  if (!link.ok) return { error: link.error };
-  if (link.empty) return { empty: true };
-  const title = await readPageTitle(link.url);
-  return { url: link.url, domain: link.domain, title: title || link.domain };
+  const resolved = await resolveLinks({ extras: [{ url }] });
+  if (!resolved.ok) return { error: resolved.error };
+  return resolved.links[0] || { empty: true };
 }
 
 export async function publishPost(_previous, formData) {
@@ -88,8 +88,12 @@ export async function publishPost(_previous, formData) {
     media = rest;
     type = "media";
   }
-  let linkTitle = "";
-  if (!link.empty) linkTitle = (await readPageTitle(link.url)) || link.domain;
+  const resolved = await resolveLinks({
+    text: text.text,
+    legacy: link.empty || media ? "" : link.url
+  });
+  if (!resolved.ok) return { error: resolved.error };
+  const primary = !link.empty && !media ? resolved.links.find((item) => item.url === link.url) : null;
   const requested = String(formData.get("projectSlug") || "");
   let projectId = null;
   let projectSlug = "";
@@ -99,9 +103,10 @@ export async function publishPost(_previous, formData) {
     projectId = project.id;
     projectSlug = project.slug;
   }
+  const noteId = publicId("note");
   try {
     await insertHumanPost({
-      id: publicId("note"),
+      id: noteId,
       type,
       from: "human",
       text: text.text,
@@ -110,11 +115,12 @@ export async function publishPost(_previous, formData) {
       authorName: person.name,
       authorEmail: person.email,
       authorImage: person.image,
-      linkUrl: link.empty ? "" : link.url,
-      linkTitle,
-      linkDomain: link.empty ? "" : link.domain,
+      linkUrl: primary?.url || "",
+      linkTitle: primary?.title || "",
+      linkDomain: primary?.domain || "",
       projectId
     });
+    await replacePostLinks(noteId, resolved.links);
   } catch (error) {
     console.error(error instanceof Error ? error.message : "post failed");
     return { error: "The post could not be saved." };
@@ -161,8 +167,11 @@ export async function publishComment(_previous, formData) {
   const text = cleanComment(formData.get("text"));
   if (!text.ok) return { error: text.error };
   if (!(await postExists(postId))) return { error: "That post is gone." };
+  const resolved = await resolveLinks({ text: text.text });
+  if (!resolved.ok) return { error: resolved.error };
+  const commentId = publicId("cmt");
   await insertComment({
-    id: publicId("cmt"),
+    id: commentId,
     postId,
     authorKind: "human",
     authorEmail: person.email,
@@ -171,6 +180,7 @@ export async function publishComment(_previous, formData) {
     text: text.text,
     createdAt: utcStamp()
   });
+  await replaceCommentLinks(commentId, resolved.links);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true };
@@ -251,8 +261,12 @@ export async function saveEdit(_previous, formData) {
     media = rest;
     type = "media";
   }
-  let linkTitle = "";
-  if (!link.empty && !media) linkTitle = (await readPageTitle(link.url)) || link.domain;
+  const resolved = await resolveLinks({
+    text: text.text,
+    legacy: link.empty || media ? "" : link.url
+  });
+  if (!resolved.ok) return { error: resolved.error };
+  const primary = !link.empty && !media ? resolved.links.find((item) => item.url === link.url) : null;
   const requested = String(formData.get("projectSlug") || "");
   let projectId = null;
   if (requested) {
@@ -267,12 +281,13 @@ export async function saveEdit(_previous, formData) {
     text: text.text,
     type,
     media,
-    linkUrl: link.empty || media ? "" : link.url,
-    linkTitle: link.empty || media ? "" : linkTitle,
-    linkDomain: link.empty || media ? "" : link.domain,
+    linkUrl: primary?.url || "",
+    linkTitle: primary?.title || "",
+    linkDomain: primary?.domain || "",
     projectId
   });
   if (!saved) return { error: "You can only edit your own posts." };
+  await replacePostLinks(post.id, resolved.links);
   if (projectId) await touchProject(projectId);
   revalidatePath("/");
   revalidatePath("/p", "layout");

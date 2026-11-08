@@ -183,6 +183,34 @@ create table if not exists project_reads (
   primary key (email, project_id)
 );
 
+create table if not exists post_links (
+  post_id text not null references posts (id) on delete cascade,
+  url text not null,
+  title text not null default '',
+  domain text not null,
+  kind text not null,
+  repo text not null default '',
+  path text not null default '',
+  file_name text not null default '',
+  github_type text not null default '',
+  position integer not null default 0,
+  primary key (post_id, url)
+);
+
+create table if not exists comment_links (
+  comment_id text not null references comments (id) on delete cascade,
+  url text not null,
+  title text not null default '',
+  domain text not null,
+  kind text not null,
+  repo text not null default '',
+  path text not null default '',
+  file_name text not null default '',
+  github_type text not null default '',
+  position integer not null default 0,
+  primary key (comment_id, url)
+);
+
 create table if not exists api_rate_limits (
   key_hash text not null,
   window_start timestamptz not null,

@@ -1030,6 +1030,40 @@ legend { color: var(--muted); font-weight: 500; }
 }
 .link-card span, .link-card { color: var(--muted); }
 .link-card strong { color: #fff; }
+.link-list { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.link-list .link-card { margin: 0; }
+.post-text a, .comments p a { color: var(--cyan); }
+.card a.github-card { color: #fff; }
+.github-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #12131c;
+  color: #fff;
+  text-decoration: none;
+}
+.github-copy { display: grid; min-width: 0; }
+.github-copy strong { color: #fff; font-size: 14px; }
+.github-copy span { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+.github-note { font-size: 12px; }
+.github-mark { width: 22px; height: 22px; }
+.file-icon {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 36px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #2a2d44;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
 .thread { display: grid; gap: 12px; margin-top: 16px; }
 .react-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .react-row form { margin: 0; }
