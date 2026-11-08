@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { previewLink, publishPost } from "@/app/feed/actions";
 import { inspectLink, inspectVideo } from "@/lib/compose";
 
-export function Composer() {
+export function Composer({ projectSlug = "" }) {
   const [state, action, pending] = useActionState(publishPost, null);
   const [text, setText] = useState("");
   const [link, setLink] = useState("");
@@ -14,6 +14,7 @@ export function Composer() {
   const videoInfo = inspectVideo(video);
   return (
     <form action={action} className="card composer">
+      {projectSlug ? <input type="hidden" name="projectSlug" value={projectSlug} /> : null}
       <h2>Share something</h2>
       <label className="field">
         Note

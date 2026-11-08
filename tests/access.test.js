@@ -51,4 +51,9 @@ test("bot routes require a bearer token and ignore a bare session", () => {
     decideAccess({ pathname: "/api/bots", hasSession: false, authorization: "bearer btm_test" }).ok,
     true
   );
+  assert.equal(
+    decideAccess({ pathname: "/api/projects", hasSession: false, authorization: "Bearer btm_test" }).bearer,
+    true
+  );
+  assert.equal(decideAccess({ pathname: "/api/projects", hasSession: true }).status, 401);
 });

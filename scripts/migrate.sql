@@ -156,6 +156,30 @@ create table if not exists post_reactions (
   primary key (post_id, actor, emoji)
 );
 
+create table if not exists projects (
+  id text primary key,
+  name text not null,
+  slug text not null unique,
+  description text not null default '',
+  color text,
+  emoji text,
+  created_by text not null,
+  archived_at timestamptz,
+  created_at timestamptz not null default now(),
+  last_activity_at timestamptz not null default now()
+);
+
+alter table posts add column if not exists project_id text references projects (id);
+
+create index if not exists posts_project_idx on posts (project_id, created_at desc);
+
+create table if not exists project_reads (
+  email text not null,
+  project_id text not null references projects (id) on delete cascade,
+  seen_at timestamptz not null,
+  primary key (email, project_id)
+);
+
 create table if not exists api_rate_limits (
   key_hash text not null,
   window_start timestamptz not null,

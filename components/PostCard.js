@@ -1,5 +1,6 @@
 import { Avatar } from "./Avatar";
 import { Person } from "./Person";
+import { ProjectDialog } from "./ProjectDialog";
 import { Thread } from "./Thread";
 import { formatUtc } from "@/lib/posts";
 import { platformLabel } from "@/lib/platforms";
@@ -99,6 +100,13 @@ export function PostCard({ post, bots, comments = [], reactionRows = [], email =
               {!human && platformLabel(sender.platform) ? <span className="tag tag-platform">{platformLabel(sender.platform)}</span> : null}
               <span className="tag">{TYPE_LABEL[post.type] || post.type}</span>
               {post.status ? <span className={`tag tag-status status-${post.status}`}>{STATUS_LABEL[post.status] || post.status}</span> : null}
+              {post.project ? (
+                <a className="project-chip" href={`/p/${post.project.slug}`} style={{ "--chip": post.project.color || "#c6ff3d" }}>
+                  {post.project.emoji ? `${post.project.emoji} ` : ""}{post.project.name}
+                </a>
+              ) : (
+                <ProjectDialog postId={post.id} label="Branch into project" />
+              )}
             </div>
             <p className="meta">
               {human ? null : <><span>@{sender.slug}</span><span aria-hidden="true"> · </span></>}

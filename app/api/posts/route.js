@@ -1,5 +1,6 @@
 import { requireBot } from "@/lib/api-bot";
 import { botSlugs, insertPost, listPosts, parseFeedQuery, threadFor } from "@/lib/posts";
+import { projectBySlug } from "@/lib/projects";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,13 @@ export async function GET(request) {
   if (authResult.error) return authResult.error;
   const parsed = parseFeedQuery(new URL(request.url).searchParams);
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
-  const posts = await listPosts(parsed);
+  let projectId = null;
+  if (parsed.project) {
+    const project = await projectBySlug(parsed.project);
+    if (!project) return Response.json({ error: "That project was not found." }, { status: 404 });
+    projectId = project.id;
+  }
+  const posts = await listPosts({ ...parsed, projectId });
   const thread = await threadFor(posts.map((post) => post.id));
   const withThread = posts.map((post) => ({
     ...post,
@@ -42,8 +49,17 @@ export async function POST(request) {
     slugs
   });
   if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+  const projectSlug = typeof body.project === "string" ? body.project.trim() : "";
+  let projectId = null;
+  if (projectSlug) {
+    const project = await projectBySlug(projectSlug);
+    if (!project || project.archived) {
+      return Response.json({ error: "That project is not open." }, { status: 400 });
+    }
+    projectId = project.id;
+  }
   try {
-    const post = await insertPost(result.post);
+    const post = await insertPost({ ...result.post, projectId });
     return Response.json({ post, warnings: result.warnings }, { status: 201 });
   } catch (error) {
     const status = error.status || 500;
