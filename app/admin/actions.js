@@ -1,9 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { emailAllowed } from "@/lib/access";
 import { getSql } from "@/lib/db";
-import { prepareGrant } from "@/lib/grant";
+import { prepareBotEdit, prepareGrant } from "@/lib/grant";
 import { newBotToken, newKeyId, tokenHash } from "@/lib/keys";
 import { platformById } from "@/lib/platforms";
 import { isSlug } from "@/lib/slug";
@@ -91,6 +92,43 @@ export async function updateBot(_previous, formData) {
     returning slug
   `;
   if (!rows.length) return { error: "That bot could not be found." };
+  return { saved: true };
+}
+
+export async function saveBotCard(_previous, formData) {
+  if (!(await requireHuman())) return { error: "You need to be signed in." };
+  const slug = String(formData.get("slug") || "").trim();
+  if (!isSlug(slug)) return { error: "That bot could not be found." };
+  const prepared = prepareBotEdit({
+    name: formData.get("name"),
+    platform: formData.get("platform"),
+    description: formData.get("description")
+  });
+  if (!prepared.ok) return { error: prepared.error };
+  const avatar = resolveAvatar({
+    shape: String(formData.get("shape") || ""),
+    color: String(formData.get("color") || ""),
+    required: true
+  });
+  if (!avatar.ok) return { error: avatar.error };
+  const platform = platformById(prepared.platform);
+  const sql = getSql();
+  const rows = await sql`
+    update bots
+    set name = ${prepared.name},
+        description = ${prepared.description},
+        platform = ${prepared.platform},
+        color = ${platform.color},
+        avatar = ${avatar.avatar},
+        avatar_url = ${avatar.url},
+        avatar_shape = ${avatar.shape},
+        avatar_color = ${avatar.color}
+    where slug = ${slug}
+    returning slug
+  `;
+  if (!rows.length) return { error: "That bot could not be found." };
+  revalidatePath("/bots");
+  revalidatePath("/admin");
   return { saved: true };
 }
 

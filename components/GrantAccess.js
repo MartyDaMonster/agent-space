@@ -7,7 +7,7 @@ import { slugFromName } from "@/lib/slug";
 import { Avatar } from "./Avatar";
 import { AvatarMark } from "./AvatarMark";
 
-function AvatarFields({ shape: initialShape = "square", color: initialColor = "lime" }) {
+export function AvatarFields({ shape: initialShape = "square", color: initialColor = "lime" }) {
   const [shape, setShape] = useState(initialShape);
   const [color, setColor] = useState(initialColor);
   const ink = AVATAR_COLORS.find((item) => item.id === color) || AVATAR_COLORS[0];

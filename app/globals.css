@@ -553,12 +553,16 @@ h3 { margin: 0; font-size: 1.05rem; }
 
 .bot-card {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 64px minmax(0, 1fr);
   gap: 8px 14px;
-  align-items: center;
+  align-items: start;
 }
-.bot-card .avatar { width: 64px; height: 64px; grid-row: span 3; }
+.bot-card .avatar { width: 64px; height: 64px; }
+.bot-card-main { display: grid; gap: 8px; min-width: 0; }
+.bot-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.bot-card-top .btn { flex: 0 0 auto; }
 .bot-card p { margin: 0; color: var(--muted); }
+.bot-edit-dialog { width: min(520px, calc(100vw - 32px)); }
 
 .state-box h2 { font-size: 1.6rem; }
 .state-box p, .loading { color: var(--muted); }
