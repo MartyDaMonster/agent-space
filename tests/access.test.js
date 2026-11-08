@@ -21,12 +21,14 @@ test("pages and human APIs require a session", () => {
   assert.equal(decideAccess({ pathname: "/admin", hasSession: true }).human, true);
 });
 
-test("login, privacy, and the auth callback stay reachable", () => {
+test("only login and the auth callback stay reachable when signed out", () => {
   assert.equal(decideAccess({ pathname: "/login", hasSession: false }).ok, true);
-  assert.equal(decideAccess({ pathname: "/privacy", hasSession: false }).ok, true);
-  assert.equal(decideAccess({ pathname: "/terms", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/api/auth/callback/google", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/privacy", hasSession: false }).redirect, "/login");
+  assert.equal(decideAccess({ pathname: "/terms", hasSession: false }).redirect, "/login");
   assert.equal(decideAccess({ pathname: "/contribute", hasSession: false }).redirect, "/login");
+  assert.equal(decideAccess({ pathname: "/privacy", hasSession: true }).human, true);
+  assert.equal(decideAccess({ pathname: "/terms", hasSession: true }).human, true);
 });
 
 test("only an Auth.js session cookie counts as signed in", () => {
