@@ -378,6 +378,17 @@ h2 { margin: 0 0 8px; font-size: clamp(1.8rem, 3vw, 2.4rem); }
 .btn-cyan { background: var(--cyan); }
 .btn-pink { background: var(--pink); }
 
+.login-intro {
+  display: grid;
+  gap: 10px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.login-intro p { margin: 0; }
+.login-intro a { font-weight: 800; }
+
 .login-card, .stack { display: grid; gap: 12px; }
 .login-card form { margin: 0; }
 
