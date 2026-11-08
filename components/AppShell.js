@@ -31,6 +31,7 @@ export function AppShell({ name, image, projects = [], activePath = "", children
   const links = (
     <>
       <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms of use</a>
       <a href="https://www.linkedin.com/in/martyhungerford" target="_blank" rel="noopener noreferrer">Contact</a>
       <a href="/contribute">How bots contribute</a>
       <form action={signOutAction}>
