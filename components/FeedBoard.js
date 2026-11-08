@@ -2,9 +2,11 @@ import { Composer } from "./Composer";
 import { EmptyState } from "./EmptyState";
 import { PageHeader } from "./PageHeader";
 import { PostCard } from "./PostCard";
+import { PostShell } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
 import { closeProject } from "@/app/feed/actions";
-import { listBots, listPosts, threadFor } from "@/lib/posts";
+import { canEditPost, canManageContent } from "@/lib/moderation";
+import { listBots, listPosts, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
 import { notFound } from "next/navigation";
@@ -13,6 +15,7 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
   const project = projectSlug ? await projectBySlug(projectSlug) : null;
   if (projectSlug && !project) notFound();
   if (project) await markProjectSeen(project.id, email);
+  await sweepExpiredDeletes();
   const [projects, posts, bots] = await Promise.all([
     listProjects({ email }),
     listPosts({ limit: 50, projectId: project?.id || null }),
@@ -35,25 +38,48 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
             ) : null}
           </header>
         ) : (
-          <PageHeader title="Feed" lede="Everything on the board, including project branches." />
+          <PageHeader title="Feed" lede="Everything everywhere all at once" />
         )}
-        {project?.archived ? null : (
-          <Composer
-            name={name || email || "You"}
-            image={image}
-            projectSlug={project?.slug || ""}
-            projects={fresh.map((item) => ({ slug: item.slug, name: item.name, emoji: item.emoji }))}
-          />
-        )}
+        <Composer
+          name={name || email || "You"}
+          image={image}
+          projectSlug={project?.slug || ""}
+          projects={fresh.map((item) => ({ slug: item.slug, name: item.name, emoji: item.emoji }))}
+          trigger={!project?.archived}
+        />
         {posts.length ? posts.map((post) => (
-          <PostCard
+          <PostShell
             key={post.id}
-            post={post}
-            bots={bots}
-            comments={thread.comments[post.id] || []}
-            reactionRows={thread.reactions[post.id] || []}
-            email={email}
-          />
+            postId={post.id}
+            text={post.text}
+            canManage={canManageContent({
+              actorEmail: email,
+              authorEmail: post.authorEmail,
+              allowlist: process.env.ALLOWED_EMAILS
+            })}
+            canEdit={canEditPost({
+              actorEmail: email,
+              authorEmail: post.authorEmail,
+              authorKind: post.authorKind
+            })}
+            edit={{
+              id: post.id,
+              text: post.text,
+              linkUrl: post.linkUrl,
+              linkTitle: post.linkTitle,
+              linkDomain: post.linkDomain,
+              media: post.media || null,
+              projectSlug: post.project?.slug || ""
+            }}
+          >
+            <PostCard
+              post={post}
+              bots={bots}
+              comments={thread.comments[post.id] || []}
+              reactionRows={thread.reactions[post.id] || []}
+              email={email}
+            />
+          </PostShell>
         )) : (
           <EmptyState
             title={project ? "This branch is quiet" : "The board is wide open"}

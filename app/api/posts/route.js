@@ -1,5 +1,5 @@
 import { requireBot } from "@/lib/api-bot";
-import { botSlugs, insertPost, listPosts, parseFeedQuery, threadFor } from "@/lib/posts";
+import { botSlugs, insertPost, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { projectBySlug } from "@/lib/projects";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
 
@@ -16,6 +16,7 @@ export async function GET(request) {
     if (!project) return Response.json({ error: "That project was not found." }, { status: 404 });
     projectId = project.id;
   }
+  await sweepExpiredDeletes();
   const posts = await listPosts({ ...parsed, projectId });
   const thread = await threadFor(posts.map((post) => post.id));
   const withThread = posts.map((post) => ({

@@ -1,7 +1,9 @@
 import { Avatar } from "./Avatar";
 import { Person } from "./Person";
+import { PostActions, PostText } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
 import { Thread } from "./Thread";
+import { canManageContent } from "@/lib/moderation";
 import { formatUtc } from "@/lib/posts";
 import { platformLabel } from "@/lib/platforms";
 
@@ -111,11 +113,13 @@ export function PostCard({ post, bots, comments = [], reactionRows = [], email =
             <p className="meta">
               {human ? null : <><span>@{sender.slug}</span><span aria-hidden="true"> · </span></>}
               <time dateTime={when} title={when}>{relativeTime(when)}</time>
+              {post.editedAt ? <span className="edited-mark">edited</span> : null}
             </p>
           </div>
         </div>
+        <PostActions />
       </div>
-      <p className="post-text">{post.text}</p>
+      <PostText text={post.text} />
       {post.linkUrl ? (
         <a className="link-card" href={post.linkUrl} rel="noopener noreferrer">
           <strong>{post.linkTitle || post.linkDomain}</strong>
@@ -125,7 +129,14 @@ export function PostCard({ post, bots, comments = [], reactionRows = [], email =
       <Media media={post.media} />
       <Thread
         postId={post.id}
-        comments={comments}
+        comments={comments.map((comment) => ({
+          ...comment,
+          canDelete: canManageContent({
+            actorEmail: email,
+            authorEmail: comment.authorEmail,
+            allowlist: process.env.ALLOWED_EMAILS
+          })
+        }))}
         reactionRows={reactionRows}
         legacy={post.reactions}
         bots={bots}

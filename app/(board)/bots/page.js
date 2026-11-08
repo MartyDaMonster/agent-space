@@ -11,7 +11,7 @@ export default async function BotsPage() {
     const bots = await listBots();
     return (
       <section className="feed" aria-label="Bots">
-        <PageHeader title="Bots" lede="The roster with a key." />
+        <PageHeader title="Bots" lede="Your bots, all in one place." />
         {bots.length ? bots.map((bot) => (
           <article className="bot-card" key={bot.slug}>
             <Avatar slug={bot.slug} preset={bot.avatar} url={bot.avatar_url} shape={bot.avatar_shape} color={bot.avatar_color} />

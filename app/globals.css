@@ -93,19 +93,18 @@ h1 {
   flex: 0 0 auto;
   z-index: 1;
   align-self: flex-end;
-  /* 13px tuck at 4.5rem (72px), kept proportional as the wordmark scales. */
-  margin-inline: -0.18em;
+  /* About 7% of the font size, so the avatars only nick the neighbouring letters. */
+  margin-inline: -0.07em;
+  margin-bottom: 0;
 }
 
 .wm-square {
-  width: 0.78em;
-  height: 0.78em;
-  margin-bottom: 0.01em;
+  width: 0.52em;
+  height: 0.52em;
 }
 .wm-cloud {
-  width: 1.28em;
-  height: 0.7em;
-  margin-bottom: 0.04em;
+  width: 0.946em;
+  height: 0.52em;
 }
 
 .wm-square svg,
@@ -401,6 +400,8 @@ h3 { margin: 0; font-size: 1.05rem; }
 .tag-status.status-acknowledged { background: var(--pink); }
 .tag-status.status-queued { background: var(--lime); }
 
+.edited-mark { color: var(--muted); font-weight: 500; }
+.edited-mark::before { content: " · "; }
 .meta, .when {
   margin: 8px 0 0;
   color: var(--muted);
@@ -426,6 +427,68 @@ h3 { margin: 0; font-size: 1.05rem; }
 }
 .post-card:hover { transform: translateY(-3px); }
 .post-card:hover::after { opacity: 1; }
+.post-card:has(.post-menu-panel) { z-index: 4; }
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.who-line { flex: 1; min-width: 0; }
+.post-menu { position: relative; flex: 0 0 auto; }
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.icon-btn:hover { background: #2a2d44; }
+.icon-btn:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.post-menu-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 5;
+  display: grid;
+  gap: 4px;
+  min-width: 148px;
+  padding: 8px;
+  border-radius: 16px;
+  background: #2a2d44;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.post-menu-panel button {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.post-menu-panel button:hover { background: #32364f; }
+.post-menu-panel .is-danger { color: #ffb4c8; }
+.comment-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.confirm-dialog {
+  display: grid;
+  gap: 12px;
+  width: min(400px, calc(100vw - 32px));
+  margin: auto;
+  padding: 24px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--card);
+  color: #fff;
+}
+.confirm-dialog form { display: grid; gap: 16px; }
+.confirm-dialog::backdrop { background: rgba(8, 9, 14, 0.72); }
+.confirm-dialog h2 { margin: 0; font-size: 1.5rem; }
+.confirm-dialog p { margin: 0; color: var(--muted); }
 
 .post-text {
   margin: 16px 0 0;
@@ -523,11 +586,26 @@ h3 { margin: 0; font-size: 1.05rem; }
   border: 0;
   border-radius: 999px;
   background: var(--lime);
-  color: var(--ink);
+  color: #111;
   font: inherit;
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
+  outline: none;
   transition: transform 180ms ease-out;
+}
+.card a.btn {
+  color: #111;
+  text-decoration: none;
+}
+.btn:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 3px;
+}
+.btn.btn-quiet:focus-visible,
+.btn.btn-pink:focus-visible,
+.btn.btn-cyan:focus-visible {
+  outline-color: #fff;
 }
 .btn::after {
   content: "";
@@ -548,7 +626,8 @@ h3 { margin: 0; font-size: 1.05rem; }
 .btn:hover:not(:disabled)::after { opacity: 1; }
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn.btn-quiet { background: transparent; color: var(--muted); }
+.btn.btn-quiet,
+.card a.btn.btn-quiet { background: transparent; color: var(--muted); }
 .btn.btn-quiet::after { display: none; }
 
 .login-intro {
@@ -1144,12 +1223,26 @@ legend { color: var(--muted); font-weight: 500; }
   transform: translateX(-50%);
 }
 .toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 0;
   padding: 12px 14px;
   border-radius: 12px;
   background: #32364f;
   color: #fff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+.toast p { margin: 0; }
+.toast-action {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--lime);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 .toast.is-error { background: #3a1d2a; }
 .onboard-card {
