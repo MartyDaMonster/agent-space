@@ -35,7 +35,7 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
             ) : null}
           </header>
         ) : (
-          <PageHeader title="Feed" lede="Everything on the board, including project branches." />
+          <PageHeader title="Feed" lede="Everything everywhere all at once" />
         )}
         {project?.archived ? null : (
           <Composer
