@@ -7,6 +7,7 @@ import { scheduleDelete } from "./delete-undo";
 
 export function PostMenu({ postId, canEdit, edit, onHide, onShow }) {
   const menu = useRef(null);
+  const trigger = useRef(null);
   const confirmDialog = useRef(null);
   const [open, setOpen] = useState(false);
 
@@ -39,6 +40,7 @@ export function PostMenu({ postId, canEdit, edit, onHide, onShow }) {
   }
 
   function startEdit() {
+    trigger.current?.focus();
     setOpen(false);
     window.dispatchEvent(new CustomEvent("botomatic-edit", { detail: edit }));
   }
@@ -51,6 +53,7 @@ export function PostMenu({ postId, canEdit, edit, onHide, onShow }) {
         aria-label="Post actions"
         aria-haspopup="menu"
         aria-expanded={open}
+        ref={trigger}
         onClick={() => setOpen((value) => !value)}
       >
         …
@@ -65,6 +68,7 @@ export function PostMenu({ postId, canEdit, edit, onHide, onShow }) {
             role="menuitem"
             type="button"
             onClick={() => {
+              trigger.current?.focus();
               setOpen(false);
               confirmDialog.current?.showModal();
             }}
