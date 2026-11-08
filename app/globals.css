@@ -400,6 +400,59 @@ h3 { margin: 0; font-size: 1.05rem; }
 .tag-status.status-acknowledged { background: var(--pink); }
 .tag-status.status-queued { background: var(--lime); }
 
+.file-list { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.file-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #12131c;
+}
+.file-icon {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 36px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #2a2d44;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.file-copy { display: grid; min-width: 0; }
+.file-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.file-copy span { color: var(--muted); font-size: 13px; }
+.file-actions { display: flex; gap: 10px; align-items: center; }
+.file-card a { color: var(--cyan); font-size: 13px; font-weight: 600; text-decoration: none; }
+.file-card img { grid-column: 1 / -1; max-width: 100%; max-height: 240px; border-radius: 8px; }
+.file-md { grid-column: 1 / -1; }
+.file-md summary { cursor: pointer; color: var(--cyan); font-weight: 600; }
+.md-body { display: grid; gap: 8px; margin-top: 8px; }
+.md-body p, .md-body ul { margin: 0; }
+.md-heading { font-weight: 700; }
+.md-body pre { overflow: auto; margin: 0; padding: 10px; border-radius: 8px; background: #1b1d2b; }
+.attach-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.attach-row .meta { margin: 0; }
+.attach-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.attach-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.grant-form.is-dropping { outline: 2px dashed var(--lime); outline-offset: 6px; }
+.comment-form { display: grid; gap: 10px; }
 .edited-mark { color: var(--muted); font-weight: 500; }
 .edited-mark::before { content: " · "; }
 .meta, .when {

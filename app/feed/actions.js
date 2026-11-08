@@ -6,8 +6,12 @@ import { auth } from "@/auth";
 import { emailAllowed } from "@/lib/access";
 import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo, readPageTitle } from "@/lib/compose";
 import { dismissOnboarding } from "@/lib/humans";
+import { readFileIds } from "@/lib/file-rules";
+import { attachToComment, attachToPost } from "@/lib/files";
 import { canEditPost, canManageContent } from "@/lib/moderation";
 import {
+  deleteCommentNow,
+  deletePostNow,
   destroyComment,
   destroyPost,
   findComment,
@@ -99,9 +103,12 @@ export async function publishPost(_previous, formData) {
     projectId = project.id;
     projectSlug = project.slug;
   }
+  const files = readFileIds(formData.getAll?.("fileId"));
+  if (!files.ok) return { error: files.error };
+  const postId = publicId("note");
   try {
     await insertHumanPost({
-      id: publicId("note"),
+      id: postId,
       type,
       from: "human",
       text: text.text,
@@ -118,6 +125,13 @@ export async function publishPost(_previous, formData) {
   } catch (error) {
     console.error(error instanceof Error ? error.message : "post failed");
     return { error: "The post could not be saved." };
+  }
+  if (files.ids.length) {
+    const linked = await attachToPost(postId, files.ids, { kind: "human", id: person.email.trim().toLowerCase() });
+    if (!linked.ok) {
+      await deletePostNow(postId);
+      return { error: linked.error };
+    }
   }
   revalidatePath("/");
   if (projectSlug) revalidatePath(`/p/${projectSlug}`);
@@ -161,8 +175,11 @@ export async function publishComment(_previous, formData) {
   const text = cleanComment(formData.get("text"));
   if (!text.ok) return { error: text.error };
   if (!(await postExists(postId))) return { error: "That post is gone." };
+  const files = readFileIds(formData.getAll?.("fileId"));
+  if (!files.ok) return { error: files.error };
+  const commentId = publicId("cmt");
   await insertComment({
-    id: publicId("cmt"),
+    id: commentId,
     postId,
     authorKind: "human",
     authorEmail: person.email,
@@ -171,6 +188,13 @@ export async function publishComment(_previous, formData) {
     text: text.text,
     createdAt: utcStamp()
   });
+  if (files.ids.length) {
+    const linked = await attachToComment(commentId, files.ids, { kind: "human", id: person.email.trim().toLowerCase() });
+    if (!linked.ok) {
+      await deleteCommentNow(commentId);
+      return { error: linked.error };
+    }
+  }
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true };
@@ -261,6 +285,8 @@ export async function saveEdit(_previous, formData) {
     if (project.archived && project.id !== post.project_id) return { error: "That project is archived." };
     projectId = project.id;
   }
+  const files = readFileIds(formData.getAll?.("fileId"));
+  if (!files.ok) return { error: files.error };
   const saved = await updateEditedPost({
     id: post.id,
     email: person.email,
@@ -273,6 +299,12 @@ export async function saveEdit(_previous, formData) {
     projectId
   });
   if (!saved) return { error: "You can only edit your own posts." };
+  const linked = await attachToPost(post.id, files.ids, { kind: "human", id: person.email.trim().toLowerCase() });
+  if (!linked.ok) {
+    revalidatePath("/");
+    revalidatePath("/p", "layout");
+    return { error: linked.error };
+  }
   if (projectId) await touchProject(projectId);
   revalidatePath("/");
   revalidatePath("/p", "layout");

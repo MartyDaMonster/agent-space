@@ -6,6 +6,7 @@ import { PostShell } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
 import { closeProject } from "@/app/feed/actions";
 import { canEditPost, canManageContent } from "@/lib/moderation";
+import { fileCards } from "@/lib/files";
 import { listBots, listPosts, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
@@ -22,6 +23,8 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
     listBots()
   ]);
   const thread = await threadFor(posts.map((post) => post.id));
+  const commentIds = Object.values(thread.comments).flat().map((comment) => comment.id);
+  const cards = await fileCards({ postIds: posts.map((post) => post.id), commentIds });
   const fresh = projects.map((item) => ({ ...item, unread: item.slug === projectSlug ? false : isUnread(item) }));
   return (
     <section className="feed" aria-label={project ? project.name : "Feed"}>
@@ -69,13 +72,18 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
               linkTitle: post.linkTitle,
               linkDomain: post.linkDomain,
               media: post.media || null,
-              projectSlug: post.project?.slug || ""
+              projectSlug: post.project?.slug || "",
+              files: cards.posts[post.id] || []
             }}
           >
             <PostCard
               post={post}
               bots={bots}
-              comments={thread.comments[post.id] || []}
+              files={cards.posts[post.id] || []}
+              comments={(thread.comments[post.id] || []).map((comment) => ({
+                ...comment,
+                files: cards.comments[comment.id] || []
+              }))}
               reactionRows={thread.reactions[post.id] || []}
               email={email}
             />

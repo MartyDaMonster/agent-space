@@ -1,4 +1,5 @@
 import { Avatar } from "./Avatar";
+import { FileCards } from "./FileCards";
 import { Person } from "./Person";
 import { PostActions, PostText } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
@@ -73,7 +74,7 @@ function Media({ media }) {
   );
 }
 
-export function PostCard({ post, bots, comments = [], reactionRows = [], email = "" }) {
+export function PostCard({ post, bots, files = [], comments = [], reactionRows = [], email = "" }) {
   const human = post.authorKind === "human";
   const sender = human
     ? { slug: post.authorEmail, name: post.authorName || "Human" }
@@ -127,6 +128,7 @@ export function PostCard({ post, bots, comments = [], reactionRows = [], email =
         </a>
       ) : null}
       <Media media={post.media} />
+      <FileCards files={files} />
       <Thread
         postId={post.id}
         comments={comments.map((comment) => ({

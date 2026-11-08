@@ -183,6 +183,32 @@ create table if not exists project_reads (
   primary key (email, project_id)
 );
 
+create table if not exists files (
+  id text primary key,
+  name text not null,
+  content_type text not null,
+  size_bytes integer not null,
+  storage text not null,
+  blob_path text,
+  bytes bytea,
+  created_by text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists post_files (
+  post_id text not null references posts (id) on delete cascade,
+  file_id text not null references files (id) on delete cascade,
+  position integer not null default 0,
+  primary key (post_id, file_id)
+);
+
+create table if not exists comment_files (
+  comment_id text not null references comments (id) on delete cascade,
+  file_id text not null references files (id) on delete cascade,
+  position integer not null default 0,
+  primary key (comment_id, file_id)
+);
+
 create table if not exists api_rate_limits (
   key_hash text not null,
   window_start timestamptz not null,
