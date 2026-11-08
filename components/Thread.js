@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { publishComment, purgeComment, restoreComment, retireComment, saveComment } from "@/app/feed/actions";
-import { REACTION_EMOJI } from "@/lib/compose";
+import { draftAfterSave, REACTION_EMOJI } from "@/lib/compose";
 import { canEditComment } from "@/lib/moderation";
 import { AppDialog } from "./AppDialog";
 import { Avatar } from "./Avatar";
@@ -66,6 +66,7 @@ export function Thread({ postId, comments, reactionNames = {}, reactionCounts = 
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(publishComment, null);
   const [text, setText] = useState("");
+  const seen = useRef(null);
   const [gone, setGone] = useState([]);
   const [pendingId, setPendingId] = useState("");
   const confirmDialog = useRef(null);
@@ -73,6 +74,11 @@ export function Thread({ postId, comments, reactionNames = {}, reactionCounts = 
   useEffect(() => () => {
     alive.current = false;
   }, []);
+  useEffect(() => {
+    if (!state || seen.current === state) return;
+    seen.current = state;
+    setText((current) => draftAfterSave(current, state));
+  }, [state]);
   const visible = comments.filter((comment) => !gone.includes(comment.id));
   const shown = open ? visible : visible.slice(0, 2);
   const hidden = visible.length - shown.length;

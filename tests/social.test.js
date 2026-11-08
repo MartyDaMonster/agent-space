@@ -1,8 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cleanComment, cleanEmoji, initials, inspectImage, inspectLink, inspectVideo, isBlockedHost } from "../lib/compose.js";
+import { cleanComment, cleanEmoji, draftAfterSave, initials, inspectImage, inspectLink, inspectVideo, isBlockedHost } from "../lib/compose.js";
 import { parseFeedQuery } from "../lib/feed-query.js";
 import { isUnread, prepareProject } from "../lib/project-fields.js";
+
+test("a successful comment clears the draft and a failure keeps it", () => {
+  assert.equal(draftAfterSave("Thanks @dexter", { saved: true }), "");
+  assert.equal(draftAfterSave("Thanks @dexter", { error: "That post is gone." }), "Thanks @dexter");
+  assert.equal(draftAfterSave("", { saved: true }), "");
+  assert.equal(draftAfterSave("A note for the board", null), "A note for the board");
+});
 
 test("comments and reactions stay inside the small set", () => {
   assert.equal(cleanComment("  Hello there.  ").text, "Hello there.");

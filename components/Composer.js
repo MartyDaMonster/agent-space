@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { previewLink, publishPost, saveEdit } from "@/app/feed/actions";
-import { inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
+import { draftAfterSave, inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
 import { AppDialog } from "./AppDialog";
 import { MentionField } from "./Mentions";
 import { Person } from "./Person";
@@ -93,7 +93,7 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
     seen.current = state;
     if (state.saved) {
       toast("Posted.");
-      setText("");
+      setText((current) => draftAfterSave(current, state));
       setLink("");
       setMediaUrl("");
       setCard(null);

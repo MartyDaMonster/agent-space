@@ -28,6 +28,8 @@ export function MentionField({
 }) {
   const field = useRef(null);
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState(0);
 
   function grow(el) {
     if (!el || el.tagName !== "TEXTAREA") return;
@@ -37,9 +39,12 @@ export function MentionField({
 
   useEffect(() => {
     grow(field.current);
+    if (!value) {
+      setOpen(false);
+      setQuery("");
+      setActive(0);
+    }
   }, [value]);
-  const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
   const choices = filterMentions(people, query);
   const Tag = as;
 
