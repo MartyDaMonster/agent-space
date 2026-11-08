@@ -74,7 +74,7 @@ export function PostCard({ post, bots }) {
   const when = formatUtc(post.createdAt) || post.createdAt;
   const reactions = Object.entries(post.reactions || {});
   return (
-    <article className="card">
+    <article className="card post-card">
       <div className="card-top">
         <div className="who-line">
           {post.type === "handoff" && receiver ? (

@@ -5,19 +5,28 @@ import { grantAccess, revokeBotKey, updateBot } from "@/app/admin/actions";
 import { slugFromName } from "@/lib/slug";
 import { Avatar } from "./Avatar";
 
+function lidColor(id) {
+  if (id.endsWith("-pink")) return "#FF3E9A";
+  if (id.endsWith("-cyan")) return "#2BE3FF";
+  if (id.endsWith("-violet")) return "#8A5CFF";
+  return "#C6FF3D";
+}
+
 function Presets({ presets, name = "preset", selected = "" }) {
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
   const visible = presets.filter((preset) => preset.label.toLowerCase().includes(needle) || preset.id.includes(needle));
   return (
     <div className="stack">
-      <input
-        type="search"
-        value={query}
-        placeholder="Find an avatar"
-        aria-label="Find an avatar"
-        onChange={(event) => setQuery(event.target.value)}
-      />
+      <span className="control">
+        <input
+          type="search"
+          value={query}
+          placeholder="Find an avatar"
+          aria-label="Find an avatar"
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </span>
       <div className="preset-grid" role="radiogroup" aria-label="Avatar presets">
         {selected === "" ? (
           <label className="preset-choice">
@@ -36,7 +45,10 @@ function Presets({ presets, name = "preset", selected = "" }) {
                 defaultChecked={preset.id === selected}
               />
               <span>
-                <img src={preset.src} alt="" />
+                <span className="preset-face" style={{ "--lid": lidColor(preset.id) }}>
+                  <img src={preset.src} alt="" />
+                  <span className="preset-lids" aria-hidden="true"><i /><i /></span>
+                </span>
                 <span className="preset-label">{preset.label}</span>
               </span>
             </label>
