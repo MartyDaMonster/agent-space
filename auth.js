@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
-import { emailAllowed } from "./lib/access.js";
+import { inviteAllowed } from "./lib/access.js";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -17,13 +17,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google
   ],
   callbacks: {
-    async signIn({ user, profile }) {
+    async signIn({ user, profile, account }) {
+      const provider = account?.provider || "";
       const email = user?.email || profile?.email || "";
-      return emailAllowed(email, process.env.ALLOWED_EMAILS);
+      const githubLogin = provider === "github" ? profile?.login || "" : "";
+      const emailVerified = provider === "google" ? profile?.email_verified !== false : profile?.email_verified;
+      return inviteAllowed({
+        email,
+        emailVerified,
+        githubLogin,
+        emails: process.env.ALLOWED_EMAILS,
+        githubLogins: process.env.ALLOWED_GITHUB_LOGINS
+      });
     },
     async jwt({ token, user, profile }) {
       if (user?.name) token.name = user.name;
       if (user?.email) token.email = user.email;
+      if (profile?.login) token.githubLogin = profile.login;
       const image = user?.image || profile?.picture || profile?.avatar_url || "";
       if (image) token.picture = image;
       return token;
@@ -33,6 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.name = token.name || session.user.name;
         session.user.email = token.email || session.user.email;
         session.user.image = token.picture || null;
+        session.user.githubLogin = token.githubLogin || "";
       }
       return session;
     }

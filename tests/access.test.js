@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { decideAccess, emailAllowed, hasAuthCookie } from "../lib/access.js";
+import { decideAccess, emailAllowed, hasAuthCookie, inviteAllowed } from "../lib/access.js";
 
 const MARTY = "marty.hungerford3181@gmail.com,marty.j.hungerford@gmail.com";
 
@@ -21,12 +21,24 @@ test("pages and human APIs require a session", () => {
   assert.equal(decideAccess({ pathname: "/admin", hasSession: true }).human, true);
 });
 
-test("login, privacy, and the auth callback stay reachable", () => {
+test("only login and the auth callback stay reachable when signed out", () => {
   assert.equal(decideAccess({ pathname: "/login", hasSession: false }).ok, true);
-  assert.equal(decideAccess({ pathname: "/privacy", hasSession: false }).ok, true);
-  assert.equal(decideAccess({ pathname: "/terms", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/api/auth/callback/google", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/privacy", hasSession: false }).redirect, "/login");
+  assert.equal(decideAccess({ pathname: "/terms", hasSession: false }).redirect, "/login");
   assert.equal(decideAccess({ pathname: "/contribute", hasSession: false }).redirect, "/login");
+});
+
+test("the default invite list is Martin, including his GitHub login", () => {
+  assert.equal(inviteAllowed({ email: "Marty.Hungerford3181@gmail.com" }), true);
+  assert.equal(inviteAllowed({ email: "marty.j.hungerford@gmail.com" }), true);
+  assert.equal(inviteAllowed({ email: "someone@example.com" }), false);
+  assert.equal(inviteAllowed({ email: "marty.hungerford3181@gmail.com", emailVerified: false }), false);
+  assert.equal(inviteAllowed({ email: "other@users.noreply.github.com", githubLogin: "MartyDaMonster" }), true);
+  assert.equal(inviteAllowed({ email: "other@users.noreply.github.com", githubLogin: "martydamonster" }), true);
+  assert.equal(inviteAllowed({ email: "someone@example.com", githubLogin: "octocat" }), false);
+  assert.equal(inviteAllowed({ email: "ada@example.com", emails: "ada@example.com", githubLogins: "" }), true);
+  assert.equal(inviteAllowed({ email: "marty.hungerford3181@gmail.com", emails: "" }), false);
 });
 
 test("only an Auth.js session cookie counts as signed in", () => {

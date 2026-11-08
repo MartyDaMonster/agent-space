@@ -33,15 +33,18 @@ Deploy the Next.js app to the Vercel team `marty-da-monster` (personal). Do not 
 | `AUTH_GITHUB_SECRET` | GitHub OAuth client secret |
 | `AUTH_GOOGLE_ID` | Google OAuth client id |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
-| `ALLOWED_EMAILS` | Comma-separated sign-in allowlist. Empty refuses everyone. |
+| `ALLOWED_EMAILS` | Comma-separated sign-in allowlist. Unset uses the two Gmail addresses below. An explicit empty value refuses every email. |
+| `ALLOWED_GITHUB_LOGINS` | Comma-separated GitHub logins. Unset allows `MartyDaMonster`. |
 | `DATABASE_URL` | Neon Postgres pooled connection string |
 | `AUTH_TRUST_HOST` | Set to `true` on Vercel so preview hosts can complete sign-in |
 
-Initial allowlist:
+Default invite list, used when the env vars are unset:
 
 ```
 marty.hungerford3181@gmail.com,marty.j.hungerford@gmail.com
 ```
+
+GitHub login `MartyDaMonster` is also invited. A verified email on the list is enough for Google. Anyone else is sent back to the sign-in page with no session and no `humans` row.
 
 OAuth callback URLs, on the preview host and the final host:
 

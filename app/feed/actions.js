@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { emailAllowed } from "@/lib/access";
+import { sessionInvited } from "@/lib/access";
 import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
 import { readPageTitle } from "@/lib/page-title";
 import { dismissOnboarding } from "@/lib/humans";
@@ -34,7 +34,7 @@ import { utcStamp } from "@/scripts/schema.js";
 async function human() {
   const session = await auth();
   const email = session?.user?.email || "";
-  if (!emailAllowed(email, process.env.ALLOWED_EMAILS)) return null;
+  if (!sessionInvited(session)) return null;
   return {
     email,
     name: session.user.name || email,
