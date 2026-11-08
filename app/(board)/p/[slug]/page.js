@@ -7,7 +7,14 @@ export default async function ProjectPage({ params }) {
   const { slug } = await params;
   const session = await auth();
   try {
-    return <FeedBoard email={session?.user?.email || ""} projectSlug={slug} />;
+    return (
+      <FeedBoard
+        email={session?.user?.email || ""}
+        name={session?.user?.name || ""}
+        image={typeof session?.user?.image === "string" ? session.user.image : ""}
+        projectSlug={slug}
+      />
+    );
   } catch (error) {
     if (error?.digest === "NEXT_NOT_FOUND" || error?.digest === "NEXT_HTTP_ERROR_FALLBACK;404") throw error;
     console.error(error instanceof Error ? error.message : "project failed");

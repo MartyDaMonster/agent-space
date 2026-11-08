@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cleanComment, cleanEmoji, initials, inspectLink, inspectVideo, isBlockedHost } from "../lib/compose.js";
+import { cleanComment, cleanEmoji, initials, inspectImage, inspectLink, inspectVideo, isBlockedHost } from "../lib/compose.js";
 import { parseFeedQuery } from "../lib/feed-query.js";
 import { isUnread, prepareProject } from "../lib/project-fields.js";
 
@@ -25,6 +25,8 @@ test("links and videos only accept public https addresses", () => {
   assert.equal(inspectVideo("https://vimeo.com/123456789").kind, "vimeo");
   assert.equal(inspectVideo("https://cdn.example.com/clip.mp4").kind, "video");
   assert.equal(inspectVideo("https://cdn.example.com/clip.mov").ok, false);
+  assert.equal(inspectImage("https://cdn.example.com/photo.jpg").ok, true);
+  assert.equal(inspectImage("https://cdn.example.com/note.txt").ok, false);
 });
 
 test("a project name becomes a slug and unread follows activity", () => {

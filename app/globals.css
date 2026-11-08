@@ -869,6 +869,85 @@ legend { color: var(--muted); font-weight: 500; }
   padding: 0;
   cursor: pointer;
 }
+.composer-trigger { display: grid; gap: 8px; padding: 14px 16px; }
+.composer-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.composer-pill {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: #12131c;
+  color: #aeb6c8;
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease-out, transform 180ms ease-out;
+}
+.composer-pill:hover { border-color: rgba(255, 255, 255, 0.4); }
+.composer-kinds { display: flex; gap: 4px; }
+.composer-kinds button {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 180ms ease-out, color 180ms ease-out, transform 180ms ease-out;
+}
+.composer-kinds button:hover { background: #1b1d2b; color: #fff; transform: translateY(-1px); }
+.composer-kinds svg { width: 18px; height: 18px; }
+.composer-dialog {
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(88vh, 720px);
+  margin: auto;
+  padding: 20px;
+  overflow: auto;
+  border: 0;
+  border-radius: 24px;
+  background: var(--card);
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity 180ms ease-out, transform 180ms ease-out, overlay 180ms ease-out allow-discrete, display 180ms ease-out allow-discrete;
+}
+.composer-dialog[open] { opacity: 1; transform: scale(1); }
+@starting-style {
+  .composer-dialog[open] { opacity: 0; transform: scale(0.98); }
+}
+.composer-dialog::backdrop { background: rgba(8, 9, 14, 0.72); }
+.composer-dialog h2 { margin: 0; font-size: 1.6rem; }
+.composer-preview {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #12131c;
+}
+@media (max-width: 720px) {
+  .composer-dialog {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(16px);
+  }
+  .composer-dialog[open] { transform: none; }
+  @starting-style {
+    .composer-dialog[open] { opacity: 0; transform: translateY(16px); }
+  }
+}
 .composer { display: grid; gap: 16px; }
 .composer h2, .link-card strong { font-family: var(--sans); font-weight: 700; font-variation-settings: "wght" 700; }
 .link-card {
@@ -983,5 +1062,8 @@ legend { color: var(--muted); font-weight: 500; }
   .project-switch a { justify-content: space-between; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .project-switch a:hover { transform: none; }
+  .project-switch a:hover,
+  .composer-kinds button:hover,
+  .composer-dialog,
+  .composer-dialog[open] { transform: none; transition: none; }
 }

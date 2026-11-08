@@ -7,7 +7,7 @@ import { isUnread } from "@/lib/project-fields";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
 import { notFound } from "next/navigation";
 
-export async function FeedBoard({ email, projectSlug = "" }) {
+export async function FeedBoard({ email, name = "", image = "", projectSlug = "" }) {
   const project = projectSlug ? await projectBySlug(projectSlug) : null;
   if (projectSlug && !project) notFound();
   if (project) await markProjectSeen(project.id, email);
@@ -52,7 +52,14 @@ export async function FeedBoard({ email, projectSlug = "" }) {
             <ProjectDialog />
           </div>
         )}
-        {project?.archived ? null : <Composer projectSlug={project?.slug || ""} />}
+        {project?.archived ? null : (
+          <Composer
+            name={name || email || "You"}
+            image={image}
+            projectSlug={project?.slug || ""}
+            projects={fresh.map((item) => ({ slug: item.slug, name: item.name, emoji: item.emoji }))}
+          />
+        )}
         {posts.length ? posts.map((post) => (
           <PostCard
             key={post.id}

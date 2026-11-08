@@ -16,7 +16,13 @@ export default async function HomePage() {
       image: typeof session?.user?.image === "string" ? session.user.image : ""
     });
     if (!human.onboarded_at) return <Onboarding platforms={PLATFORMS} />;
-    return <FeedBoard email={email} />;
+    return (
+      <FeedBoard
+        email={email}
+        name={session?.user?.name || email}
+        image={typeof session?.user?.image === "string" ? session.user.image : ""}
+      />
+    );
   } catch (error) {
     console.error(error instanceof Error ? error.message : "feed failed");
     return (
