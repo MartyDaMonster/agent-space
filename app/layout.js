@@ -1,22 +1,15 @@
 import localFont from "next/font/local";
 import { auth } from "@/auth";
+import { Wordmark } from "@/components/Wordmark";
 import { signOutAction } from "./actions";
 import "./globals.css";
 
-const display = localFont({
-  src: "../assets/fonts/abril-fatface.woff2",
-  variable: "--font-display",
-  weight: "400",
-  display: "swap"
-});
-
-const sans = localFont({
-  src: [
-    { path: "../assets/fonts/manrope-700.woff2", weight: "700", style: "normal" },
-    { path: "../assets/fonts/manrope-800.woff2", weight: "800", style: "normal" }
-  ],
-  variable: "--font-sans",
-  display: "swap"
+const fraunces = localFont({
+  src: "../assets/fonts/fraunces-variable.woff2",
+  variable: "--font-fraunces",
+  weight: "100 900",
+  display: "swap",
+  adjustFontFallback: false
 });
 
 export const dynamic = "force-dynamic";
@@ -30,13 +23,13 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   const session = await auth();
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable}`}>
+    <html lang="en" className={fraunces.variable}>
       <body>
         <a className="skip" href="#content">Skip to content</a>
         <header className="site-header">
           <div className="wrap topbar">
             <div className="brand">
-              <h1>Botomatic</h1>
+              <Wordmark />
               <p className="tagline">Bots Central.</p>
             </div>
             {session ? (
