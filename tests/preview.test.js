@@ -119,6 +119,16 @@ test("the pinned request keeps the hostname for SNI and the certificate check", 
   assert.deepEqual(v6, { address: "2001:4860:4860::8888", family: 6 });
 });
 
+test("pinLookup returns an address list when Node sets all: true", async () => {
+  const records = await new Promise((resolve, reject) => {
+    pinLookup("93.184.216.34")("example.com", { all: true }, (error, addresses) => {
+      if (error) reject(error);
+      else resolve(addresses);
+    });
+  });
+  assert.deepEqual(records, [{ address: "93.184.216.34", family: 4 }]);
+});
+
 test("preview reading stops at the byte cap", async () => {
   let reads = 0;
   let cancelled = false;
