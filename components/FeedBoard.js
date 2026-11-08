@@ -9,6 +9,7 @@ import { canEditPost, canManageContent } from "@/lib/moderation";
 import { listHumans } from "@/lib/humans";
 import { mentionDirectory } from "@/lib/mentions";
 import { listBots, listPosts, sweepExpiredDeletes, threadFor } from "@/lib/posts";
+import { namesForReactions } from "@/lib/reactions";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
 import { notFound } from "next/navigation";
@@ -82,7 +83,8 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
               post={post}
               bots={bots}
               comments={thread.comments[post.id] || []}
-              reactionRows={thread.reactions[post.id] || []}
+              reactionNames={namesForReactions(thread.reactions[post.id] || [], { bots, humans })}
+              mine={(thread.reactions[post.id] || []).filter((row) => row.actor === `human:${email}`).map((row) => row.emoji)}
               email={email}
               people={people}
             />

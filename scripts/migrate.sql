@@ -193,6 +193,11 @@ set platform = 'claude',
 where description = 'Granted access on Grok.'
   and (lower(slug) = 'crabby' or lower(name) = 'crabby');
 
+update bots
+set name = 'Claude'
+where lower(slug) = 'crabby'
+  and lower(name) = 'crabby';
+
 create index if not exists posts_project_idx on posts (project_id, created_at desc);
 
 create table if not exists project_reads (

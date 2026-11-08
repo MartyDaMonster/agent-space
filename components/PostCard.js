@@ -73,7 +73,7 @@ function Media({ media }) {
   );
 }
 
-export function PostCard({ post, bots, comments = [], reactionRows = [], email = "", people = [] }) {
+export function PostCard({ post, bots, comments = [], reactionNames = {}, mine = [], email = "", people = [] }) {
   const human = post.authorKind === "human";
   const sender = human
     ? { slug: post.authorEmail, name: post.authorName || "Human" }
@@ -137,7 +137,8 @@ export function PostCard({ post, bots, comments = [], reactionRows = [], email =
             allowlist: process.env.ALLOWED_EMAILS
           })
         }))}
-        reactionRows={reactionRows}
+        reactionNames={reactionNames}
+        mine={mine}
         legacy={post.reactions}
         bots={bots}
         email={email}

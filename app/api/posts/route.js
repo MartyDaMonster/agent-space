@@ -1,6 +1,8 @@
 import { requireBot } from "@/lib/api-bot";
+import { listHumans } from "@/lib/humans";
 import { rememberMentions } from "@/lib/mention-store";
-import { botSlugs, insertPost, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
+import { botSlugs, insertPost, listBots, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
+import { namesForReactions } from "@/lib/reactions";
 import { projectBySlug } from "@/lib/projects";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
 
@@ -20,10 +22,12 @@ export async function GET(request) {
   await sweepExpiredDeletes();
   const posts = await listPosts({ ...parsed, projectId, mentions: parsed.mentions });
   const thread = await threadFor(posts.map((post) => post.id));
+  const [bots, humans] = await Promise.all([listBots(), listHumans()]);
   const withThread = posts.map((post) => ({
     ...post,
     comments: thread.comments[post.id] || [],
-    reactionCounts: countReactions(post, thread.reactions[post.id] || [])
+    reactionCounts: countReactions(post, thread.reactions[post.id] || []),
+    reactionNames: namesForReactions(thread.reactions[post.id] || [], { bots, humans })
   }));
   return Response.json({ posts: withThread });
 }

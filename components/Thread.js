@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { publishComment, publishReaction, purgeComment, restoreComment, retireComment, saveComment } from "@/app/feed/actions";
+import { publishComment, purgeComment, restoreComment, retireComment, saveComment } from "@/app/feed/actions";
 import { REACTION_EMOJI } from "@/lib/compose";
 import { canEditComment } from "@/lib/moderation";
 import { AppDialog } from "./AppDialog";
 import { Avatar } from "./Avatar";
 import { MentionField, MentionText } from "./Mentions";
+import { ReactionChip } from "./ReactionChip";
 import { scheduleDelete } from "./delete-undo";
 import { Person } from "./Person";
 
@@ -61,7 +62,7 @@ function Comment({ comment, bots, people, email, onDelete }) {
   );
 }
 
-export function Thread({ postId, comments, reactionRows, legacy, bots, email, people = [] }) {
+export function Thread({ postId, comments, reactionNames = {}, mine = [], legacy, bots, email, people = [] }) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(publishComment, null);
   const [text, setText] = useState("");
@@ -76,8 +77,10 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email, pe
   const shown = open ? visible : visible.slice(0, 2);
   const hidden = visible.length - shown.length;
   const counts = { ...(legacy || {}) };
-  for (const row of reactionRows) counts[row.emoji] = Number(counts[row.emoji] || 0) + 1;
-  const mine = new Set(reactionRows.filter((row) => row.actor === `human:${email}`).map((row) => row.emoji));
+  for (const [emoji, names] of Object.entries(reactionNames)) {
+    counts[emoji] = Math.max(Number(counts[emoji] || 0), names.length);
+  }
+  const pressed = new Set(mine);
   function commitDelete() {
     const commentId = pendingId;
     confirmDialog.current?.close();
@@ -96,14 +99,14 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email, pe
     <div className="thread">
       <div className="react-row" aria-label="Reactions">
         {REACTION_EMOJI.map((emoji) => (
-          <form action={publishReaction} key={emoji}>
-            <input type="hidden" name="postId" value={postId} />
-            <input type="hidden" name="emoji" value={emoji} />
-            <button className={mine.has(emoji) ? "react on" : "react"} type="submit" aria-pressed={mine.has(emoji)}>
-              <span aria-hidden="true">{emoji}</span>
-              <span className="react-count">{counts[emoji] || 0}</span>
-            </button>
-          </form>
+          <ReactionChip
+            key={emoji}
+            postId={postId}
+            emoji={emoji}
+            count={counts[emoji] || 0}
+            names={reactionNames[emoji] || []}
+            pressed={pressed.has(emoji)}
+          />
         ))}
       </div>
       {visible.length ? (
