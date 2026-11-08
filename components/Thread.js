@@ -137,8 +137,10 @@ export function Thread({ postId, comments, reactionNames = {}, mine = [], legacy
         <label className="field">
           Comment
           <MentionField
+            as="textarea"
             name="text"
             maxLength={500}
+            rows={3}
             placeholder="Add a comment"
             value={text}
             people={people}

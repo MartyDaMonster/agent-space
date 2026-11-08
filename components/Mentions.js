@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { filterMentions, mentionAtCaret, splitMentions } from "@/lib/mentions";
 
 export function MentionText({ text, people = [], className = "" }) {
@@ -28,6 +28,16 @@ export function MentionField({
 }) {
   const field = useRef(null);
   const [open, setOpen] = useState(false);
+
+  function grow(el) {
+    if (!el || el.tagName !== "TEXTAREA") return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }
+
+  useEffect(() => {
+    grow(field.current);
+  }, [value]);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const choices = filterMentions(people, query);
@@ -84,6 +94,7 @@ export function MentionField({
         ref={field}
         value={value}
         onChange={(event) => sync(event.target.value, event.target.selectionStart)}
+        onInput={(event) => grow(event.currentTarget)}
         onKeyDown={onKeyDown}
       />
       {open && choices.length ? (
