@@ -128,8 +128,8 @@ export function Thread({ postId, comments, reactionNames = {}, mine = [], legacy
         <h2>Delete this comment?</h2>
         <p>You can undo for a few seconds.</p>
         <div className="dialog-actions">
-          <button className="btn btn-secondary" type="button" onClick={() => confirmDialog.current?.close()}>Cancel</button>
-          <button className="btn btn-pink" type="button" onClick={commitDelete}>Delete</button>
+          <button className="btn btn-secondary" type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); confirmDialog.current?.close(); }}>Cancel</button>
+          <button className="btn btn-pink" type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); commitDelete(); }}>Delete</button>
         </div>
       </AppDialog>
       <form action={action} className="comment-form">

@@ -13,8 +13,8 @@ function Board() {
         <h2>Delete this comment?</h2>
         <p>You can undo for a few seconds.</p>
         <div className="dialog-actions">
-          <button id="cancel" className="btn btn-secondary" type="button" onClick={() => dialog.current?.close()}>Cancel</button>
-          <button className="btn btn-pink" type="button">Delete</button>
+          <button id="cancel" className="btn btn-secondary" type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); dialog.current?.close(); }}>Cancel</button>
+          <button id="confirm" className="btn btn-pink" type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); dialog.current?.close(); }}>Delete</button>
         </div>
       </AppDialog>
     </main>

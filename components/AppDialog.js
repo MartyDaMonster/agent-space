@@ -15,8 +15,10 @@ export function AppDialog({ dialogRef, className = "", sheet = false, children, 
     if (!mounted || !dialog) return undefined;
     const opener = { current: null };
     const showModal = dialog.showModal.bind(dialog);
+    let closedUntil = 0;
 
     dialog.showModal = () => {
+      if (Date.now() < closedUntil) return;
       const active = document.activeElement;
       if (active instanceof HTMLElement && !dialog.contains(active)) opener.current = active;
       showModal();
@@ -25,8 +27,17 @@ export function AppDialog({ dialogRef, className = "", sheet = false, children, 
       if (preferred instanceof HTMLElement) preferred.focus();
     };
 
+    function shut() {
+      closedUntil = Date.now() + 400;
+      if (dialog.open) dialog.close();
+      releaseScroll();
+    }
+
     function onClick(event) {
-      if (event.target === dialog) dialog.close();
+      if (event.target !== dialog) return;
+      event.preventDefault();
+      event.stopPropagation();
+      shut();
     }
 
     function restore() {
@@ -38,6 +49,7 @@ export function AppDialog({ dialogRef, className = "", sheet = false, children, 
 
     function onBeforeToggle(event) {
       if (event.newState === "closed") {
+        closedUntil = Date.now() + 400;
         setTimeout(restore, 0);
         return;
       }
@@ -49,8 +61,7 @@ export function AppDialog({ dialogRef, className = "", sheet = false, children, 
     }
 
     function forceClose() {
-      if (dialog.isConnected && dialog.open) dialog.close();
-      setTimeout(releaseScroll, 0);
+      shut();
     }
 
     dialog.addEventListener("beforetoggle", onBeforeToggle);
@@ -76,10 +87,12 @@ export function AppDialog({ dialogRef, className = "", sheet = false, children, 
   const classes = `app-dialog${sheet ? " is-sheet" : ""} ${className}`.trim();
   return createPortal(
     <dialog {...rest} ref={dialogRef} className={classes} tabIndex={-1}>
-      <button className="dialog-close" type="button" aria-label="Close" onClick={() => dialogRef.current?.close()}>
+      <button className="dialog-close" type="button" aria-label="Close" onClick={(event) => { event.preventDefault(); event.stopPropagation(); dialogRef.current?.close(); }}>
         <span aria-hidden="true">×</span>
       </button>
-      {children}
+      <div className="dialog-body">
+        {children}
+      </div>
     </dialog>,
     document.body
   );
