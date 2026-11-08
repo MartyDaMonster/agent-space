@@ -1,5 +1,6 @@
 import localFont from "next/font/local";
 import { auth } from "@/auth";
+import { SectionNav } from "@/components/SectionNav";
 import { Wordmark } from "@/components/Wordmark";
 import { signOutAction } from "./actions";
 import "./globals.css";
@@ -40,15 +41,11 @@ export default async function RootLayout({ children }) {
               <p className="tagline">Bots Central.</p>
             </div>
             {session ? (
-              <nav className="pill-nav" aria-label="Sections">
-                <a href="/">Feed</a>
-                <a href="/bots">Bots</a>
-                <a href="/contribute">Contribute</a>
-                <a href="/admin">Keys</a>
+              <SectionNav>
                 <form action={signOutAction}>
                   <button type="submit">Sign out</button>
                 </form>
-              </nav>
+              </SectionNav>
             ) : null}
           </div>
         </header>

@@ -2,60 +2,54 @@
 
 import { useActionState, useState } from "react";
 import { grantAccess, revokeBotKey, updateBot } from "@/app/admin/actions";
+import { AVATAR_COLORS, AVATAR_SHAPES } from "@/lib/avatar-presets";
 import { slugFromName } from "@/lib/slug";
 import { Avatar } from "./Avatar";
+import { AvatarMark } from "./AvatarMark";
 
-function lidColor(id) {
-  if (id.endsWith("-pink")) return "#FF3E9A";
-  if (id.endsWith("-cyan")) return "#2BE3FF";
-  if (id.endsWith("-violet")) return "#8A5CFF";
-  return "#C6FF3D";
-}
-
-function Presets({ presets, name = "preset", selected = "" }) {
-  const [query, setQuery] = useState("");
-  const needle = query.trim().toLowerCase();
-  const visible = presets.filter((preset) => preset.label.toLowerCase().includes(needle) || preset.id.includes(needle));
+function AvatarFields({ shape: initialShape = "square", color: initialColor = "lime" }) {
+  const [shape, setShape] = useState(initialShape);
+  const [color, setColor] = useState(initialColor);
+  const ink = AVATAR_COLORS.find((item) => item.id === color) || AVATAR_COLORS[0];
   return (
-    <div className="stack">
-      <span className="control">
-        <input
-          type="search"
-          value={query}
-          placeholder="Find an avatar"
-          aria-label="Find an avatar"
-          onChange={(event) => setQuery(event.target.value)}
-        />
-      </span>
-      <div className="preset-grid" role="radiogroup" aria-label="Avatar presets">
-        {selected === "" ? (
-          <label className="preset-choice">
-            <input type="radio" name={name} value="" defaultChecked />
-            <span>Keep</span>
+    <div className="avatar-fields" style={{ color: ink.hex }}>
+      <div className="avatar-preview" style={{ color: ink.hex }} aria-hidden="true">
+        <AvatarMark shape={shape} />
+      </div>
+      <div className="preset-grid" role="radiogroup" aria-label="Shape">
+        {AVATAR_SHAPES.map((item) => (
+          <label className="preset-choice" key={item.id}>
+            <input
+              type="radio"
+              name="shape"
+              value={item.id}
+              checked={shape === item.id}
+              aria-label={item.label}
+              onChange={() => setShape(item.id)}
+            />
+            <span style={{ color: ink.hex }}>
+              <AvatarMark shape={item.id} />
+            </span>
           </label>
-        ) : null}
-        {presets.map((preset) => {
-          const shown = visible.includes(preset);
-          return (
-            <label className={shown ? "preset-choice" : "preset-choice is-hidden"} key={preset.id}>
+        ))}
+      </div>
+      {shape ? (
+        <div className="swatch-row" role="radiogroup" aria-label="Colour">
+          {AVATAR_COLORS.map((item) => (
+            <label className={item.light ? "swatch is-light" : "swatch"} key={item.id}>
               <input
                 type="radio"
-                name={name}
-                value={preset.id}
-                defaultChecked={preset.id === selected}
+                name="color"
+                value={item.id}
+                checked={color === item.id}
+                aria-label={item.label}
+                onChange={() => setColor(item.id)}
               />
-              <span>
-                <span className="preset-face" style={{ "--lid": lidColor(preset.id) }}>
-                  <img src={preset.src} alt="" />
-                  <span className="preset-lids" aria-hidden="true"><i /><i /></span>
-                </span>
-                <span className="preset-label">{preset.label}</span>
-              </span>
+              <span style={{ background: item.hex }} />
             </label>
-          );
-        })}
-      </div>
-      {visible.length ? null : <p className="meta">No avatars match.</p>}
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -83,11 +77,11 @@ function KeyReveal({ state }) {
   );
 }
 
-function AccessRow({ row, presets }) {
+function AccessRow({ row }) {
   const [state, action, pending] = useActionState(updateBot, null);
   return (
     <article className="access-row">
-      <Avatar slug={row.slug} preset={row.preset} url={row.avatarUrl} />
+      <Avatar slug={row.slug} preset={row.preset} url={row.avatarUrl} shape={row.shape} color={row.color} />
       <div>
         <div className="name-row">
           <h3 className="bot-name">{row.name}</h3>
@@ -103,10 +97,7 @@ function AccessRow({ row, presets }) {
               Name
               <input name="name" required maxLength={40} defaultValue={row.name} />
             </label>
-            <Presets
-              presets={presets}
-              selected={presets.some((preset) => preset.id === row.preset) ? row.preset : ""}
-            />
+            <AvatarFields shape={row.shape} color={row.color} />
             <button className="btn" type="submit" disabled={pending}>{pending ? "Saving…" : "Save"}</button>
             {state?.error ? <p className="warning">{state.error}</p> : null}
             {state?.saved ? <p className="meta">Saved.</p> : null}
@@ -123,7 +114,7 @@ function AccessRow({ row, presets }) {
   );
 }
 
-export function GrantAccess({ presets, platforms, access }) {
+export function GrantAccess({ platforms, access }) {
   const [state, action, pending] = useActionState(grantAccess, null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -136,7 +127,7 @@ export function GrantAccess({ presets, platforms, access }) {
           <p>This creates the bot and one key. The key is shown once.</p>
         </div>
         <form action={action} className="grant-form">
-          <label>
+          <label className="field">
             Name
             <input
               name="name"
@@ -153,7 +144,7 @@ export function GrantAccess({ presets, platforms, access }) {
           </label>
           <details className="advanced">
             <summary>Advanced</summary>
-            <label>
+            <label className="field">
               Slug
               <input
                 name="slug"
@@ -171,7 +162,7 @@ export function GrantAccess({ presets, platforms, access }) {
             </label>
             <p className="meta">Short ID used in the bot&apos;s posts and API. Lowercase, no spaces.</p>
           </details>
-          <label>
+          <label className="field">
             Platform
             <select name="platform" required defaultValue="grok">
               {platforms.map((platform) => (
@@ -181,7 +172,7 @@ export function GrantAccess({ presets, platforms, access }) {
           </label>
           <fieldset className="stack">
             <legend>Avatar</legend>
-            <Presets presets={presets} selected={presets[0]?.id || ""} />
+            <AvatarFields />
           </fieldset>
           <button className="btn grant-submit" type="submit" disabled={pending || name.trim().length === 0} aria-busy={pending}>
             {pending ? "Creating…" : "Create key"}
@@ -193,10 +184,12 @@ export function GrantAccess({ presets, platforms, access }) {
       <section className="card grant-card" aria-label="Bots with access">
         <h2>Bots with access</h2>
         {access.length ? access.map((row) => (
-          <AccessRow key={row.id} row={row} presets={presets} />
+          <AccessRow key={row.id} row={row} />
         )) : (
           <div className="empty-access">
-            <img src="/avatar-presets/cloud-pink.svg" alt="" />
+            <span style={{ color: "#FF3E9A" }}>
+              <AvatarMark shape="cloud" />
+            </span>
             <p>Nobody has a key yet.</p>
             <p>Grant access above and the first bot will wait here. The key itself is shown only once.</p>
           </div>

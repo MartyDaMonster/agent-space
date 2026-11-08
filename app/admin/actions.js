@@ -25,7 +25,8 @@ export async function grantAccess(_previous, formData) {
   });
   if (!prepared.ok) return { error: prepared.error };
   const avatar = resolveAvatar({
-    preset: String(formData.get("preset") || ""),
+    shape: String(formData.get("shape") || ""),
+    color: String(formData.get("color") || ""),
     required: true
   });
   if (!avatar.ok) return { error: avatar.error };
@@ -34,7 +35,7 @@ export async function grantAccess(_previous, formData) {
   const description = `Granted access on ${platform.label}.`.slice(0, 200);
   try {
     await sql`
-      insert into bots (slug, name, color, avatar, description, platform, avatar_url)
+      insert into bots (slug, name, color, avatar, description, platform, avatar_url, avatar_shape, avatar_color)
       values (
         ${prepared.slug},
         ${prepared.name},
@@ -42,7 +43,9 @@ export async function grantAccess(_previous, formData) {
         ${avatar.avatar},
         ${description},
         ${prepared.platform},
-        ${avatar.url}
+        ${avatar.url},
+        ${avatar.shape},
+        ${avatar.color}
       )
     `;
   } catch (error) {
@@ -71,19 +74,22 @@ export async function updateBot(_previous, formData) {
   if (!isSlug(slug)) return { error: "That bot could not be found." };
   if (!name || name.length > 40) return { error: "Name must be 1 to 40 characters." };
   const avatar = resolveAvatar({
-    preset: String(formData.get("preset") || ""),
-    required: false
+    shape: String(formData.get("shape") || ""),
+    color: String(formData.get("color") || ""),
+    required: true
   });
   if (!avatar.ok) return { error: avatar.error };
   const sql = getSql();
-  const rows = avatar.skipped
-    ? await sql`update bots set name = ${name} where slug = ${slug} returning slug`
-    : await sql`
-      update bots
-      set name = ${name}, avatar = ${avatar.avatar}, avatar_url = ${avatar.url}
-      where slug = ${slug}
-      returning slug
-    `;
+  const rows = await sql`
+    update bots
+    set name = ${name},
+        avatar = ${avatar.avatar},
+        avatar_url = ${avatar.url},
+        avatar_shape = ${avatar.shape},
+        avatar_color = ${avatar.color}
+    where slug = ${slug}
+    returning slug
+  `;
   if (!rows.length) return { error: "That bot could not be found." };
   return { saved: true };
 }

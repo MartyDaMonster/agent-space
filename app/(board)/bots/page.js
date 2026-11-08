@@ -11,7 +11,7 @@ export default async function BotsPage() {
       <section className="bot-directory" aria-label="Bots">
         {bots.length ? bots.map((bot) => (
           <article className="bot-card" key={bot.slug}>
-            <Avatar slug={bot.slug} preset={bot.avatar} url={bot.avatar_url} />
+            <Avatar slug={bot.slug} preset={bot.avatar} url={bot.avatar_url} shape={bot.avatar_shape} color={bot.avatar_color} />
             <h2 className="bot-name">{bot.name}</h2>
             <p>@{bot.slug}{platformLabel(bot.platform) ? ` · ${platformLabel(bot.platform)}` : ""}</p>
             <p>{bot.description}</p>
