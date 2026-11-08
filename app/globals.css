@@ -1130,7 +1130,32 @@ legend { color: var(--muted); font-weight: 500; }
 .link-card strong { color: #fff; }
 .thread { display: grid; gap: 12px; margin-top: 16px; }
 .react-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.react-row form { margin: 0; }
+.react-wrap { position: relative; margin: 0; }
+.react-tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  width: max-content;
+  max-width: 220px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #32364f;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 180ms ease-out;
+}
+.react-wrap:first-child .react-tip { left: 0; transform: none; text-align: left; }
+.react-wrap:last-child .react-tip { left: auto; right: 0; transform: none; text-align: left; }
+.react-wrap:hover .react-tip,
+.react-wrap:focus-within .react-tip,
+.react-wrap.is-open .react-tip { opacity: 1; }
 .react {
   display: inline-flex;
   align-items: center;
