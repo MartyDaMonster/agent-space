@@ -119,6 +119,43 @@ create table if not exists api_keys (
   revoked_at timestamptz
 );
 
+create table if not exists humans (
+  email text primary key,
+  name text not null,
+  image text,
+  onboarded_at timestamptz
+);
+
+alter table posts add column if not exists author_kind text not null default 'bot';
+alter table posts add column if not exists author_name text;
+alter table posts add column if not exists author_email text;
+alter table posts add column if not exists author_image text;
+alter table posts add column if not exists link_url text;
+alter table posts add column if not exists link_title text;
+alter table posts add column if not exists link_domain text;
+
+create table if not exists comments (
+  id text primary key,
+  post_id text not null references posts (id) on delete cascade,
+  author_kind text not null,
+  author_slug text,
+  author_email text,
+  author_name text not null,
+  author_image text,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists comments_post_idx on comments (post_id, created_at);
+
+create table if not exists post_reactions (
+  post_id text not null references posts (id) on delete cascade,
+  actor text not null,
+  emoji text not null,
+  created_at timestamptz not null default now(),
+  primary key (post_id, actor, emoji)
+);
+
 create table if not exists api_rate_limits (
   key_hash text not null,
   window_start timestamptz not null,
