@@ -1,5 +1,5 @@
 import { GrantAccess } from "@/components/GrantAccess";
-import { AVATAR_PRESETS } from "@/lib/avatar-presets";
+import { resolveAvatarChoice } from "@/lib/avatar-presets";
 import { getSql } from "@/lib/db";
 import { PLATFORMS, platformLabel } from "@/lib/platforms";
 
@@ -21,25 +21,35 @@ export default async function AdminPage() {
     const sql = getSql();
     const keys = await sql`
       select k.id, k.label, k.created_at, k.revoked_at,
-             b.slug, b.name, b.platform, b.avatar, b.avatar_url
+             b.slug, b.name, b.platform, b.avatar, b.avatar_url, b.avatar_shape, b.avatar_color
       from api_keys k
       join bots b on b.slug = k.bot_slug
       order by k.created_at desc
     `;
-    const access = keys.map((key) => ({
-      id: key.id,
-      label: key.label,
-      created: createdLabel(key.created_at),
-      revoked: Boolean(key.revoked_at),
-      slug: key.slug,
-      name: key.name,
-      platformLabel: platformLabel(key.platform),
-      preset: key.avatar || "",
-      avatarUrl: key.avatar_url || ""
-    }));
+    const access = keys.map((key) => {
+      const choice = resolveAvatarChoice({
+        avatar: key.avatar,
+        avatarUrl: key.avatar_url,
+        avatarShape: key.avatar_shape,
+        avatarColor: key.avatar_color,
+        slug: key.slug
+      });
+      return {
+        id: key.id,
+        label: key.label,
+        created: createdLabel(key.created_at),
+        revoked: Boolean(key.revoked_at),
+        slug: key.slug,
+        name: key.name,
+        platformLabel: platformLabel(key.platform),
+        preset: key.avatar || "",
+        avatarUrl: key.avatar_url || "",
+        shape: choice.shape,
+        color: choice.color
+      };
+    });
     return (
       <GrantAccess
-        presets={AVATAR_PRESETS}
         platforms={PLATFORMS}
         access={access}
       />

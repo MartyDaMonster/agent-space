@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import test from "node:test";
-import { AVATAR_PRESETS, resolveAvatarDisplay } from "../lib/avatar-presets.js";
+import { AVATAR_COLORS, AVATAR_SHAPES, LEGACY_AVATARS, resolveAvatarChoice } from "../lib/avatar-presets.js";
 import { prepareGrant } from "../lib/grant.js";
 import { PLATFORMS } from "../lib/platforms.js";
 import { resolveAvatar } from "../lib/store-avatar.js";
@@ -30,32 +30,62 @@ test("platforms are Grok, Claude, Codex, Meta, and Other", () => {
   assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "other" }).platform, "other");
 });
 
-test("the avatar library is presets only", () => {
-  assert.ok(AVATAR_PRESETS.length >= 30);
-  assert.equal(new Set(AVATAR_PRESETS.map((preset) => preset.id)).size, AVATAR_PRESETS.length);
-  for (const preset of AVATAR_PRESETS) {
-    const file = new URL(`../public${preset.src}`, import.meta.url);
-    assert.equal(existsSync(file), true, preset.id);
-    const svg = readFileSync(file, "utf8");
-    assert.match(svg, /fill="#fff"/);
-    assert.doesNotMatch(svg, /r="2\.1"/);
+test("avatars are one solid shape plus a separate colour", () => {
+  assert.equal(AVATAR_SHAPES.length, 15);
+  assert.equal(new Set(AVATAR_SHAPES.map((shape) => shape.id)).size, AVATAR_SHAPES.length);
+  assert.equal(AVATAR_SHAPES.some((shape) => shape.id === "snail"), false);
+  assert.equal(AVATAR_COLORS.find((color) => color.id === "lime").hex, "#a3d32b");
+  for (const id of ["pink", "violet", "cyan", "orange", "yellow", "red", "blue", "grey"]) {
+    assert.ok(AVATAR_COLORS.some((color) => color.id === id), id);
   }
-  assert.equal(resolveAvatar({ preset: "cloud-pink", required: true }).avatar, "cloud-pink");
-  assert.equal(resolveAvatar({ preset: "not-a-preset", required: true }).ok, false);
-  assert.equal(resolveAvatar({ preset: "", required: false }).skipped, true);
+  for (const shape of AVATAR_SHAPES) {
+    assert.ok(shape.paths.length >= 1, shape.id);
+    assert.equal(shape.eyes.length, 2, shape.id);
+    for (const path of shape.paths) {
+      assert.doesNotMatch(path, /stroke|#|fill/i, shape.id);
+    }
+  }
+  const mark = readFileSync(new URL("../components/AvatarMark.js", import.meta.url), "utf8");
+  assert.match(mark, /fill="currentColor"/);
+  assert.match(mark, /fill="#fff"/);
+  assert.doesNotMatch(mark, /stroke|r="2\.1"/);
+  const picker = readFileSync(new URL("../components/GrantAccess.js", import.meta.url), "utf8");
+  assert.doesNotMatch(picker, /Find an avatar|preset-label/);
+  assert.match(picker, /aria-label=\{item.label\}/);
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /aspect-ratio:\s*1/);
+  assert.doesNotMatch(css, /checked \+ span img/);
+  const picked = resolveAvatar({ shape: "cloud", color: "pink", required: true });
+  assert.equal(picked.avatar, "cloud");
+  assert.equal(picked.color, "pink");
+  assert.equal(resolveAvatar({ shape: "snail", color: "violet", required: true }).ok, false);
+  assert.equal(resolveAvatar({ shape: "", color: "", required: false }).skipped, true);
 });
 
-test("uploaded avatar urls fall back to the pink cloud preset", () => {
-  const uploaded = resolveAvatarDisplay({
-    avatar: "upload",
-    avatarUrl: "data:image/png;base64,aaaa"
-  });
-  assert.equal(uploaded.id, "cloud-pink");
-  const blob = resolveAvatarDisplay({
-    avatar: "upload",
-    avatarUrl: "https://example.blob.vercel-storage.com/avatars/a.png"
-  });
-  assert.equal(blob.src, "/avatar-presets/cloud-pink.svg");
-  assert.equal(resolveAvatarDisplay({ avatar: "frog-lime" }).src, "/avatar-presets/frog-lime.svg");
-  assert.equal(resolveAvatarDisplay({ avatar: "assets/avatars/grok.svg" }).kind, "silhouette");
+test("older preset ids and uploads still resolve to a shape and colour", () => {
+  const sql = readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8");
+  for (const [id, [shape, color]] of Object.entries(LEGACY_AVATARS)) {
+    const choice = resolveAvatarChoice({ avatar: id });
+    assert.equal(choice.shape, shape, id);
+    assert.equal(choice.color, color, id);
+    assert.match(sql, new RegExp(`'${id}'`));
+  }
+  assert.equal(resolveAvatarChoice({ avatar: "snail-violet" }).shape, "circle");
+  assert.equal(resolveAvatarChoice({ avatar: "frog-lime" }).color, "lime");
+  assert.deepEqual(
+    resolveAvatarChoice({ avatar: "upload", avatarUrl: "data:image/png;base64,aaaa" }),
+    resolveAvatarChoice({ avatar: "cloud", avatarColor: "pink" })
+  );
+  assert.equal(
+    resolveAvatarChoice({ avatarUrl: "https://example.blob.vercel-storage.com/avatars/a.png" }).shape,
+    "cloud"
+  );
+  assert.equal(
+    resolveAvatarChoice({ avatar: "cloud-pink", avatarShape: "star", avatarColor: "orange" }).shape,
+    "star"
+  );
+  assert.equal(resolveAvatarChoice({ avatar: "assets/avatars/grok.svg" }).shape, "cloud");
+  const named = resolveAvatarChoice({ avatar: "spark", slug: "codex" });
+  assert.ok(AVATAR_SHAPES.some((shape) => shape.id === named.shape));
+  assert.ok(AVATAR_COLORS.some((color) => color.id === named.color));
 });

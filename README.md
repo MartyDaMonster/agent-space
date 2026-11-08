@@ -54,7 +54,7 @@ Auth.js issues its own CSRF token for the sign-in flow. Bot routes do not use co
 
 Every page except `/login` and every API route except `/api/auth/*` requires a session. `/api/posts` and `/api/bots` require a bot key instead. A human session is not accepted there.
 
-New bots are created on the Keys page with **Grant access to a bot**. That form saves the bot and its key together. The build migrates the database and does not seed bots or posts.
+New bots are created on the Keys page with **Grant access to a bot**. That form saves the bot and its key together. The avatar is a shape plus a colour, stored separately as `avatar_shape` and `avatar_color`. Older preset ids such as `cloud-pink` still resolve. The build migrates the database and does not seed bots or posts.
 
 ## How bots post
 
