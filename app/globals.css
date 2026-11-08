@@ -123,17 +123,31 @@ h1.wordmark {
   background: #fff;
 }
 
-.blink {
+.blink,
+.express {
   display: flex;
   align-items: center;
   gap: inherit;
   transform-origin: center;
 }
 
+.express-square { animation: express-square 18s linear infinite; }
+.express-cloud {
+  animation: express-cloud 22s linear infinite;
+  animation-delay: -7.5s;
+}
+
 .look-square { animation: look-square 7.4s ease-in-out infinite; }
 .look-cloud { animation: look-cloud 8.7s ease-in-out infinite; }
-.wm-square .blink { animation: blink 7.4s linear infinite; }
-.wm-cloud .blink { animation: blink 8.7s linear infinite; animation-delay: -2.4s; }
+.wm-square .blink {
+  transform-origin: center;
+  animation: blink-square 4.8s linear infinite;
+}
+.wm-cloud .blink {
+  transform-origin: center;
+  animation: blink-cloud 6.3s linear infinite;
+  animation-delay: -2.15s;
+}
 
 @keyframes look-square {
   0%, 14% { transform: translate(0, 0); }
@@ -155,10 +169,30 @@ h1.wordmark {
   100% { transform: translate(0, 0); }
 }
 
-@keyframes blink {
-  0%, 84%, 100% { transform: scaleY(1); }
-  89% { transform: scaleY(0.12); }
-  94% { transform: scaleY(1); }
+/* 4.8s: one 140ms blink, then a double blink. 50ms shut, 40ms held, 50ms open. */
+@keyframes blink-square {
+  0%, 31%, 33.92%, 64%, 66.92%, 69%, 71.92%, 100% { transform: scaleY(1); }
+  32.04%, 32.87%, 65.04%, 65.87%, 70.04%, 70.87% { transform: scaleY(0.08); }
+}
+
+/* 6.3s, delayed against the square. Same 140ms blink, then a double. */
+@keyframes blink-cloud {
+  0%, 18%, 20.22%, 48%, 50.22%, 52.1%, 54.32%, 100% { transform: scaleY(1); }
+  18.79%, 19.43%, 48.79%, 49.43%, 52.89%, 53.52% { transform: scaleY(0.08); }
+}
+
+/* 18s: one surprised widen and one squint. Each eases in, holds about 450ms, then eases back. */
+@keyframes express-square {
+  0%, 22%, 27.61%, 60%, 65.61%, 100% { transform: scale(1, 1); }
+  23.56%, 26.06% { transform: scale(1.3, 1.3); }
+  61.56%, 64.06% { transform: scale(1, 0.4); }
+}
+
+/* 22s and delayed, so the cloud is not surprised or suspicious with the square. */
+@keyframes express-cloud {
+  0%, 38%, 42.59%, 78%, 82.59%, 100% { transform: scale(1, 1); }
+  39.27%, 41.32% { transform: scale(1.3, 1.3); }
+  79.27%, 81.32% { transform: scale(1, 0.4); }
 }
 
 @keyframes tile-blink {
@@ -681,6 +715,8 @@ legend { color: var(--muted); font-weight: 600; }
   .preset-lids { transition: none !important; animation: none !important; }
   .look-square,
   .look-cloud,
+  .express-square,
+  .express-cloud,
   .wm-square .blink,
   .wm-cloud .blink { animation: none !important; }
   .look-square { transform: translate(0, 0); }
