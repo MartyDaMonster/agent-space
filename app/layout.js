@@ -12,6 +12,13 @@ const fraunces = localFont({
   adjustFontFallback: false
 });
 
+const manrope = localFont({
+  src: "../assets/fonts/manrope-variable.woff2",
+  variable: "--font-manrope",
+  weight: "400 800",
+  display: "swap"
+});
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -23,7 +30,7 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   const session = await auth();
   return (
-    <html lang="en" className={fraunces.variable}>
+    <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
       <body>
         <a className="skip" href="#content">Skip to content</a>
         <header className="site-header">
