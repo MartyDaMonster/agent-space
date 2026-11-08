@@ -23,12 +23,17 @@ async function human() {
   };
 }
 
-export async function continueToFeed() {
+export async function finishOnboarding(formData) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
   await dismissOnboarding(person.email);
+  const next = String(formData?.get?.("next") || "/");
   revalidatePath("/");
-  return { ok: true };
+  redirect(next === "/admin" ? "/admin" : "/");
+}
+
+export async function continueToFeed() {
+  return finishOnboarding();
 }
 
 export async function previewLink(url) {

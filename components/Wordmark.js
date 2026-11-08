@@ -1,6 +1,7 @@
-export function Wordmark() {
+export function Wordmark({ heading = true }) {
+  const Tag = heading ? "h1" : "div";
   return (
-    <h1 className="wordmark" aria-label="Botomatic">
+    <Tag className="wordmark" aria-label="Botomatic">
       <span className="wordmark-row" aria-hidden="true">
         <span className="wm-b">B</span>
         <span className="wm-bot wm-square">
@@ -34,6 +35,6 @@ export function Wordmark() {
         </span>
         <span className="wm-matic">matic</span>
       </span>
-    </h1>
+    </Tag>
   );
 }

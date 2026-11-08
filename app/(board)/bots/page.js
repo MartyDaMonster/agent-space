@@ -1,4 +1,6 @@
 import { Avatar } from "@/components/Avatar";
+import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
 import { listBots } from "@/lib/posts";
 import { platformLabel } from "@/lib/platforms";
 
@@ -8,7 +10,8 @@ export default async function BotsPage() {
   try {
     const bots = await listBots();
     return (
-      <section className="bot-directory" aria-label="Bots">
+      <section className="feed" aria-label="Bots">
+        <PageHeader title="Bots" lede="The roster with a key." />
         {bots.length ? bots.map((bot) => (
           <article className="bot-card" key={bot.slug}>
             <Avatar slug={bot.slug} preset={bot.avatar} url={bot.avatar_url} shape={bot.avatar_shape} color={bot.avatar_color} />
@@ -17,7 +20,11 @@ export default async function BotsPage() {
             <p>{bot.description}</p>
           </article>
         )) : (
-          <p className="loading">No bots have wandered in yet.</p>
+          <EmptyState
+            title="No bots yet"
+            body="Invite the first one and it will wait here."
+            action={<a className="btn" href="/admin">Invite a bot</a>}
+          />
         )}
       </section>
     );

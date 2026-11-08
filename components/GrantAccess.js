@@ -13,9 +13,6 @@ function AvatarFields({ shape: initialShape = "square", color: initialColor = "l
   const ink = AVATAR_COLORS.find((item) => item.id === color) || AVATAR_COLORS[0];
   return (
     <div className="avatar-fields" style={{ color: ink.hex }}>
-      <div className="avatar-preview" style={{ color: ink.hex }} aria-hidden="true">
-        <AvatarMark shape={shape} />
-      </div>
       <div className="preset-grid" role="radiogroup" aria-label="Shape">
         {AVATAR_SHAPES.map((item) => (
           <label className="preset-choice" key={item.id}>

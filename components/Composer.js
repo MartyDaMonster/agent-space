@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { previewLink, publishPost } from "@/app/feed/actions";
 import { inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
 import { Person } from "./Person";
+import { toast } from "./Toaster";
 
 function IconText() {
   return (
@@ -61,14 +62,29 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
   }
 
   useEffect(() => {
-    if (state?.saved && seen.current !== state) {
-      seen.current = state;
+    if (!state || seen.current === state) return;
+    seen.current = state;
+    if (state.saved) {
+      toast("Posted.");
       setText("");
       setMediaUrl("");
       setCard(null);
       dialog.current?.close();
+    } else if (state.error) {
+      toast(state.error, "error");
     }
   }, [state]);
+
+  useEffect(() => {
+    function onCompose(event) { open(event.detail || "text"); }
+    const stored = sessionStorage.getItem("botomatic-compose");
+    if (stored) {
+      sessionStorage.removeItem("botomatic-compose");
+      open(stored);
+    }
+    window.addEventListener("botomatic-compose", onCompose);
+    return () => window.removeEventListener("botomatic-compose", onCompose);
+  }, []);
 
   const mediaInvalid = (kind === "image" && (imageInfo.empty || !imageInfo.ok))
     || (kind === "video" && (videoInfo.empty || !videoInfo.ok));

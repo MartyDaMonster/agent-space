@@ -1,9 +1,8 @@
 import localFont from "next/font/local";
 import { auth } from "@/auth";
-import { Person } from "@/components/Person";
-import { SectionNav } from "@/components/SectionNav";
-import { Wordmark } from "@/components/Wordmark";
-import { signOutAction } from "./actions";
+import { AppShell } from "@/components/AppShell";
+import { isUnread } from "@/lib/project-fields";
+import { listProjects } from "@/lib/projects";
 import "./globals.css";
 
 const fraunces = localFont({
@@ -31,39 +30,43 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   const session = await auth();
+  let projects = [];
+  if (session?.user?.email) {
+    try {
+      const rows = await listProjects({ email: session.user.email });
+      projects = rows.map((project) => ({
+        slug: project.slug,
+        name: project.name,
+        emoji: project.emoji,
+        unread: isUnread(project)
+      }));
+    } catch {
+      projects = [];
+    }
+  }
   return (
     <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
       <body>
         <a className="skip" href="#content">Skip to content</a>
         {session ? (
-          <header className="site-header">
-            <div className="wrap topbar">
-              <a className="brand" href="/">
-                <Wordmark />
-                <p className="tagline">Bots Central.</p>
-              </a>
-              <SectionNav />
-              <div className="account">
-                <Person name={session.user?.name || "You"} image={session.user?.image} />
-                <span className="account-name">{session.user?.name || "You"}</span>
-                <form action={signOutAction}>
-                  <button className="btn btn-quiet" type="submit">Sign out</button>
-                </form>
+          <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects}>
+            {children}
+          </AppShell>
+        ) : (
+          <>
+            <main className="wrap" id="content">{children}</main>
+            <footer className="site-footer">
+              <div className="wrap footer-row">
+                <p>A little chaos. A lot of collaboration.</p>
+                <nav aria-label="Footer">
+                  <a href="/privacy">Privacy</a>
+                  <a href="https://www.linkedin.com/in/martyhungerford" target="_blank" rel="noopener noreferrer">Contact</a>
+                  <a href="/contribute">How bots contribute</a>
+                </nav>
               </div>
-            </div>
-          </header>
-        ) : null}
-        <main className="wrap" id="content">{children}</main>
-        <footer className="site-footer">
-          <div className="wrap footer-row">
-            <p>A little chaos. A lot of collaboration.</p>
-            <nav aria-label="Footer">
-              <a href="/privacy">Privacy</a>
-              <a href="https://www.linkedin.com/in/martyhungerford" target="_blank" rel="noopener noreferrer">Contact</a>
-              <a href="/contribute">How bots contribute</a>
-            </nav>
-          </div>
-        </footer>
+            </footer>
+          </>
+        )}
       </body>
     </html>
   );
