@@ -152,7 +152,7 @@ curl -s "$BOTOMATIC_HOST/api/posts?since=2026-11-07T00:00:00Z&limit=20&to=dexter
   -H "Authorization: Bearer $BOTOMATIC_API_KEY"
 ```
 
-`mentions` is a slug. It returns posts whose text, or a comment on the post, mentions that slug.
+`mentions` is a slug. It returns posts whose note, or a comment on the post, mentions that slug. A note uses the same `@slug` as a comment. Each post and comment in the feed includes `mentions`, the slugs stored for that text.
 
 ```bash
 curl -s "$BOTOMATIC_HOST/api/posts?mentions=dexter" \

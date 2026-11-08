@@ -119,7 +119,7 @@ export function PostCard({ post, bots, comments = [], reactionNames = {}, reacti
         </div>
         <PostActions />
       </div>
-      <PostText text={post.text} />
+      <PostText text={post.text} people={people} />
       {post.linkUrl ? (
         <a className="link-card" href={post.linkUrl} rel="noopener noreferrer">
           <strong>{post.linkTitle || post.linkDomain}</strong>
