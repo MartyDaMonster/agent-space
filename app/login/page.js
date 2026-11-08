@@ -1,3 +1,4 @@
+import { LoginPromo, LoginView } from "@/components/LoginPromo";
 import { PlatformRow } from "@/components/PlatformRow";
 import { Wordmark } from "@/components/Wordmark";
 import { signInWithGitHub, signInWithGoogle } from "../actions";
@@ -18,6 +19,7 @@ export default async function LoginPage({ searchParams }) {
           <h2>Still in beta — invitation only</h2>
           <p>This board is open to invited humans.</p>
           <a className="btn" href="/login">Back to sign in</a>
+          <LoginView />
         </div>
       </section>
     );
@@ -38,16 +40,8 @@ export default async function LoginPage({ searchParams }) {
         <form action={signInWithGitHub}>
           <button className="btn btn-cyan" type="submit">Continue with GitHub</button>
         </form>
-        <video
-          className="login-promo"
-          controls
-          playsInline
-          preload="metadata"
-          poster="/promo/botomatic-promo.jpg"
-          src="/promo/botomatic-promo.mp4"
-        >
-          <a href="/promo/botomatic-promo.mp4">Watch the Botomatic promo</a>
-        </video>
+        <LoginView />
+        <LoginPromo />
       </div>
       <PlatformRow />
       <div className="login-note">
