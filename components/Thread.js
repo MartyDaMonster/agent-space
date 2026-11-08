@@ -2,13 +2,26 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { publishComment, publishReaction, purgeComment, restoreComment, retireComment } from "@/app/feed/actions";
+import { publishComment, publishReaction, purgeComment, restoreComment, retireComment, saveComment } from "@/app/feed/actions";
 import { REACTION_EMOJI } from "@/lib/compose";
+import { canEditComment } from "@/lib/moderation";
 import { Avatar } from "./Avatar";
+import { MentionField, MentionText } from "./Mentions";
 import { scheduleDelete } from "./delete-undo";
 import { Person } from "./Person";
 
-function Comment({ comment, bots, onDelete }) {
+function Comment({ comment, bots, people, email, onDelete }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.text);
+  const [state, action, pending] = useActionState(saveComment, null);
+  const canEdit = canEditComment({
+    actorEmail: email,
+    authorEmail: comment.authorEmail,
+    authorKind: comment.authorKind
+  });
+  useEffect(() => {
+    if (state?.saved) setEditing(false);
+  }, [state]);
   const bot = comment.authorKind === "bot"
     ? bots.find((item) => item.slug === comment.authorSlug)
     : null;
@@ -22,17 +35,33 @@ function Comment({ comment, bots, onDelete }) {
       <div>
         <div className="comment-top">
           <strong>{comment.authorName}</strong>
+          {canEdit ? (
+            <button className="text-btn" type="button" onClick={() => { setDraft(comment.text); setEditing(true); }}>Edit</button>
+          ) : null}
           {comment.canDelete ? (
             <button className="text-btn" type="button" onClick={() => onDelete(comment.id)}>Delete</button>
           ) : null}
         </div>
-        <p>{comment.text}</p>
+        {comment.editedAt ? <span className="edited-mark">edited</span> : null}
+        {editing ? (
+          <form action={action} className="comment-edit">
+            <input type="hidden" name="commentId" value={comment.id} />
+            <MentionField as="textarea" name="text" value={draft} onChange={setDraft} people={people} maxLength={500} rows={3} />
+            {state?.error ? <p className="warning">{state.error}</p> : null}
+            <div className="dialog-actions">
+              <button className="text-btn" type="button" onClick={() => setEditing(false)}>Cancel</button>
+              <button className="btn" type="submit" disabled={pending || draft.trim().length === 0}>{pending ? "Saving…" : "Save"}</button>
+            </div>
+          </form>
+        ) : (
+          <MentionText text={comment.text} people={people} />
+        )}
       </div>
     </li>
   );
 }
 
-export function Thread({ postId, comments, reactionRows, legacy, bots, email }) {
+export function Thread({ postId, comments, reactionRows, legacy, bots, email, people = [] }) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(publishComment, null);
   const [text, setText] = useState("");
@@ -82,7 +111,7 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email }) 
       {visible.length ? (
         <ul className="comments">
           {shown.map((comment) => (
-            <Comment key={comment.id} comment={comment} bots={bots} onDelete={(id) => { setPendingId(id); confirmDialog.current?.showModal(); }} />
+            <Comment key={comment.id} comment={comment} bots={bots} people={people} email={email} onDelete={(id) => { setPendingId(id); confirmDialog.current?.showModal(); }} />
           ))}
         </ul>
       ) : null}
@@ -109,12 +138,13 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email }) 
         <input type="hidden" name="postId" value={postId} />
         <label className="field">
           Comment
-          <input
+          <MentionField
             name="text"
             maxLength={500}
             placeholder="Add a comment"
             value={text}
-            onChange={(event) => setText(event.target.value)}
+            people={people}
+            onChange={setText}
           />
         </label>
         <button className="btn" type="submit" disabled={pending || text.trim().length === 0}>

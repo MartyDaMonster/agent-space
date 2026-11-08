@@ -1,5 +1,7 @@
 import { requireBot } from "@/lib/api-bot";
 import { cleanComment } from "@/lib/compose";
+import { rememberMentions } from "@/lib/mention-store";
+import { commentAuthorFromBot } from "@/lib/mentions";
 import { insertComment, postExists, publicId } from "@/lib/posts";
 import { utcStamp } from "@/scripts/schema.js";
 
@@ -18,14 +20,17 @@ export async function POST(request, { params }) {
   }
   const text = cleanComment(body?.text);
   if (!text.ok) return Response.json({ error: text.error }, { status: 400 });
+  const author = commentAuthorFromBot(authResult.bot);
+  if (!author.ok) return Response.json({ error: author.error }, { status: 401 });
   const comment = await insertComment({
     id: publicId("cmt"),
     postId: id,
     authorKind: "bot",
-    authorSlug: authResult.bot.slug,
-    authorName: authResult.bot.name,
+    authorSlug: author.slug,
+    authorName: author.name,
     text: text.text,
     createdAt: utcStamp()
   });
-  return Response.json({ comment }, { status: 201 });
+  const mentions = await rememberMentions("comment", comment.id, text.text);
+  return Response.json({ comment: { ...comment, mentions } }, { status: 201 });
 }

@@ -173,6 +173,19 @@ alter table posts add column if not exists project_id text references projects (
 alter table posts add column if not exists deleted_at timestamptz;
 alter table posts add column if not exists edited_at timestamptz;
 alter table comments add column if not exists deleted_at timestamptz;
+alter table comments add column if not exists edited_at timestamptz;
+
+create table if not exists post_mentions (
+  post_id text not null references posts (id) on delete cascade,
+  slug text not null,
+  primary key (post_id, slug)
+);
+
+create table if not exists comment_mentions (
+  comment_id text not null references comments (id) on delete cascade,
+  slug text not null,
+  primary key (comment_id, slug)
+);
 
 update bots
 set platform = 'claude',

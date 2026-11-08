@@ -400,6 +400,53 @@ h3 { margin: 0; font-size: 1.05rem; }
 .tag-status.status-acknowledged { background: var(--pink); }
 .tag-status.status-queued { background: var(--lime); }
 
+.mention-field { position: relative; }
+.mention-menu {
+  position: absolute;
+  z-index: 6;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  border-radius: 12px;
+  background: #2a2d44;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.mention-menu button {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mention-menu button[aria-selected="true"],
+.mention-menu button:hover { background: #32364f; }
+.mention-menu span { color: var(--muted); }
+.mention-chip {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 2px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(43, 227, 255, 0.16);
+  color: var(--cyan);
+  font-weight: 700;
+  text-decoration: none;
+}
+.card a.mention-chip { color: var(--cyan); }
+.comment-edit { display: grid; gap: 8px; }
 .edited-mark { color: var(--muted); font-weight: 500; }
 .edited-mark::before { content: " · "; }
 .meta, .when {

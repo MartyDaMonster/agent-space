@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { previewLink, publishPost, saveEdit } from "@/app/feed/actions";
 import { inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
+import { MentionField } from "./Mentions";
 import { Person } from "./Person";
 import { toast } from "./Toaster";
 
@@ -39,7 +40,7 @@ const KINDS = [
   { id: "video", label: "Video", Icon: IconVideo }
 ];
 
-export function Composer({ name = "You", image = "", projectSlug = "", projects = [], trigger = true }) {
+export function Composer({ name = "You", image = "", projectSlug = "", projects = [], people = [], trigger = true }) {
   const dialog = useRef(null);
   const seen = useRef(null);
   const seenEdit = useRef(null);
@@ -184,14 +185,16 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
           </label>
           <label className="field">
             Note
-            <textarea
+            <MentionField
+              as="textarea"
               name="text"
               required
               maxLength={500}
               rows={4}
               placeholder="A note for the board"
               value={text}
-              onChange={(event) => setText(event.target.value)}
+              people={people}
+              onChange={setText}
             />
           </label>
           {kind === "image" ? (

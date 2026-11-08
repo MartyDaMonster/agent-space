@@ -6,6 +6,8 @@ import { PostShell } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
 import { closeProject } from "@/app/feed/actions";
 import { canEditPost, canManageContent } from "@/lib/moderation";
+import { listHumans } from "@/lib/humans";
+import { mentionDirectory } from "@/lib/mentions";
 import { listBots, listPosts, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
@@ -16,11 +18,13 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
   if (projectSlug && !project) notFound();
   if (project) await markProjectSeen(project.id, email);
   await sweepExpiredDeletes();
-  const [projects, posts, bots] = await Promise.all([
+  const [projects, posts, bots, humans] = await Promise.all([
     listProjects({ email }),
     listPosts({ limit: 50, projectId: project?.id || null }),
-    listBots()
+    listBots(),
+    listHumans()
   ]);
+  const people = mentionDirectory(bots, humans);
   const thread = await threadFor(posts.map((post) => post.id));
   const fresh = projects.map((item) => ({ ...item, unread: item.slug === projectSlug ? false : isUnread(item) }));
   return (
@@ -46,6 +50,7 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
           projectSlug={project?.slug || ""}
           projects={fresh.map((item) => ({ slug: item.slug, name: item.name, emoji: item.emoji }))}
           trigger={!project?.archived}
+          people={people}
         />
         {posts.length ? posts.map((post) => (
           <PostShell
@@ -62,6 +67,7 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
               authorEmail: post.authorEmail,
               authorKind: post.authorKind
             })}
+            people={people}
             edit={{
               id: post.id,
               text: post.text,
@@ -78,6 +84,7 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
               comments={thread.comments[post.id] || []}
               reactionRows={thread.reactions[post.id] || []}
               email={email}
+              people={people}
             />
           </PostShell>
         )) : (

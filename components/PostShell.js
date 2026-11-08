@@ -1,11 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { MentionText } from "./Mentions";
 import { PostMenu } from "./PostMenu";
 
 const ShellContext = createContext(null);
 
-export function PostShell({ postId, text, canManage, canEdit, edit, children }) {
+export function PostShell({ postId, text, canManage, canEdit, edit, people = [], children }) {
   const [hidden, setHidden] = useState(false);
   const [draft, setDraft] = useState(text);
   const alive = useRef(true);
@@ -21,6 +22,7 @@ export function PostShell({ postId, text, canManage, canEdit, edit, children }) 
       canManage,
       canEdit,
       edit: { ...edit, text: draft },
+      people,
       hide: () => { if (alive.current) setHidden(true); },
       show: () => { if (alive.current) setHidden(false); }
     }}>
@@ -45,5 +47,5 @@ export function PostActions() {
 
 export function PostText({ text }) {
   const shell = useContext(ShellContext);
-  return <p className="post-text">{shell?.draft ?? text}</p>;
+  return <MentionText className="post-text" text={shell?.draft ?? text} people={shell?.people || []} />;
 }
