@@ -1,5 +1,7 @@
 import { requireBot } from "@/lib/api-bot";
-import { botSlugs, insertPost, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
+import { readFileIds } from "@/lib/file-rules";
+import { attachToPost, fileCards } from "@/lib/files";
+import { botSlugs, deletePostNow, insertPost, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { projectBySlug } from "@/lib/projects";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
 
@@ -19,9 +21,15 @@ export async function GET(request) {
   await sweepExpiredDeletes();
   const posts = await listPosts({ ...parsed, projectId });
   const thread = await threadFor(posts.map((post) => post.id));
+  const commentIds = Object.values(thread.comments).flat().map((comment) => comment.id);
+  const cards = await fileCards({ postIds: posts.map((post) => post.id), commentIds });
   const withThread = posts.map((post) => ({
     ...post,
-    comments: thread.comments[post.id] || [],
+    files: cards.posts[post.id] || [],
+    comments: (thread.comments[post.id] || []).map((comment) => ({
+      ...comment,
+      files: cards.comments[comment.id] || []
+    })),
     reactionCounts: countReactions(post, thread.reactions[post.id] || [])
   }));
   return Response.json({ posts: withThread });
@@ -59,9 +67,19 @@ export async function POST(request) {
     }
     projectId = project.id;
   }
+  const files = readFileIds(body.files);
+  if (!files.ok) return Response.json({ error: files.error }, { status: 400 });
   try {
     const post = await insertPost({ ...result.post, projectId });
-    return Response.json({ post, warnings: result.warnings }, { status: 201 });
+    if (files.ids.length) {
+      const linked = await attachToPost(post.id, files.ids, { kind: "bot", id: authResult.bot.slug });
+      if (!linked.ok) {
+        await deletePostNow(post.id);
+        return Response.json({ error: linked.error }, { status: 400 });
+      }
+    }
+    const cards = await fileCards({ postIds: [post.id] });
+    return Response.json({ post: { ...post, files: cards.posts[post.id] || [] }, warnings: result.warnings }, { status: 201 });
   } catch (error) {
     const status = error.status || 500;
     const message = status === 409 ? error.message : "The post could not be saved.";

@@ -3,8 +3,10 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { previewLink, publishPost, saveEdit } from "@/app/feed/actions";
 import { inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
+import { FileCards } from "./FileCards";
 import { Person } from "./Person";
 import { toast } from "./Toaster";
+import { uploadBoardFile } from "./upload-file";
 
 function IconText() {
   return (
@@ -52,6 +54,8 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
   const [project, setProject] = useState(projectSlug);
   const [card, setCard] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [attached, setAttached] = useState([]);
+  const [dragging, setDragging] = useState(false);
   const imageInfo = inspectImage(kind === "image" ? mediaUrl : "");
   const videoInfo = inspectVideo(kind === "video" ? mediaUrl : "");
   const busy = editing ? editPending : pending;
@@ -64,6 +68,7 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
     setLink("");
     setMediaUrl("");
     setCard(null);
+    setAttached([]);
     dialog.current?.showModal();
     dialog.current?.querySelector("textarea")?.focus();
   }
@@ -82,6 +87,7 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
       title: post.linkTitle || post.linkDomain,
       domain: post.linkDomain || ""
     } : null);
+    setAttached(Array.isArray(post?.files) ? post.files : []);
     dialog.current?.showModal();
     dialog.current?.querySelector("textarea")?.focus();
   }
@@ -95,6 +101,7 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
       setLink("");
       setMediaUrl("");
       setCard(null);
+      setAttached([]);
       setEditing(null);
       dialog.current?.close();
     } else if (state.error) {
@@ -140,6 +147,25 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
 
   const formState = editing ? editState : state;
 
+  async function takeFiles(list) {
+    const incoming = [...(list || [])];
+    if (!incoming.length) return;
+    if (attached.length + incoming.length > 10) {
+      toast("Attach up to 10 files.", "error");
+      return;
+    }
+    for (const file of incoming) {
+      const uploaded = await uploadBoardFile(file);
+      if (uploaded.error) {
+        toast(uploaded.error, "error");
+        continue;
+      }
+      setAttached((current) => current.some((item) => item.id === uploaded.file.id) || current.length >= 10
+        ? current
+        : [...current, uploaded.file]);
+    }
+  }
+
   return (
     <>
       {trigger ? <div className="composer-trigger card">
@@ -165,8 +191,19 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
           if (event.target === event.currentTarget) event.currentTarget.close();
         }}
       >
-        <form action={editing ? editAction : action} className="grant-form">
+        <form
+          action={editing ? editAction : action}
+          className={dragging ? "grant-form is-dropping" : "grant-form"}
+          onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragging(false);
+            takeFiles(event.dataTransfer.files);
+          }}
+        >
           {editing ? <input type="hidden" name="postId" value={editing} /> : null}
+          {attached.map((file) => <input key={file.id} type="hidden" name="fileId" value={file.id} />)}
           <h2 id="composer-title">{editing ? "Edit post" : kind === "image" ? "Post an image" : kind === "video" ? "Post a video" : "Post something"}</h2>
           <label className="field">
             Project
@@ -255,6 +292,22 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
             </p>
           ) : null}
           {formState?.error && !formState?.saved ? <p className="warning">{formState.error}</p> : null}
+          <FileCards files={attached} onRemove={(id) => setAttached((current) => current.filter((file) => file.id !== id))} />
+          <div className="attach-row">
+            <label className="attach-btn">
+              Attach file
+              <input
+                type="file"
+                multiple
+                accept=".md,.txt,.pdf,.png,.jpg,.jpeg,.webp,.gif,.csv,.json,.docx,.xlsx,.pptx,.zip"
+                onChange={(event) => {
+                  takeFiles(event.target.files);
+                  event.target.value = "";
+                }}
+              />
+            </label>
+            <p className="meta">Or drop a file here.</p>
+          </div>
           <div className="dialog-actions">
             <button className="text-btn" type="button" onClick={() => dialog.current?.close()}>Cancel</button>
             <button className="btn" type="submit" disabled={busy || text.trim().length === 0 || mediaInvalid}>

@@ -35,6 +35,22 @@ test("only an Auth.js session cookie counts as signed in", () => {
   assert.equal(hasAuthCookie(["other"]), false);
 });
 
+test("an anonymous file download is refused", () => {
+  assert.deepEqual(
+    decideAccess({ pathname: "/api/files/f_abc123", hasSession: false }),
+    { ok: false, status: 401 }
+  );
+  assert.deepEqual(
+    decideAccess({ pathname: "/api/files", hasSession: false, authorization: "" }),
+    { ok: false, status: 401 }
+  );
+  assert.equal(decideAccess({ pathname: "/api/files/f_abc123", hasSession: true }).ok, true);
+  assert.equal(
+    decideAccess({ pathname: "/api/files/f_abc123", hasSession: false, authorization: "Bearer btm_test" }).ok,
+    true
+  );
+});
+
 test("bot routes require a bearer token and ignore a bare session", () => {
   assert.deepEqual(
     decideAccess({ pathname: "/api/posts", hasSession: true, authorization: "" }),

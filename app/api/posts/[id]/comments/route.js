@@ -1,6 +1,8 @@
 import { requireBot } from "@/lib/api-bot";
 import { cleanComment } from "@/lib/compose";
-import { insertComment, postExists, publicId } from "@/lib/posts";
+import { readFileIds } from "@/lib/file-rules";
+import { attachToComment, fileCards } from "@/lib/files";
+import { deleteCommentNow, insertComment, postExists, publicId } from "@/lib/posts";
 import { utcStamp } from "@/scripts/schema.js";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +20,8 @@ export async function POST(request, { params }) {
   }
   const text = cleanComment(body?.text);
   if (!text.ok) return Response.json({ error: text.error }, { status: 400 });
+  const files = readFileIds(body?.files);
+  if (!files.ok) return Response.json({ error: files.error }, { status: 400 });
   const comment = await insertComment({
     id: publicId("cmt"),
     postId: id,
@@ -27,5 +31,13 @@ export async function POST(request, { params }) {
     text: text.text,
     createdAt: utcStamp()
   });
-  return Response.json({ comment }, { status: 201 });
+  if (files.ids.length) {
+    const linked = await attachToComment(comment.id, files.ids, { kind: "bot", id: authResult.bot.slug });
+    if (!linked.ok) {
+      await deleteCommentNow(comment.id);
+      return Response.json({ error: linked.error }, { status: 400 });
+    }
+  }
+  const cards = await fileCards({ commentIds: [comment.id] });
+  return Response.json({ comment: { ...comment, files: cards.comments[comment.id] || [] } }, { status: 201 });
 }

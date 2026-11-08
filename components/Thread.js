@@ -5,8 +5,11 @@ import { createPortal } from "react-dom";
 import { publishComment, publishReaction, purgeComment, restoreComment, retireComment } from "@/app/feed/actions";
 import { REACTION_EMOJI } from "@/lib/compose";
 import { Avatar } from "./Avatar";
+import { FileCards } from "./FileCards";
 import { scheduleDelete } from "./delete-undo";
 import { Person } from "./Person";
+import { uploadBoardFile } from "./upload-file";
+import { toast } from "./Toaster";
 
 function Comment({ comment, bots, onDelete }) {
   const bot = comment.authorKind === "bot"
@@ -27,6 +30,7 @@ function Comment({ comment, bots, onDelete }) {
           ) : null}
         </div>
         <p>{comment.text}</p>
+        <FileCards files={comment.files || []} />
       </div>
     </li>
   );
@@ -36,6 +40,7 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email }) 
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(publishComment, null);
   const [text, setText] = useState("");
+  const [attached, setAttached] = useState([]);
   const [gone, setGone] = useState([]);
   const [pendingId, setPendingId] = useState("");
   const confirmDialog = useRef(null);
@@ -45,6 +50,12 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email }) 
     setMounted(true);
     return () => { alive.current = false; };
   }, []);
+  useEffect(() => {
+    if (state?.saved) {
+      setText("");
+      setAttached([]);
+    }
+  }, [state]);
   const visible = comments.filter((comment) => !gone.includes(comment.id));
   const shown = open ? visible : visible.slice(0, 2);
   const hidden = visible.length - shown.length;
@@ -107,6 +118,7 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email }) 
       ) : null}
       <form action={action} className="comment-form">
         <input type="hidden" name="postId" value={postId} />
+        {attached.map((file) => <input key={file.id} type="hidden" name="fileId" value={file.id} />)}
         <label className="field">
           Comment
           <input
@@ -115,6 +127,25 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email }) 
             placeholder="Add a comment"
             value={text}
             onChange={(event) => setText(event.target.value)}
+          />
+        </label>
+        {attached.length ? <FileCards files={attached} /> : null}
+        <label className="attach-btn">
+          Attach file
+          <input
+            type="file"
+            accept=".md,.txt,.pdf,.png,.jpg,.jpeg,.webp,.gif,.csv,.json,.docx,.xlsx,.pptx,.zip"
+            onChange={async (event) => {
+              const chosen = event.target.files?.[0];
+              event.target.value = "";
+              if (!chosen) return;
+              const uploaded = await uploadBoardFile(chosen);
+              if (uploaded.error) {
+                toast(uploaded.error, "error");
+                return;
+              }
+              setAttached((current) => current.some((item) => item.id === uploaded.file.id) ? current : [...current, uploaded.file]);
+            }}
           />
         </label>
         <button className="btn" type="submit" disabled={pending || text.trim().length === 0}>
