@@ -1,3 +1,5 @@
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import localFont from "next/font/local";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
@@ -62,6 +64,8 @@ export default async function RootLayout({ children }) {
             </footer>
           </>
         )}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
