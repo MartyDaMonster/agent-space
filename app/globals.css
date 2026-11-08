@@ -224,31 +224,66 @@ h3 { margin: 0; font-size: 1.05rem; }
 body.modal-open { overflow: hidden; }
 dialog.app-dialog {
   position: fixed;
+  inset: 0;
   z-index: 80;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 24px 16px;
+  border: 0;
+  background: rgba(8, 9, 14, 0.62);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  overflow: auto;
+}
+dialog.app-dialog::backdrop {
+  background: rgba(8, 9, 14, 0.62);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 dialog.app-dialog:focus,
 dialog.app-dialog:focus-visible {
   outline: none;
 }
+.dialog-card {
+  position: relative;
+  width: min(440px, 100%);
+  max-height: 100%;
+  margin: auto;
+  padding: 24px;
+  overflow: auto;
+  border-radius: 16px;
+  background: var(--card);
+  color: #fff;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+.dialog-card > h2,
+.dialog-card > form > h2 { padding-right: 36px; }
+.dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.dialog-close:hover { background: #2a2d44; }
 @media (max-width: 959px) {
-  dialog.app-dialog:not(.is-sheet) {
-    top: 16px;
-    bottom: calc(16px + 64px + env(safe-area-inset-bottom));
-    max-height: calc(100dvh - 32px - 64px - env(safe-area-inset-bottom));
-    margin-top: auto;
-    margin-bottom: auto;
-  }
-  dialog.app-dialog.is-sheet {
-    top: auto;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    max-height: calc(100dvh - 16px);
-    border-radius: 20px 20px 0 0;
-    padding-bottom: calc(24px + 64px + env(safe-area-inset-bottom));
+  dialog.app-dialog {
+    padding: 16px 16px calc(16px + 64px + env(safe-area-inset-bottom));
   }
 }
 
@@ -554,19 +589,12 @@ dialog.app-dialog:focus-visible {
 .post-menu-panel button:hover { background: #32364f; }
 .post-menu-panel .is-danger { color: #ffb4c8; }
 .comment-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.confirm-dialog {
+.confirm-dialog .dialog-card {
   display: grid;
   gap: 12px;
-  width: min(400px, calc(100vw - 32px));
-  margin: auto;
-  padding: 24px;
-  border: 0;
-  border-radius: 16px;
-  background: var(--card);
-  color: #fff;
+  width: min(400px, 100%);
 }
 .confirm-dialog form { display: grid; gap: 16px; }
-.confirm-dialog::backdrop { background: rgba(8, 9, 14, 0.72); }
 .confirm-dialog h2 { margin: 0; font-size: 1.5rem; }
 .confirm-dialog p { margin: 0; color: var(--muted); }
 
@@ -642,7 +670,7 @@ dialog.app-dialog:focus-visible {
 .bot-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .bot-card-top .btn { flex: 0 0 auto; }
 .bot-card p { margin: 0; color: var(--muted); }
-.bot-edit-dialog { width: min(520px, calc(100vw - 32px)); }
+.bot-edit-dialog .dialog-card { width: min(520px, 100%); }
 
 .state-box h2 { font-size: 1.6rem; }
 .state-box p, .loading { color: var(--muted); }
@@ -1071,25 +1099,10 @@ legend { color: var(--muted); font-weight: 500; }
 }
 .composer-kinds button:hover { background: #1b1d2b; color: #fff; transform: translateY(-1px); }
 .composer-kinds svg { width: 18px; height: 18px; }
-.composer-dialog {
-  width: min(520px, calc(100vw - 32px));
-  max-height: min(88vh, 720px);
-  margin: auto;
-  padding: 20px;
-  overflow: auto;
-  border: 0;
+.composer-dialog .dialog-card {
+  width: min(520px, 100%);
   border-radius: 24px;
-  background: var(--card);
-  color: #fff;
-  opacity: 0;
-  transform: scale(0.98);
-  transition: opacity 180ms ease-out, transform 180ms ease-out, overlay 180ms ease-out allow-discrete, display 180ms ease-out allow-discrete;
 }
-.composer-dialog[open] { opacity: 1; transform: scale(1); }
-@starting-style {
-  .composer-dialog[open] { opacity: 0; transform: scale(0.98); }
-}
-.composer-dialog::backdrop { background: rgba(8, 9, 14, 0.72); }
 .composer-dialog h2 { margin: 0; font-size: 1.6rem; }
 .composer-preview {
   width: 100%;
@@ -1099,21 +1112,7 @@ legend { color: var(--muted); font-weight: 500; }
   background: #12131c;
 }
 @media (max-width: 959px) {
-  .composer-dialog {
-    width: 100%;
-    max-width: 100%;
-    max-height: calc(100dvh - 16px);
-    margin: 0;
-    border-radius: 20px 20px 0 0;
-    transform: none;
-  }
-  dialog.app-dialog.is-sheet.composer-dialog {
-    padding-bottom: calc(24px + 64px + env(safe-area-inset-bottom));
-  }
-  .composer-dialog[open] { transform: none; }
-  @starting-style {
-    .composer-dialog[open] { opacity: 0; transform: none; }
-  }
+  .composer-dialog .dialog-card { border-radius: 16px; }
 }
 .composer { display: grid; gap: 16px; }
 .composer h2, .link-card strong { font-family: var(--sans); font-weight: 700; font-variation-settings: "wght" 700; }
@@ -1495,16 +1494,7 @@ legend { color: var(--muted); font-weight: 500; }
   font-weight: 600;
   text-decoration: none;
 }
-.project-dialog {
-  width: min(440px, calc(100vw - 32px));
-  margin: auto;
-  padding: 24px;
-  border: 0;
-  border-radius: 24px;
-  background: var(--card);
-  color: #fff;
-}
-.project-dialog::backdrop { background: rgba(8, 9, 14, 0.72); }
+.project-dialog .dialog-card { border-radius: 24px; }
 .project-dialog h2 { margin: 0; }
 .color-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .dialog-actions { display: flex; justify-content: flex-end; align-items: center; gap: 16px; }
@@ -1516,8 +1506,6 @@ legend { color: var(--muted); font-weight: 500; }
 @media (prefers-reduced-motion: reduce) {
   .project-switch a:hover,
   .composer-kinds button:hover,
-  .composer-dialog,
-  .composer-dialog[open],
   .onboard-track,
   .page-fade,
   .skeleton,
