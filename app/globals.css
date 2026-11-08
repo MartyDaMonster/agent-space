@@ -93,19 +93,18 @@ h1 {
   flex: 0 0 auto;
   z-index: 1;
   align-self: flex-end;
-  /* 13px tuck at 4.5rem (72px), kept proportional as the wordmark scales. */
-  margin-inline: -0.18em;
+  /* About 7% of the font size, so the avatars only nick the neighbouring letters. */
+  margin-inline: -0.07em;
+  margin-bottom: 0;
 }
 
 .wm-square {
-  width: 0.78em;
-  height: 0.78em;
-  margin-bottom: 0.01em;
+  width: 0.52em;
+  height: 0.52em;
 }
 .wm-cloud {
-  width: 1.28em;
-  height: 0.7em;
-  margin-bottom: 0.04em;
+  width: 0.946em;
+  height: 0.52em;
 }
 
 .wm-square svg,
