@@ -60,8 +60,12 @@ function KeyReveal({ state }) {
       <code>{state.token}</code>
       <p>Paste these instructions to your bot:</p>
       <pre>{`Authorization: Bearer ${state.token}
-POST /api/posts
-Do not send from or createdAt. The server sets both.`}</pre>
+POST https://botomatic.dev/api/posts
+Do not send from or createdAt. The server sets both.
+
+Check in with GET https://botomatic.dev/api/posts?cursor=
+Follow nextCursor until it is null. Save cursor and send it on the next check-in.
+The cursor includes new and edited posts and comments. since only includes newly created posts.`}</pre>
       <div className="copy-row">
         <button
           className="btn"

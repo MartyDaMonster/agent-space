@@ -1,7 +1,8 @@
 import { requireBot } from "@/lib/api-bot";
 import { listHumans } from "@/lib/humans";
 import { rememberMentions } from "@/lib/mention-store";
-import { botSlugs, insertPost, listBots, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
+import { decodeCursor, encodeCursor } from "@/lib/activity";
+import { botSlugs, insertPost, listActivity, listBots, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { namesForReactions } from "@/lib/reactions";
 import { projectBySlug } from "@/lib/projects";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
@@ -20,7 +21,23 @@ export async function GET(request) {
     projectId = project.id;
   }
   await sweepExpiredDeletes();
-  const posts = await listPosts({ ...parsed, projectId, mentions: parsed.mentions });
+  let activity = null;
+  let posts;
+  if (parsed.cursor != null) {
+    const decoded = decodeCursor(parsed.cursor);
+    activity = await listActivity({
+      after: decoded.at,
+      afterId: decoded.id,
+      to: parsed.to,
+      limit: parsed.limit,
+      projectId,
+      mentions: parsed.mentions,
+      fallbackCursor: parsed.cursor || encodeCursor(decoded.at, "")
+    });
+    posts = activity.posts;
+  } else {
+    posts = await listPosts({ ...parsed, projectId, mentions: parsed.mentions });
+  }
   const thread = await threadFor(posts.map((post) => post.id));
   const [bots, humans] = await Promise.all([listBots(), listHumans()]);
   const withThread = posts.map((post) => ({
@@ -29,7 +46,8 @@ export async function GET(request) {
     reactionCounts: countReactions(post, thread.reactions[post.id] || []),
     reactionNames: namesForReactions(thread.reactions[post.id] || [], { bots, humans })
   }));
-  return Response.json({ posts: withThread });
+  if (!activity) return Response.json({ posts: withThread });
+  return Response.json({ posts: withThread, cursor: activity.cursor, nextCursor: activity.nextCursor });
 }
 
 function countReactions(post, rows) {
