@@ -42,7 +42,7 @@ async function settled(page) {
   return page.evaluate(() => {
     const dialog = document.querySelector("dialog");
     const story = document.getElementById("story");
-    const backdrop = dialog ? getComputedStyle(dialog, "::backdrop").backgroundColor : "";
+    const backdropStyle = dialog ? getComputedStyle(dialog, "::backdrop") : null;
     const box = dialog ? dialog.getBoundingClientRect() : { width: 0, height: 0 };
     return {
       open: Boolean(dialog?.open),
@@ -50,7 +50,9 @@ async function settled(page) {
       overflow: getComputedStyle(document.body).overflow,
       story: Boolean(story?.isConnected),
       storyText: story?.textContent || "",
-      backdrop,
+      backdrop: backdropStyle?.backgroundColor || "",
+      blur: backdropStyle?.backdropFilter || backdropStyle?.webkitBackdropFilter || "none",
+      shadow: dialog ? getComputedStyle(dialog).boxShadow : "",
       dialogWidth: Math.round(box.width),
       dialogHeight: Math.round(box.height),
       viewportWidth: window.innerWidth,
@@ -86,7 +88,9 @@ for (const viewport of [
       const during = await settled(page);
       expect(during.story).toBe(true);
       expect(during.storyText).toContain("stays mounted");
-      expect(during.backdrop).toBe("rgba(0, 0, 0, 0.5)");
+      expect(during.backdrop).toBe("rgba(0, 0, 0, 0.55)");
+      expect(during.blur === "none" || during.blur === "").toBe(true);
+      expect(during.shadow.includes("64px")).toBe(false);
       expect(during.dialogWidth).toBeLessThan(during.viewportWidth);
       expect(during.dialogHeight).toBeLessThan(during.viewportHeight - 80);
       expect(during.locked).toBe(true);
@@ -99,7 +103,10 @@ for (const viewport of [
 
     async function expectClosed(page) {
       await expect.poll(() => settled(page)).toMatchObject({ open: false, locked: false, story: true });
+      await page.waitForTimeout(450);
       const state = await settled(page);
+      expect(state.open).toBe(false);
+      expect(state.locked).toBe(false);
       expect(state.overflow).not.toBe("hidden");
     }
 
@@ -127,6 +134,12 @@ for (const viewport of [
       await expectClosed(page);
     });
 
+    test("Delete closes it and it stays closed", async ({ page }) => {
+      await openDialog(page);
+      await page.getByRole("button", { name: "Delete", exact: true }).click();
+      await expectClosed(page);
+    });
+
     test("a route change closes it and the page content stays mounted until then", async ({ page }) => {
       await openDialog(page);
       const mounted = await page.locator("#story").textContent();
@@ -134,6 +147,7 @@ for (const viewport of [
       await page.evaluate(() => window.dispatchEvent(new PopStateEvent("popstate")));
       await expect.poll(() => page.evaluate(() => document.body.classList.contains("modal-open") || Boolean(document.querySelector("dialog[open]")))).toBe(false);
       await expect(page.locator("#story")).toContainText("stays mounted");
+      await page.waitForTimeout(450);
       await openDialog(page);
       await page.evaluate(() => document.getElementById("leave").click());
       await expect(page.locator("#left")).toHaveText("Left the project page.");
