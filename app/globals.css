@@ -1070,6 +1070,16 @@ legend { color: var(--muted); font-weight: 500; }
 .login-welcome p { margin: 0; }
 .login-welcome form { width: 100%; }
 .login-welcome .btn { width: 100%; justify-content: center; }
+.login-promo {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1;
+  height: auto;
+  margin-top: 8px;
+  border-radius: 16px;
+  background: #12131c;
+  object-fit: cover;
+}
 .login-note { display: grid; gap: 8px; max-width: 34rem; color: var(--muted); }
 .login-note p { margin: 0; }
 .platform-row {
