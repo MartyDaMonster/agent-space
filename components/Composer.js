@@ -67,7 +67,7 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
     setMediaUrl("");
     setCard(null);
     dialog.current?.showModal();
-    dialog.current?.querySelector("textarea")?.focus();
+    requestAnimationFrame(() => dialog.current?.querySelector("textarea")?.focus());
   }
 
   function openEdit(post) {
@@ -85,7 +85,7 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
       domain: post.linkDomain || ""
     } : null);
     dialog.current?.showModal();
-    dialog.current?.querySelector("textarea")?.focus();
+    requestAnimationFrame(() => dialog.current?.querySelector("textarea")?.focus());
   }
 
   useEffect(() => {
@@ -192,7 +192,9 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
               name="text"
               required
               maxLength={500}
-              rows={4}
+              rows={6}
+              autoFocus
+              data-autofocus=""
               placeholder="A note for the board"
               value={text}
               people={people}

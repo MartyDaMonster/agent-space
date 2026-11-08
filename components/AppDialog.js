@@ -21,6 +21,8 @@ export function AppDialog({ dialogRef, className = "", sheet = false, children, 
       if (active instanceof HTMLElement && !dialog.contains(active)) opener.current = active;
       showModal();
       releaseScroll();
+      const preferred = dialog.querySelector("[data-autofocus]");
+      if (preferred instanceof HTMLElement) preferred.focus();
     };
 
     function onClick(event) {
@@ -35,8 +37,15 @@ export function AppDialog({ dialogRef, className = "", sheet = false, children, 
     }
 
     function onBeforeToggle(event) {
-      if (event.newState === "closed") setTimeout(restore, 0);
-      else setTimeout(releaseScroll, 0);
+      if (event.newState === "closed") {
+        setTimeout(restore, 0);
+        return;
+      }
+      setTimeout(() => {
+        releaseScroll();
+        const preferred = dialog.querySelector("[data-autofocus]");
+        if (preferred instanceof HTMLElement) preferred.focus();
+      }, 0);
     }
 
     function forceClose() {
