@@ -66,69 +66,59 @@ h1 {
   line-height: 1;
 }
 
-h1.wordmark {
+.wordmark {
   margin: 0;
   color: #fff;
   font-family: var(--font-fraunces), Fraunces, serif;
   font-weight: 900;
   font-size: clamp(2.7rem, 8vw, 4.5rem);
   font-variation-settings: "SOFT" 100, "opsz" 144, "wght" 900;
-  line-height: 0.8;
+  line-height: 0.72;
   letter-spacing: -0.045em;
 }
 
 .wordmark-row {
-  display: flex;
-  align-items: center;
+  display: inline-flex;
+  align-items: flex-end;
+}
+
+.wm-b,
+.wm-t,
+.wm-matic {
+  line-height: 0.72;
 }
 
 .wm-bot {
   position: relative;
   flex: 0 0 auto;
   z-index: 1;
+  align-self: flex-end;
   /* 13px tuck at 4.5rem (72px), kept proportional as the wordmark scales. */
-  margin-inline: -0.1806em;
+  margin-inline: -0.18em;
 }
 
-.wm-square { width: 0.64em; height: 0.64em; }
-.wm-cloud { width: 0.78em; height: 0.62em; }
+.wm-square {
+  width: 0.78em;
+  height: 0.78em;
+  margin-bottom: 0.01em;
+}
+.wm-cloud {
+  width: 1.28em;
+  height: 0.7em;
+  margin-bottom: 0.04em;
+}
 
 .wm-square svg,
 .wm-cloud svg { display: block; width: 100%; height: 100%; overflow: visible; }
 
-.wm-tilt {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform: rotate(-10deg);
-}
+.wm-tilt { transform: rotate(-10deg); transform-origin: center; }
 
-.wm-eyes {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-}
-
-.wm-square .wm-eyes {
-  top: 34%;
-  left: 46%;
-  gap: 0.055em;
-}
-
-.wm-cloud .wm-eyes {
-  top: 42%;
-  left: 30%;
-  gap: 0.07em;
-}
-
-.eye {
-  display: block;
-  width: 0.105em;
-  height: 0.092em;
-  border-radius: 999px;
-  background: #fff;
+.wordmark .look-square,
+.wordmark .look-cloud,
+.wordmark .express,
+.wordmark .blink {
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .blink,
@@ -1021,7 +1011,7 @@ legend { color: var(--muted); font-weight: 500; }
   background: var(--bg);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-.app-bar .wordmark { font-size: 1.55rem; }
+.app-bar .wordmark { font-size: 1.85rem; line-height: 0.72; }
 .app-bar .brand { text-decoration: none; color: inherit; }
 .account-trigger {
   display: inline-flex;
@@ -1186,6 +1176,7 @@ legend { color: var(--muted); font-weight: 500; }
 }
 .onboard-art { display: flex; gap: 16px; }
 .onboard-art .avatar-mark { width: 112px; height: 112px; }
+.onboard-logo .wordmark { font-size: clamp(2.2rem, 8vw, 3.6rem); }
 .onboard-art .eyes {
   transform-box: fill-box;
   transform-origin: center;
