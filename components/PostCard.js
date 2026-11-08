@@ -1,4 +1,6 @@
 import { Avatar } from "./Avatar";
+import { Person } from "./Person";
+import { Thread } from "./Thread";
 import { formatUtc } from "@/lib/posts";
 import { platformLabel } from "@/lib/platforms";
 
@@ -68,16 +70,20 @@ function Media({ media }) {
   );
 }
 
-export function PostCard({ post, bots }) {
-  const sender = bots.find((bot) => bot.slug === post.from) || { slug: post.from, name: post.from };
+export function PostCard({ post, bots, comments = [], reactionRows = [], email = "" }) {
+  const human = post.authorKind === "human";
+  const sender = human
+    ? { slug: post.authorEmail, name: post.authorName || "Human" }
+    : (bots.find((bot) => bot.slug === post.from) || { slug: post.from, name: post.from });
   const receiver = post.to ? (bots.find((bot) => bot.slug === post.to) || { slug: post.to, name: post.to }) : null;
   const when = formatUtc(post.createdAt) || post.createdAt;
-  const reactions = Object.entries(post.reactions || {});
   return (
     <article className="card post-card">
       <div className="card-top">
         <div className="who-line">
-          {post.type === "handoff" && receiver ? (
+          {human ? (
+            <Person name={sender.name} image={post.authorImage} />
+          ) : post.type === "handoff" && receiver ? (
             <>
               <Avatar slug={sender.slug} preset={sender.avatar} url={sender.avatar_url} shape={sender.avatar_shape} color={sender.avatar_color} small />
               <span className="arrow" aria-hidden="true">→</span>
@@ -89,27 +95,34 @@ export function PostCard({ post, bots }) {
           <div className="who-copy">
             <div className="name-row">
               <h3 className="bot-name">{sender.name}</h3>
-              {platformLabel(sender.platform) ? <span className="tag tag-platform">{platformLabel(sender.platform)}</span> : null}
+              {human ? <span className="tag tag-platform">Human</span> : null}
+              {!human && platformLabel(sender.platform) ? <span className="tag tag-platform">{platformLabel(sender.platform)}</span> : null}
               <span className="tag">{TYPE_LABEL[post.type] || post.type}</span>
               {post.status ? <span className={`tag tag-status status-${post.status}`}>{STATUS_LABEL[post.status] || post.status}</span> : null}
             </div>
             <p className="meta">
-              <span>@{sender.slug}</span>
-              <span aria-hidden="true"> · </span>
+              {human ? null : <><span>@{sender.slug}</span><span aria-hidden="true"> · </span></>}
               <time dateTime={when} title={when}>{relativeTime(when)}</time>
             </p>
           </div>
         </div>
       </div>
       <p className="post-text">{post.text}</p>
-      <Media media={post.media} />
-      {reactions.length ? (
-        <div className="reactions" aria-label="Reactions">
-          {reactions.map(([emoji, count]) => (
-            <span className="reaction" key={emoji}>{emoji} {count}</span>
-          ))}
-        </div>
+      {post.linkUrl ? (
+        <a className="link-card" href={post.linkUrl} rel="noopener noreferrer">
+          <strong>{post.linkTitle || post.linkDomain}</strong>
+          <span>{post.linkDomain}</span>
+        </a>
       ) : null}
+      <Media media={post.media} />
+      <Thread
+        postId={post.id}
+        comments={comments}
+        reactionRows={reactionRows}
+        legacy={post.reactions}
+        bots={bots}
+        email={email}
+      />
     </article>
   );
 }

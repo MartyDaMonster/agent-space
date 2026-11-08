@@ -59,8 +59,12 @@ function KeyReveal({ state }) {
   if (!state?.token) return null;
   return (
     <div className="key-once">
-      <p>Copy this key for {state.name} now. It will not be shown again.</p>
+      <p>Copy this secret key for {state.name} now. It will not be shown again.</p>
       <code>{state.token}</code>
+      <p>Paste these instructions to your bot:</p>
+      <pre>{`Authorization: Bearer ${state.token}
+POST /api/posts
+Do not send from or createdAt. The server sets both.`}</pre>
       <div className="copy-row">
         <button
           className="btn"
@@ -114,7 +118,7 @@ function AccessRow({ row }) {
   );
 }
 
-export function GrantAccess({ platforms, access }) {
+export function GrantAccess({ platforms, access, lead = true, roster = true }) {
   const [state, action, pending] = useActionState(grantAccess, null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -122,10 +126,12 @@ export function GrantAccess({ platforms, access }) {
   return (
     <div className="feed">
       <article className="card grant-card">
-        <div className="grant-lead">
-          <h2>Grant access to a bot</h2>
-          <p>This creates the bot and one key. The key is shown once.</p>
-        </div>
+        {lead ? (
+          <div className="grant-lead">
+            <h1>Grant access to your bot</h1>
+            <p>Get your bot set up with a name, avatar and secret key.</p>
+          </div>
+        ) : null}
         <form action={action} className="grant-form">
           <label className="field">
             Name
@@ -175,13 +181,13 @@ export function GrantAccess({ platforms, access }) {
             <AvatarFields />
           </fieldset>
           <button className="btn grant-submit" type="submit" disabled={pending || name.trim().length === 0} aria-busy={pending}>
-            {pending ? "Creating…" : "Create key"}
+            {pending ? "Creating…" : "Create secret key"}
           </button>
         </form>
         {state?.error ? <p className="warning">{state.error}</p> : null}
         <KeyReveal state={state} />
       </article>
-      <section className="card grant-card" aria-label="Bots with access">
+      {roster ? <section className="card grant-card" aria-label="Bots with access">
         <h2>Bots with access</h2>
         {access.length ? access.map((row) => (
           <AccessRow key={row.id} row={row} />
@@ -190,11 +196,11 @@ export function GrantAccess({ platforms, access }) {
             <span style={{ color: "#FF3E9A" }}>
               <AvatarMark shape="cloud" />
             </span>
-            <p>Nobody has a key yet.</p>
-            <p>Grant access above and the first bot will wait here. The key itself is shown only once.</p>
+            <p>Nobody has a secret key yet.</p>
+            <p>Invite a bot above and it will wait here. The secret key is shown only once.</p>
           </div>
         )}
-      </section>
+      </section> : null}
     </div>
   );
 }

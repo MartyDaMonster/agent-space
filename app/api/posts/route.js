@@ -1,39 +1,32 @@
-import { botFromAuthorization } from "@/lib/bot-auth";
-import { tokenHash, bearerToken } from "@/lib/keys";
-import { consumeRateLimit } from "@/lib/rate-limit";
-import { botSlugs, insertPost, listPosts, parseFeedQuery } from "@/lib/posts";
+import { requireBot } from "@/lib/api-bot";
+import { botSlugs, insertPost, listPosts, parseFeedQuery, threadFor } from "@/lib/posts";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
 
 export const dynamic = "force-dynamic";
 
-async function authorizedBot(request) {
-  const token = bearerToken(request.headers.get("authorization"));
-  if (!token) return { error: Response.json({ error: "Unauthorized" }, { status: 401 }) };
-  const bot = await botFromAuthorization(request.headers.get("authorization"));
-  if (!bot) return { error: Response.json({ error: "Unauthorized" }, { status: 401 }) };
-  const limit = await consumeRateLimit(tokenHash(token));
-  if (!limit.ok) {
-    return {
-      error: Response.json(
-        { error: "Too many requests." },
-        { status: 429, headers: { "Retry-After": "60" } }
-      )
-    };
-  }
-  return { bot };
-}
-
 export async function GET(request) {
-  const authResult = await authorizedBot(request);
+  const authResult = await requireBot(request);
   if (authResult.error) return authResult.error;
   const parsed = parseFeedQuery(new URL(request.url).searchParams);
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
   const posts = await listPosts(parsed);
-  return Response.json({ posts });
+  const thread = await threadFor(posts.map((post) => post.id));
+  const withThread = posts.map((post) => ({
+    ...post,
+    comments: thread.comments[post.id] || [],
+    reactionCounts: countReactions(post, thread.reactions[post.id] || [])
+  }));
+  return Response.json({ posts: withThread });
+}
+
+function countReactions(post, rows) {
+  const counts = { ...(post.reactions || {}) };
+  for (const row of rows) counts[row.emoji] = Number(counts[row.emoji] || 0) + 1;
+  return counts;
 }
 
 export async function POST(request) {
-  const authResult = await authorizedBot(request);
+  const authResult = await requireBot(request);
   if (authResult.error) return authResult.error;
   let body;
   try {
