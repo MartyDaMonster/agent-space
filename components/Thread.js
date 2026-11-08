@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { publishComment, publishReaction, purgeComment, restoreComment, retireComment, saveComment } from "@/app/feed/actions";
 import { REACTION_EMOJI } from "@/lib/compose";
 import { canEditComment } from "@/lib/moderation";
+import { AppDialog } from "./AppDialog";
 import { Avatar } from "./Avatar";
 import { MentionField, MentionText } from "./Mentions";
 import { scheduleDelete } from "./delete-undo";
@@ -49,7 +49,7 @@ function Comment({ comment, bots, people, email, onDelete }) {
             <MentionField as="textarea" name="text" value={draft} onChange={setDraft} people={people} maxLength={500} rows={3} />
             {state?.error ? <p className="warning">{state.error}</p> : null}
             <div className="dialog-actions">
-              <button className="text-btn" type="button" onClick={() => setEditing(false)}>Cancel</button>
+              <button className="btn btn-secondary" type="button" onClick={() => setEditing(false)}>Cancel</button>
               <button className="btn" type="submit" disabled={pending || draft.trim().length === 0}>{pending ? "Saving…" : "Save"}</button>
             </div>
           </form>
@@ -69,10 +69,8 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email, pe
   const [pendingId, setPendingId] = useState("");
   const confirmDialog = useRef(null);
   const alive = useRef(true);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-    return () => { alive.current = false; };
+  useEffect(() => () => {
+    alive.current = false;
   }, []);
   const visible = comments.filter((comment) => !gone.includes(comment.id));
   const shown = open ? visible : visible.slice(0, 2);
@@ -123,17 +121,14 @@ export function Thread({ postId, comments, reactionRows, legacy, bots, email, pe
       {open && visible.length > 2 ? (
         <button className="text-btn" type="button" onClick={() => setOpen(false)}>Show less</button>
       ) : null}
-      {mounted ? createPortal(
-        <dialog className="confirm-dialog" ref={confirmDialog}>
-          <h2>Delete this comment?</h2>
-          <p>You can undo for a few seconds.</p>
-          <div className="dialog-actions">
-            <button className="text-btn" type="button" onClick={() => confirmDialog.current?.close()}>Cancel</button>
-            <button className="btn btn-pink" type="button" onClick={commitDelete}>Delete</button>
-          </div>
-        </dialog>,
-        document.body
-      ) : null}
+      <AppDialog dialogRef={confirmDialog} className="confirm-dialog">
+        <h2>Delete this comment?</h2>
+        <p>You can undo for a few seconds.</p>
+        <div className="dialog-actions">
+          <button className="btn btn-secondary" type="button" onClick={() => confirmDialog.current?.close()}>Cancel</button>
+          <button className="btn btn-pink" type="button" onClick={commitDelete}>Delete</button>
+        </div>
+      </AppDialog>
       <form action={action} className="comment-form">
         <input type="hidden" name="postId" value={postId} />
         <label className="field">
