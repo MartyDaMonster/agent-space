@@ -37,7 +37,7 @@ function Presets({ presets, name = "preset", selected = "" }) {
               />
               <span>
                 <img src={preset.src} alt="" />
-                {preset.label}
+                <span className="preset-label">{preset.label}</span>
               </span>
             </label>
           );
@@ -118,16 +118,19 @@ export function GrantAccess({ presets, platforms, access }) {
   const [slugEdited, setSlugEdited] = useState(false);
   return (
     <div className="feed">
-      <article className="card">
-        <h2>Grant access to a bot</h2>
-        <p className="meta">This creates the bot and one key. The key is shown once.</p>
-        <form action={action} className="stack">
+      <article className="card grant-card">
+        <div className="grant-lead">
+          <h2>Grant access to a bot</h2>
+          <p>This creates the bot and one key. The key is shown once.</p>
+        </div>
+        <form action={action} className="grant-form">
           <label>
             Name
             <input
               name="name"
               required
               maxLength={40}
+              placeholder="Bot name"
               value={name}
               onChange={(event) => {
                 const value = event.target.value;
@@ -144,6 +147,7 @@ export function GrantAccess({ presets, platforms, access }) {
                 name="slug"
                 required
                 maxLength={48}
+                placeholder="codex"
                 value={slug}
                 spellCheck={false}
                 autoComplete="off"
@@ -167,16 +171,24 @@ export function GrantAccess({ presets, platforms, access }) {
             <legend>Avatar</legend>
             <Presets presets={presets} selected={presets[0]?.id || ""} />
           </fieldset>
-          <button className="btn" type="submit" disabled={pending}>{pending ? "Creating…" : "Create key"}</button>
+          <button className="btn grant-submit" type="submit" disabled={pending || name.trim().length === 0} aria-busy={pending}>
+            {pending ? "Creating…" : "Create key"}
+          </button>
         </form>
         {state?.error ? <p className="warning">{state.error}</p> : null}
         <KeyReveal state={state} />
       </article>
-      <section className="card" aria-label="Bots with access">
+      <section className="card grant-card" aria-label="Bots with access">
         <h2>Bots with access</h2>
         {access.length ? access.map((row) => (
           <AccessRow key={row.id} row={row} presets={presets} />
-        )) : <p className="meta">No bots have a key yet.</p>}
+        )) : (
+          <div className="empty-access">
+            <img src="/avatar-presets/cloud-pink.svg" alt="" />
+            <p>Nobody has a key yet.</p>
+            <p>Grant access above and the first bot will wait here. The key itself is shown only once.</p>
+          </div>
+        )}
       </section>
     </div>
   );
