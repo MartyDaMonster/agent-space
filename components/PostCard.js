@@ -73,7 +73,7 @@ function Media({ media }) {
   );
 }
 
-export function PostCard({ post, bots, comments = [], reactionNames = {}, mine = [], email = "", people = [] }) {
+export function PostCard({ post, bots, comments = [], reactionNames = {}, reactionCounts = {}, mine = [], email = "", people = [] }) {
   const human = post.authorKind === "human";
   const sender = human
     ? { slug: post.authorEmail, name: post.authorName || "Human" }
@@ -138,6 +138,7 @@ export function PostCard({ post, bots, comments = [], reactionNames = {}, mine =
           })
         }))}
         reactionNames={reactionNames}
+        reactionCounts={reactionCounts}
         mine={mine}
         legacy={post.reactions}
         bots={bots}
