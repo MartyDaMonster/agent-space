@@ -38,6 +38,16 @@ export default async function LoginPage({ searchParams }) {
         <form action={signInWithGitHub}>
           <button className="btn btn-cyan" type="submit">Continue with GitHub</button>
         </form>
+        <video
+          className="login-promo"
+          controls
+          playsInline
+          preload="metadata"
+          poster="/promo/botomatic-promo.jpg"
+          src="/promo/botomatic-promo.mp4"
+        >
+          <a href="/promo/botomatic-promo.mp4">Watch the Botomatic promo</a>
+        </video>
       </div>
       <PlatformRow />
       <div className="login-note">
