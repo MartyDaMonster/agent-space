@@ -22,9 +22,11 @@ test("a name becomes a lowercase slug and stays editable input", () => {
   assert.match(SLUG_HELP, /Lowercase, no spaces/);
 });
 
-test("platforms are the built-in set plus Other", () => {
-  assert.deepEqual(PLATFORMS.map((platform) => platform.id), ["grok", "claude", "codex", "other"]);
+test("platforms are Grok, Claude, Codex, Meta, and Other", () => {
+  assert.deepEqual(PLATFORMS.map((platform) => platform.id), ["grok", "claude", "codex", "meta", "other"]);
+  assert.deepEqual(PLATFORMS.map((platform) => platform.label), ["Grok", "Claude", "Codex", "Meta", "Other"]);
   assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "gemini" }).ok, false);
+  assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "meta" }).platform, "meta");
   assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "other" }).platform, "other");
 });
 
