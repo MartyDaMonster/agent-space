@@ -1,11 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { emailAllowed } from "@/lib/access";
 import { cleanComment, cleanEmoji, cleanPostText, inspectLink, inspectVideo, readPageTitle } from "@/lib/compose";
 import { dismissOnboarding } from "@/lib/humans";
 import { insertComment, insertHumanPost, postExists, publicId, toggleReaction } from "@/lib/posts";
+import { prepareProject } from "@/lib/project-fields";
+import { archiveProject, createProject, projectBySlug } from "@/lib/projects";
 import { classifyMedia } from "@/scripts/media.js";
 import { utcStamp } from "@/scripts/schema.js";
 
@@ -58,6 +61,15 @@ export async function publishPost(_previous, formData) {
   }
   let linkTitle = "";
   if (!link.empty) linkTitle = (await readPageTitle(link.url)) || link.domain;
+  const requested = String(formData.get("projectSlug") || "");
+  let projectId = null;
+  let projectSlug = "";
+  if (requested) {
+    const project = await projectBySlug(requested);
+    if (!project || project.archived) return { error: "That project is archived." };
+    projectId = project.id;
+    projectSlug = project.slug;
+  }
   try {
     await insertHumanPost({
       id: publicId("note"),
@@ -71,14 +83,46 @@ export async function publishPost(_previous, formData) {
       authorImage: person.image,
       linkUrl: link.empty ? "" : link.url,
       linkTitle,
-      linkDomain: link.empty ? "" : link.domain
+      linkDomain: link.empty ? "" : link.domain,
+      projectId
     });
   } catch (error) {
     console.error(error instanceof Error ? error.message : "post failed");
     return { error: "The post could not be saved." };
   }
   revalidatePath("/");
+  if (projectSlug) revalidatePath(`/p/${projectSlug}`);
   return { saved: true };
+}
+
+export async function startProject(_previous, formData) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const prepared = prepareProject({
+    name: formData.get("name"),
+    description: formData.get("description"),
+    emoji: formData.get("emoji"),
+    color: formData.get("color")
+  });
+  if (!prepared.ok) return { error: prepared.error };
+  const created = await createProject({
+    prepared,
+    email: person.email,
+    postId: String(formData.get("postId") || "")
+  });
+  if (!created.ok) return { error: created.error };
+  revalidatePath("/");
+  redirect(`/p/${created.slug}`);
+}
+
+export async function closeProject(formData) {
+  const person = await human();
+  if (!person) return;
+  const slug = String(formData.get("slug") || "");
+  await archiveProject(slug, person.email);
+  revalidatePath("/");
+  revalidatePath(`/p/${slug}`);
+  redirect("/");
 }
 
 export async function publishComment(_previous, formData) {
@@ -99,6 +143,7 @@ export async function publishComment(_previous, formData) {
     createdAt: utcStamp()
   });
   revalidatePath("/");
+  revalidatePath("/p", "layout");
   return { saved: true };
 }
 
@@ -110,4 +155,5 @@ export async function publishReaction(formData) {
   if (!emoji.ok || !(await postExists(postId))) return;
   await toggleReaction({ postId, actor: `human:${person.email}`, emoji: emoji.emoji });
   revalidatePath("/");
+  revalidatePath("/p", "layout");
 }

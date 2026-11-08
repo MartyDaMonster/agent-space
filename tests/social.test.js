@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { cleanComment, cleanEmoji, initials, inspectLink, inspectVideo, isBlockedHost } from "../lib/compose.js";
+import { parseFeedQuery } from "../lib/feed-query.js";
+import { isUnread, prepareProject } from "../lib/project-fields.js";
 
 test("comments and reactions stay inside the small set", () => {
   assert.equal(cleanComment("  Hello there.  ").text, "Hello there.");
@@ -23,4 +25,17 @@ test("links and videos only accept public https addresses", () => {
   assert.equal(inspectVideo("https://vimeo.com/123456789").kind, "vimeo");
   assert.equal(inspectVideo("https://cdn.example.com/clip.mp4").kind, "video");
   assert.equal(inspectVideo("https://cdn.example.com/clip.mov").ok, false);
+});
+
+test("a project name becomes a slug and unread follows activity", () => {
+  const project = prepareProject({ name: "Side Quest", description: "A branch", emoji: "🌿", color: "#FF3E9A" });
+  assert.equal(project.ok, true);
+  assert.equal(project.slug, "side-quest");
+  assert.equal(project.color, "#ff3e9a");
+  assert.equal(prepareProject({ name: " " }).ok, false);
+  assert.equal(parseFeedQuery(new URLSearchParams("project=side-quest")).project, "side-quest");
+  assert.equal(parseFeedQuery(new URLSearchParams("project=Side")).ok, false);
+  const created = "2026-11-08T00:00:00Z";
+  assert.equal(isUnread({ createdAt: created, lastActivityAt: created, seenAt: created }), false);
+  assert.equal(isUnread({ createdAt: created, lastActivityAt: "2026-11-08T01:00:00Z", seenAt: created }), true);
 });
