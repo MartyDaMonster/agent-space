@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { previewLink, publishPost, saveEdit } from "@/app/feed/actions";
 import { inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
+import { LinkCards } from "./LinkCards";
 import { Person } from "./Person";
 import { toast } from "./Toaster";
 
@@ -243,17 +244,13 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
                     return;
                   }
                   const preview = await previewLink(event.target.value);
-                  if (preview?.url) setCard(preview);
+                  if (preview?.error) toast(preview.error, "error");
+                  setCard(preview?.url ? preview : null);
                 }}
               />
             </label>
           ) : null}
-          {card?.url ? (
-            <p className="link-card">
-              <strong>{card.title || card.domain}</strong>
-              <span>{card.domain}</span>
-            </p>
-          ) : null}
+          {card?.url ? <LinkCards links={[card]} /> : null}
           {formState?.error && !formState?.saved ? <p className="warning">{formState.error}</p> : null}
           <div className="dialog-actions">
             <button className="text-btn" type="button" onClick={() => dialog.current?.close()}>Cancel</button>

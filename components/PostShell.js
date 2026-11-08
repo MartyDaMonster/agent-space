@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { RichText } from "./LinkCards";
 import { PostMenu } from "./PostMenu";
 
 const ShellContext = createContext(null);
@@ -45,5 +46,5 @@ export function PostActions() {
 
 export function PostText({ text }) {
   const shell = useContext(ShellContext);
-  return <p className="post-text">{shell?.draft ?? text}</p>;
+  return <RichText className="post-text" text={shell?.draft ?? text} />;
 }

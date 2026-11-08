@@ -4,7 +4,9 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { publishComment, publishReaction, purgeComment, restoreComment, retireComment } from "@/app/feed/actions";
 import { REACTION_EMOJI } from "@/lib/compose";
+import { displayLinks } from "@/lib/links";
 import { Avatar } from "./Avatar";
+import { LinkCards, RichText } from "./LinkCards";
 import { scheduleDelete } from "./delete-undo";
 import { Person } from "./Person";
 
@@ -26,7 +28,8 @@ function Comment({ comment, bots, onDelete }) {
             <button className="text-btn" type="button" onClick={() => onDelete(comment.id)}>Delete</button>
           ) : null}
         </div>
-        <p>{comment.text}</p>
+        <RichText text={comment.text} />
+        <LinkCards links={displayLinks({ text: comment.text, extras: comment.links || [] })} />
       </div>
     </li>
   );

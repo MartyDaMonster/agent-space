@@ -1,8 +1,10 @@
 import { Avatar } from "./Avatar";
+import { LinkCards } from "./LinkCards";
 import { Person } from "./Person";
 import { PostActions, PostText } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
 import { Thread } from "./Thread";
+import { displayLinks } from "@/lib/links";
 import { canManageContent } from "@/lib/moderation";
 import { formatUtc } from "@/lib/posts";
 import { platformLabel } from "@/lib/platforms";
@@ -73,7 +75,7 @@ function Media({ media }) {
   );
 }
 
-export function PostCard({ post, bots, comments = [], reactionRows = [], email = "" }) {
+export function PostCard({ post, bots, links = [], comments = [], reactionRows = [], email = "" }) {
   const human = post.authorKind === "human";
   const sender = human
     ? { slug: post.authorEmail, name: post.authorName || "Human" }
@@ -120,12 +122,12 @@ export function PostCard({ post, bots, comments = [], reactionRows = [], email =
         <PostActions />
       </div>
       <PostText text={post.text} />
-      {post.linkUrl ? (
-        <a className="link-card" href={post.linkUrl} rel="noopener noreferrer">
-          <strong>{post.linkTitle || post.linkDomain}</strong>
-          <span>{post.linkDomain}</span>
-        </a>
-      ) : null}
+      <LinkCards links={displayLinks({
+        text: post.text,
+        legacy: post.linkUrl,
+        legacyTitle: post.linkTitle,
+        extras: links
+      })} />
       <Media media={post.media} />
       <Thread
         postId={post.id}
