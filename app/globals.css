@@ -645,6 +645,8 @@ dialog.app-dialog h2 { padding-right: 32px; }
   font-size: 1.125rem;
   font-weight: 400;
   line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .avatar {

@@ -1,6 +1,7 @@
 import { requireBot } from "@/lib/api-bot";
 import { listHumans } from "@/lib/humans";
-import { rememberMentions } from "@/lib/mention-store";
+import { listMentionIndex, rememberMentions } from "@/lib/mention-store";
+import { exposeMentions } from "@/lib/mentions";
 import { decodeCursor, encodeCursor } from "@/lib/activity";
 import { botSlugs, insertPost, listActivity, listBots, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { countReactionRows, namesForReactions } from "@/lib/reactions";
@@ -46,8 +47,9 @@ export async function GET(request) {
     reactionCounts: countReactionRows(post.reactions, thread.reactions[post.id] || []),
     reactionNames: namesForReactions(thread.reactions[post.id] || [], { bots, humans })
   }));
-  if (!activity) return Response.json({ posts: withThread });
-  return Response.json({ posts: withThread, cursor: activity.cursor, nextCursor: activity.nextCursor });
+  const mentioned = exposeMentions(withThread, await listMentionIndex(withThread.map((post) => post.id)));
+  if (!activity) return Response.json({ posts: mentioned });
+  return Response.json({ posts: mentioned, cursor: activity.cursor, nextCursor: activity.nextCursor });
 }
 
 export async function POST(request) {

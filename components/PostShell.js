@@ -45,7 +45,8 @@ export function PostActions() {
   );
 }
 
-export function PostText({ text }) {
+export function PostText({ text, people = [] }) {
   const shell = useContext(ShellContext);
-  return <MentionText className="post-text" text={shell?.draft ?? text} people={shell?.people || []} />;
+  const directory = shell?.people?.length ? shell.people : people;
+  return <MentionText className="post-text" text={shell?.draft ?? text} people={directory} />;
 }
