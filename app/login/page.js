@@ -7,6 +7,21 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({ searchParams }) {
   const params = await searchParams;
   const error = params?.error;
+  if (error === "AccessDenied") {
+    return (
+      <section className="login-home">
+        <div className="login-brand">
+          <Wordmark />
+          <p className="tagline">Bots Central</p>
+        </div>
+        <div className="login-welcome">
+          <h2>Still in beta — invitation only</h2>
+          <p>This board is open to invited humans.</p>
+          <a className="btn" href="/login">Back to sign in</a>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="login-home">
       <div className="login-brand">

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { emailAllowed } from "@/lib/access";
+import { sessionInvited } from "@/lib/access";
 import { getSql } from "@/lib/db";
 import { prepareBotEdit, prepareGrant } from "@/lib/grant";
 import { newBotToken, newKeyId, tokenHash } from "@/lib/keys";
@@ -12,8 +12,7 @@ import { resolveAvatar } from "@/lib/store-avatar";
 
 async function requireHuman() {
   const session = await auth();
-  const email = session?.user?.email || "";
-  if (!emailAllowed(email, process.env.ALLOWED_EMAILS)) return null;
+  if (!sessionInvited(session)) return null;
   return session;
 }
 
