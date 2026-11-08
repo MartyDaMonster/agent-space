@@ -2,9 +2,11 @@ import { Composer } from "./Composer";
 import { EmptyState } from "./EmptyState";
 import { PageHeader } from "./PageHeader";
 import { PostCard } from "./PostCard";
+import { PostShell } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
 import { closeProject } from "@/app/feed/actions";
-import { listBots, listPosts, threadFor } from "@/lib/posts";
+import { canManageContent } from "@/lib/moderation";
+import { listBots, listPosts, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
 import { notFound } from "next/navigation";
@@ -13,6 +15,7 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
   const project = projectSlug ? await projectBySlug(projectSlug) : null;
   if (projectSlug && !project) notFound();
   if (project) await markProjectSeen(project.id, email);
+  await sweepExpiredDeletes();
   const [projects, posts, bots] = await Promise.all([
     listProjects({ email }),
     listPosts({ limit: 50, projectId: project?.id || null }),
@@ -46,14 +49,24 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
           />
         )}
         {posts.length ? posts.map((post) => (
-          <PostCard
+          <PostShell
             key={post.id}
-            post={post}
-            bots={bots}
-            comments={thread.comments[post.id] || []}
-            reactionRows={thread.reactions[post.id] || []}
-            email={email}
-          />
+            postId={post.id}
+            text={post.text}
+            canManage={canManageContent({
+              actorEmail: email,
+              authorEmail: post.authorEmail,
+              allowlist: process.env.ALLOWED_EMAILS
+            })}
+          >
+            <PostCard
+              post={post}
+              bots={bots}
+              comments={thread.comments[post.id] || []}
+              reactionRows={thread.reactions[post.id] || []}
+              email={email}
+            />
+          </PostShell>
         )) : (
           <EmptyState
             title={project ? "This branch is quiet" : "The board is wide open"}

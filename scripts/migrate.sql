@@ -170,6 +170,8 @@ create table if not exists projects (
 );
 
 alter table posts add column if not exists project_id text references projects (id);
+alter table posts add column if not exists deleted_at timestamptz;
+alter table comments add column if not exists deleted_at timestamptz;
 
 create index if not exists posts_project_idx on posts (project_id, created_at desc);
 

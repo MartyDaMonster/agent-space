@@ -6,7 +6,23 @@ import { auth } from "@/auth";
 import { emailAllowed } from "@/lib/access";
 import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo, readPageTitle } from "@/lib/compose";
 import { dismissOnboarding } from "@/lib/humans";
-import { insertComment, insertHumanPost, postExists, publicId, toggleReaction } from "@/lib/posts";
+import { canManageContent } from "@/lib/moderation";
+import {
+  destroyComment,
+  destroyPost,
+  findComment,
+  findPost,
+  insertComment,
+  insertHumanPost,
+  markCommentDeleted,
+  markCommentRestored,
+  markPostDeleted,
+  markPostRestored,
+  postExists,
+  publicId,
+  toggleReaction,
+  updatePostText
+} from "@/lib/posts";
 import { prepareProject } from "@/lib/project-fields";
 import { archiveProject, createProject, projectBySlug } from "@/lib/projects";
 import { classifyMedia } from "@/scripts/media.js";
@@ -158,6 +174,97 @@ export async function publishComment(_previous, formData) {
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true };
+}
+
+function manages(person, authorEmail) {
+  return canManageContent({
+    actorEmail: person.email,
+    authorEmail,
+    allowlist: process.env.ALLOWED_EMAILS
+  });
+}
+
+export async function retirePost(postId) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const post = await findPost(String(postId || ""));
+  if (!post || post.deleted_at) return { error: "That post is gone." };
+  if (!manages(person, post.author_email)) return { error: "You can't delete that post." };
+  await markPostDeleted(post.id);
+  return { ok: true };
+}
+
+export async function restorePost(postId) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const post = await findPost(String(postId || ""));
+  if (!post) return { error: "That post is gone." };
+  if (!manages(person, post.author_email)) return { error: "You can't restore that post." };
+  await markPostRestored(post.id);
+  revalidatePath("/");
+  revalidatePath("/p", "layout");
+  return { ok: true };
+}
+
+export async function purgePost(postId) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const post = await findPost(String(postId || ""));
+  if (!post) return { ok: true };
+  if (!manages(person, post.author_email)) return { error: "You can't delete that post." };
+  await destroyPost(post.id);
+  revalidatePath("/");
+  revalidatePath("/p", "layout");
+  return { ok: true };
+}
+
+export async function revisePost(postId, text) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const post = await findPost(String(postId || ""));
+  if (!post || post.deleted_at) return { error: "That post is gone." };
+  if (!manages(person, post.author_email)) return { error: "You can't edit that post." };
+  const clean = cleanPostText(text);
+  if (!clean.ok) return { error: clean.error };
+  const saved = await updatePostText(post.id, clean.text);
+  if (!saved) return { error: "That post is gone." };
+  revalidatePath("/");
+  revalidatePath("/p", "layout");
+  return { text: clean.text };
+}
+
+export async function retireComment(commentId) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const comment = await findComment(String(commentId || ""));
+  if (!comment || comment.deleted_at) return { error: "That comment is gone." };
+  if (!manages(person, comment.author_email)) return { error: "You can't delete that comment." };
+  await markCommentDeleted(comment.id);
+  return { ok: true };
+}
+
+export async function restoreComment(commentId) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const comment = await findComment(String(commentId || ""));
+  if (!comment) return { error: "That comment is gone." };
+  if (!manages(person, comment.author_email)) return { error: "You can't restore that comment." };
+  await markCommentRestored(comment.id);
+  revalidatePath("/");
+  revalidatePath("/p", "layout");
+  return { ok: true };
+}
+
+export async function purgeComment(commentId) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const comment = await findComment(String(commentId || ""));
+  if (!comment) return { ok: true };
+  if (!manages(person, comment.author_email)) return { error: "You can't delete that comment." };
+  await destroyComment(comment.id);
+  revalidatePath("/");
+  revalidatePath("/p", "layout");
+  return { ok: true };
 }
 
 export async function publishReaction(formData) {
