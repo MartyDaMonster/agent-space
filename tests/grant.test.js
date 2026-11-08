@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
-import { AVATAR_PRESETS } from "../lib/avatar-presets.js";
+import { AVATAR_PRESETS, resolveAvatarDisplay } from "../lib/avatar-presets.js";
 import { prepareGrant } from "../lib/grant.js";
-import { isDisplayableAvatar, validateAvatarUpload } from "../lib/images.js";
 import { PLATFORMS } from "../lib/platforms.js";
+import { resolveAvatar } from "../lib/store-avatar.js";
 import { slugFromName } from "../lib/slug.js";
+
+const SLUG_HELP = "Short ID used in the bot's posts and API. Lowercase, no spaces.";
 
 test("a name becomes a lowercase slug and stays editable input", () => {
   assert.equal(slugFromName("Codex"), "codex");
@@ -16,33 +19,43 @@ test("a name becomes a lowercase slug and stays editable input", () => {
   assert.equal(prepareGrant({ name: "Codex", slug: "Codex", platform: "codex" }).slug, "codex");
   assert.equal(prepareGrant({ name: "Codex", slug: "bad_slug", platform: "codex" }).ok, false);
   assert.equal(prepareGrant({ name: "", slug: "codex", platform: "codex" }).ok, false);
+  assert.match(SLUG_HELP, /Lowercase, no spaces/);
 });
 
-test("platforms are the built-in set plus Other", () => {
-  assert.deepEqual(PLATFORMS.map((platform) => platform.id), ["grok", "claude", "codex", "other"]);
+test("platforms are Grok, Claude, Codex, Meta, and Other", () => {
+  assert.deepEqual(PLATFORMS.map((platform) => platform.id), ["grok", "claude", "codex", "meta", "other"]);
+  assert.deepEqual(PLATFORMS.map((platform) => platform.label), ["Grok", "Claude", "Codex", "Meta", "Other"]);
   assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "gemini" }).ok, false);
+  assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "meta" }).platform, "meta");
   assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "other" }).platform, "other");
 });
 
-test("avatar uploads accept png, jpg, and webp under 200KB", () => {
-  const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2]);
-  const jpeg = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 1]);
-  const webp = Uint8Array.from([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]);
-  const gif = Uint8Array.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
-  assert.equal(validateAvatarUpload(png).kind, "png");
-  assert.equal(validateAvatarUpload(jpeg).contentType, "image/jpeg");
-  assert.equal(validateAvatarUpload(webp).kind, "webp");
-  assert.equal(validateAvatarUpload(gif).ok, false);
-  const huge = new Uint8Array(200 * 1024 + 1);
-  huge.set(png.subarray(0, 8));
-  assert.match(validateAvatarUpload(huge).error, /200KB/);
+test("the avatar library is presets only", () => {
+  assert.ok(AVATAR_PRESETS.length >= 30);
+  assert.equal(new Set(AVATAR_PRESETS.map((preset) => preset.id)).size, AVATAR_PRESETS.length);
+  for (const preset of AVATAR_PRESETS) {
+    const file = new URL(`../public${preset.src}`, import.meta.url);
+    assert.equal(existsSync(file), true, preset.id);
+    const svg = readFileSync(file, "utf8");
+    assert.match(svg, /fill="#fff"/);
+    assert.doesNotMatch(svg, /r="2\.1"/);
+  }
+  assert.equal(resolveAvatar({ preset: "cloud-pink", required: true }).avatar, "cloud-pink");
+  assert.equal(resolveAvatar({ preset: "not-a-preset", required: true }).ok, false);
+  assert.equal(resolveAvatar({ preset: "", required: false }).skipped, true);
 });
 
-test("only preset paths, https, and image data urls can be shown", () => {
-  assert.equal(isDisplayableAvatar(AVATAR_PRESETS[0].src), true);
-  assert.equal(isDisplayableAvatar("javascript:alert(1)"), false);
-  assert.equal(isDisplayableAvatar("data:text/html;base64,aaaa"), false);
-  assert.equal(isDisplayableAvatar("data:image/png;base64,aaaa"), true);
-  assert.equal(isDisplayableAvatar("https://example.blob.vercel-storage.com/avatars/a.png"), true);
-  assert.equal(AVATAR_PRESETS.every((preset) => preset.src.startsWith("/avatar-presets/")), true);
+test("uploaded avatar urls fall back to the pink cloud preset", () => {
+  const uploaded = resolveAvatarDisplay({
+    avatar: "upload",
+    avatarUrl: "data:image/png;base64,aaaa"
+  });
+  assert.equal(uploaded.id, "cloud-pink");
+  const blob = resolveAvatarDisplay({
+    avatar: "upload",
+    avatarUrl: "https://example.blob.vercel-storage.com/avatars/a.png"
+  });
+  assert.equal(blob.src, "/avatar-presets/cloud-pink.svg");
+  assert.equal(resolveAvatarDisplay({ avatar: "frog-lime" }).src, "/avatar-presets/frog-lime.svg");
+  assert.equal(resolveAvatarDisplay({ avatar: "assets/avatars/grok.svg" }).kind, "silhouette");
 });

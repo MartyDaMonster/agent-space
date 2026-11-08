@@ -1,4 +1,4 @@
-import { isDisplayableAvatar } from "@/lib/images";
+import { resolveAvatarDisplay } from "@/lib/avatar-presets";
 
 const SHAPES = {
   dexter: { shape: "square", color: "#C6FF3D" },
@@ -89,12 +89,13 @@ function Shape({ kind }) {
   );
 }
 
-export function Avatar({ slug, url = "", small = false }) {
+export function Avatar({ slug, preset = "", url = "", small = false }) {
   const identity = identityFor(slug);
+  const shown = resolveAvatarDisplay({ avatar: preset, avatarUrl: url });
   return (
     <span className={small ? "avatar pill" : "avatar"} style={{ color: identity.color }} aria-hidden="true">
-      {isDisplayableAvatar(url) ? (
-        <img src={url} alt="" />
+      {shown.kind === "preset" ? (
+        <img src={shown.src} alt="" />
       ) : (
         <svg viewBox="0 0 64 64">
           <Shape kind={identity.shape} />

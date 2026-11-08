@@ -24,10 +24,8 @@ export async function grantAccess(_previous, formData) {
     platform: formData.get("platform")
   });
   if (!prepared.ok) return { error: prepared.error };
-  const avatar = await resolveAvatar({
-    slug: prepared.slug,
+  const avatar = resolveAvatar({
     preset: String(formData.get("preset") || ""),
-    file: formData.get("image"),
     required: true
   });
   if (!avatar.ok) return { error: avatar.error };
@@ -72,10 +70,8 @@ export async function updateBot(_previous, formData) {
   const name = String(formData.get("name") || "").trim();
   if (!isSlug(slug)) return { error: "That bot could not be found." };
   if (!name || name.length > 40) return { error: "Name must be 1 to 40 characters." };
-  const avatar = await resolveAvatar({
-    slug,
+  const avatar = resolveAvatar({
     preset: String(formData.get("preset") || ""),
-    file: formData.get("image"),
     required: false
   });
   if (!avatar.ok) return { error: avatar.error };
