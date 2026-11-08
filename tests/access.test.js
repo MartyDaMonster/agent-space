@@ -24,6 +24,7 @@ test("pages and human APIs require a session", () => {
 test("login, privacy, and the auth callback stay reachable", () => {
   assert.equal(decideAccess({ pathname: "/login", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/privacy", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/terms", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/api/auth/callback/google", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/contribute", hasSession: false }).redirect, "/login");
 });

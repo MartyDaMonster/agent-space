@@ -1,4 +1,6 @@
 import { Composer } from "./Composer";
+import { EmptyState } from "./EmptyState";
+import { PageHeader } from "./PageHeader";
 import { PostCard } from "./PostCard";
 import { ProjectDialog } from "./ProjectDialog";
 import { closeProject } from "@/app/feed/actions";
@@ -7,7 +9,7 @@ import { isUnread } from "@/lib/project-fields";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
 import { notFound } from "next/navigation";
 
-export async function FeedBoard({ email, projectSlug = "" }) {
+export async function FeedBoard({ email, name = "", image = "", projectSlug = "" }) {
   const project = projectSlug ? await projectBySlug(projectSlug) : null;
   if (projectSlug && !project) notFound();
   if (project) await markProjectSeen(project.id, email);
@@ -19,27 +21,12 @@ export async function FeedBoard({ email, projectSlug = "" }) {
   const thread = await threadFor(posts.map((post) => post.id));
   const fresh = projects.map((item) => ({ ...item, unread: item.slug === projectSlug ? false : isUnread(item) }));
   return (
-    <div className="board-shell">
-      <nav className="project-switch" aria-label="Projects">
-        <a href="/" aria-current={project ? undefined : "page"}>
-          All
-          {fresh.some((item) => item.unread) ? <span className="activity-dot" aria-label="New activity" /> : null}
-        </a>
-        {fresh.map((item) => (
-          <a key={item.id} href={`/p/${item.slug}`} aria-current={item.slug === projectSlug ? "page" : undefined}>
-            <span>{item.emoji ? `${item.emoji} ` : ""}{item.name}</span>
-            {item.unread ? <span className="activity-dot" aria-label="New activity" /> : null}
-          </a>
-        ))}
-      </nav>
-      <section className="feed" aria-label={project ? project.name : "Feed"}>
+    <section className="feed" aria-label={project ? project.name : "Feed"}>
         {project ? (
-          <header className="project-banner card">
-            <div>
-              <h1>{project.emoji ? `${project.emoji} ` : ""}{project.name}</h1>
-              {project.description ? <p>{project.description}</p> : null}
-              {project.archived ? <p className="meta">This project is archived.</p> : null}
-            </div>
+          <header className="page-header">
+            <h1>{project.emoji ? `${project.emoji} ` : ""}{project.name}</h1>
+            {project.description ? <p>{project.description}</p> : null}
+            {project.archived ? <p>This project is archived.</p> : null}
             {!project.archived && project.createdBy === email ? (
               <form action={closeProject}>
                 <input type="hidden" name="slug" value={project.slug} />
@@ -48,11 +35,16 @@ export async function FeedBoard({ email, projectSlug = "" }) {
             ) : null}
           </header>
         ) : (
-          <div className="feed-tools">
-            <ProjectDialog />
-          </div>
+          <PageHeader title="Feed" lede="Everything on the board, including project branches." />
         )}
-        {project?.archived ? null : <Composer projectSlug={project?.slug || ""} />}
+        {project?.archived ? null : (
+          <Composer
+            name={name || email || "You"}
+            image={image}
+            projectSlug={project?.slug || ""}
+            projects={fresh.map((item) => ({ slug: item.slug, name: item.name, emoji: item.emoji }))}
+          />
+        )}
         {posts.length ? posts.map((post) => (
           <PostCard
             key={post.id}
@@ -63,12 +55,12 @@ export async function FeedBoard({ email, projectSlug = "" }) {
             email={email}
           />
         )) : (
-          <article className="state-box">
-            <h2>{project ? "This branch is quiet" : "The board is wide open"}</h2>
-            <p>{project ? "The first note in this project will land here." : "Nothing here yet. The first note will feel like a party."}</p>
-          </article>
+          <EmptyState
+            title={project ? "This branch is quiet" : "The board is wide open"}
+            body={project ? "The first note in this project will land here." : "Nothing here yet. The first note will feel like a party."}
+            action={project ? null : <ProjectDialog />}
+          />
         )}
-      </section>
-    </div>
+    </section>
   );
 }

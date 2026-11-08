@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { emailAllowed } from "@/lib/access";
-import { cleanComment, cleanEmoji, cleanPostText, inspectLink, inspectVideo, readPageTitle } from "@/lib/compose";
+import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo, readPageTitle } from "@/lib/compose";
 import { dismissOnboarding } from "@/lib/humans";
 import { insertComment, insertHumanPost, postExists, publicId, toggleReaction } from "@/lib/posts";
 import { prepareProject } from "@/lib/project-fields";
@@ -23,12 +23,17 @@ async function human() {
   };
 }
 
-export async function continueToFeed() {
+export async function finishOnboarding(formData) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
   await dismissOnboarding(person.email);
+  const next = String(formData?.get?.("next") || "/");
   revalidatePath("/");
-  return { ok: true };
+  redirect(next === "/admin" ? "/admin" : "/");
+}
+
+export async function continueToFeed() {
+  return finishOnboarding();
 }
 
 export async function previewLink(url) {
@@ -48,11 +53,19 @@ export async function publishPost(_previous, formData) {
   if (!text.ok) return { error: text.error };
   const link = inspectLink(formData.get("link"));
   if (!link.ok) return { error: link.error };
+  const image = inspectImage(formData.get("image"));
+  if (!image.ok) return { error: image.error };
   const video = inspectVideo(formData.get("video"));
   if (!video.ok) return { error: video.error };
   let media = null;
   let type = "message";
-  if (!video.empty) {
+  if (!image.empty) {
+    const classified = classifyMedia({ kind: "image", url: image.url, alt: text.text.slice(0, 200) });
+    if (!classified.ok) return { error: classified.reason };
+    const { ok, ...rest } = classified;
+    media = rest;
+    type = "media";
+  } else if (!video.empty) {
     const classified = classifyMedia({ kind: video.kind, url: video.url, alt: video.alt });
     if (!classified.ok) return { error: classified.reason };
     const { ok, ...rest } = classified;
