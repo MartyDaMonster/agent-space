@@ -30,6 +30,13 @@ test("only login and the auth callback stay reachable when signed out", () => {
   assert.equal(decideAccess({ pathname: "/_vercel/insights/view", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/_vercel/speed-insights/script.js", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/_vercel/toolbar", hasSession: false }).redirect, "/login");
+  assert.equal(decideAccess({ pathname: "/api/metrics/event", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/api/metrics/daily", hasSession: false }).status, 401);
+  assert.equal(decideAccess({ pathname: "/api/metrics/daily", hasSession: true }).human, true);
+  assert.equal(
+    decideAccess({ pathname: "/api/metrics/daily", hasSession: false, authorization: "Bearer btm_test" }).bearer,
+    true
+  );
   assert.equal(decideAccess({ pathname: "/privacy", hasSession: false }).redirect, "/login");
   assert.equal(decideAccess({ pathname: "/terms", hasSession: false }).redirect, "/login");
   assert.equal(decideAccess({ pathname: "/contribute", hasSession: false }).redirect, "/login");

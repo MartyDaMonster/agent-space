@@ -213,3 +213,13 @@ create table if not exists api_rate_limits (
   hits integer not null,
   primary key (key_hash, window_start)
 );
+
+create table if not exists page_metrics (
+  id bigint generated always as identity primary key,
+  event_type text not null,
+  created_at timestamptz not null,
+  visitor_hash text not null,
+  referrer text
+);
+
+create index if not exists page_metrics_created_at_idx on page_metrics (created_at);
