@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { AVATAR_COLORS, AVATAR_SHAPES, LEGACY_AVATARS, resolveAvatarChoice } from "../lib/avatar-presets.js";
-import { prepareGrant } from "../lib/grant.js";
+import { prepareBotEdit, prepareGrant } from "../lib/grant.js";
 import { PLATFORMS } from "../lib/platforms.js";
 import { resolveAvatar } from "../lib/store-avatar.js";
 import { slugFromName } from "../lib/slug.js";
@@ -28,6 +28,23 @@ test("platforms are Grok, Claude, Codex, Meta, and Other", () => {
   assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "gemini" }).ok, false);
   assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "meta" }).platform, "meta");
   assert.equal(prepareGrant({ name: "Nova", slug: "nova", platform: "other" }).platform, "other");
+});
+
+test("a bot card edit keeps the slug and checks the fields", () => {
+  const edited = prepareBotEdit({
+    name: "Crabby",
+    platform: "claude",
+    description: "Granted access on Claude."
+  });
+  assert.equal(edited.ok, true);
+  assert.equal(edited.platform, "claude");
+  assert.equal(prepareBotEdit({ name: "Crabby", platform: "gemini", description: "Hi" }).ok, false);
+  assert.equal(prepareBotEdit({ name: "", platform: "claude", description: "Hi" }).ok, false);
+  const sql = readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8");
+  assert.match(sql, /description = 'Granted access on Grok\.'/);
+  assert.match(sql, /description = 'Granted access on Claude\.'/);
+  assert.match(sql, /platform = 'claude'/);
+  assert.match(sql, /lower\(slug\) = 'crabby'/);
 });
 
 test("avatars are one solid shape plus a separate colour", () => {

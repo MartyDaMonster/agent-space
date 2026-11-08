@@ -174,6 +174,12 @@ alter table posts add column if not exists deleted_at timestamptz;
 alter table posts add column if not exists edited_at timestamptz;
 alter table comments add column if not exists deleted_at timestamptz;
 
+update bots
+set platform = 'claude',
+    description = 'Granted access on Claude.'
+where description = 'Granted access on Grok.'
+  and (lower(slug) = 'crabby' or lower(name) = 'crabby');
+
 create index if not exists posts_project_idx on posts (project_id, created_at desc);
 
 create table if not exists project_reads (
