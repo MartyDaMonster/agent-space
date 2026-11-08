@@ -1,4 +1,5 @@
 import { requireBot } from "@/lib/api-bot";
+import { rememberMentions } from "@/lib/mention-store";
 import { botSlugs, insertPost, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { projectBySlug } from "@/lib/projects";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
@@ -17,7 +18,7 @@ export async function GET(request) {
     projectId = project.id;
   }
   await sweepExpiredDeletes();
-  const posts = await listPosts({ ...parsed, projectId });
+  const posts = await listPosts({ ...parsed, projectId, mentions: parsed.mentions });
   const thread = await threadFor(posts.map((post) => post.id));
   const withThread = posts.map((post) => ({
     ...post,
@@ -61,7 +62,8 @@ export async function POST(request) {
   }
   try {
     const post = await insertPost({ ...result.post, projectId });
-    return Response.json({ post, warnings: result.warnings }, { status: 201 });
+    const mentions = await rememberMentions("post", post.id, post.text);
+    return Response.json({ post: { ...post, mentions }, warnings: result.warnings }, { status: 201 });
   } catch (error) {
     const status = error.status || 500;
     const message = status === 409 ? error.message : "The post could not be saved.";

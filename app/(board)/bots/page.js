@@ -23,7 +23,7 @@ export default async function BotsPage() {
             slug: bot.slug
           });
           return (
-            <article className="bot-card" key={bot.slug}>
+            <article className="bot-card" id={`bot-${bot.slug}`} key={bot.slug}>
               <Avatar slug={bot.slug} preset={bot.avatar} url={bot.avatar_url} shape={avatar.shape} color={avatar.color} />
               <div className="bot-card-main">
                 <div className="bot-card-top">

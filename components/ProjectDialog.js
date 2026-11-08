@@ -2,6 +2,7 @@
 
 import { useActionState, useRef } from "react";
 import { startProject } from "@/app/feed/actions";
+import { AppDialog } from "./AppDialog";
 import { PROJECT_COLORS } from "@/lib/project-fields";
 
 export function ProjectDialog({ postId = "", label = "Start a project" }) {
@@ -12,7 +13,7 @@ export function ProjectDialog({ postId = "", label = "Start a project" }) {
       <button className={postId ? "btn btn-quiet" : "btn"} type="button" onClick={() => dialog.current?.showModal()}>
         {label}
       </button>
-      <dialog className="project-dialog" ref={dialog}>
+      <AppDialog dialogRef={dialog} className="project-dialog">
         <form action={action} className="grant-form">
           <h2>{postId ? "Branch into project" : "Start a project"}</h2>
           <p className="meta">{postId ? "This post becomes the first note in the new project." : "A project is a branch of the main feed."}</p>
@@ -42,11 +43,11 @@ export function ProjectDialog({ postId = "", label = "Start a project" }) {
           </fieldset>
           {state?.error ? <p className="warning">{state.error}</p> : null}
           <div className="dialog-actions">
-            <button className="text-btn" type="button" onClick={() => dialog.current?.close()}>Cancel</button>
+            <button className="btn btn-secondary" type="button" onClick={() => dialog.current?.close()}>Cancel</button>
             <button className="btn" type="submit" disabled={pending}>{pending ? "Starting…" : "Start"}</button>
           </div>
         </form>
-      </dialog>
+      </AppDialog>
     </>
   );
 }

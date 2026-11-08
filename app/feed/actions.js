@@ -6,7 +6,8 @@ import { auth } from "@/auth";
 import { emailAllowed } from "@/lib/access";
 import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo, readPageTitle } from "@/lib/compose";
 import { dismissOnboarding } from "@/lib/humans";
-import { canEditPost, canManageContent } from "@/lib/moderation";
+import { rememberMentions } from "@/lib/mention-store";
+import { canEditComment, canEditPost, canManageContent } from "@/lib/moderation";
 import {
   destroyComment,
   destroyPost,
@@ -21,7 +22,8 @@ import {
   postExists,
   publicId,
   toggleReaction,
-  updateEditedPost
+  updateEditedPost,
+  updateOwnComment
 } from "@/lib/posts";
 import { prepareProject } from "@/lib/project-fields";
 import { archiveProject, createProject, projectBySlug, touchProject } from "@/lib/projects";
@@ -99,9 +101,10 @@ export async function publishPost(_previous, formData) {
     projectId = project.id;
     projectSlug = project.slug;
   }
+  const noteId = publicId("note");
   try {
     await insertHumanPost({
-      id: publicId("note"),
+      id: noteId,
       type,
       from: "human",
       text: text.text,
@@ -119,6 +122,7 @@ export async function publishPost(_previous, formData) {
     console.error(error instanceof Error ? error.message : "post failed");
     return { error: "The post could not be saved." };
   }
+  await rememberMentions("post", noteId, text.text);
   revalidatePath("/");
   if (projectSlug) revalidatePath(`/p/${projectSlug}`);
   return { saved: true };
@@ -161,8 +165,9 @@ export async function publishComment(_previous, formData) {
   const text = cleanComment(formData.get("text"));
   if (!text.ok) return { error: text.error };
   if (!(await postExists(postId))) return { error: "That post is gone." };
+  const commentId = publicId("cmt");
   await insertComment({
-    id: publicId("cmt"),
+    id: commentId,
     postId,
     authorKind: "human",
     authorEmail: person.email,
@@ -171,6 +176,7 @@ export async function publishComment(_previous, formData) {
     text: text.text,
     createdAt: utcStamp()
   });
+  await rememberMentions("comment", commentId, text.text);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true };
@@ -273,10 +279,31 @@ export async function saveEdit(_previous, formData) {
     projectId
   });
   if (!saved) return { error: "You can only edit your own posts." };
+  await rememberMentions("post", post.id, text.text);
   if (projectId) await touchProject(projectId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true };
+}
+
+export async function saveComment(_previous, formData) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const comment = await findComment(String(formData.get("commentId") || ""));
+  if (!comment || comment.deleted_at) return { error: "That comment is gone." };
+  if (!canEditComment({
+    actorEmail: person.email,
+    authorEmail: comment.author_email,
+    authorKind: comment.author_kind
+  })) return { error: "You can only edit your own comments." };
+  const text = cleanComment(formData.get("text"));
+  if (!text.ok) return { error: text.error };
+  const saved = await updateOwnComment({ id: comment.id, email: person.email, text: text.text });
+  if (!saved) return { error: "You can only edit your own comments." };
+  await rememberMentions("comment", comment.id, text.text);
+  revalidatePath("/");
+  revalidatePath("/p", "layout");
+  return { saved: true, text: text.text };
 }
 
 export async function retireComment(commentId) {

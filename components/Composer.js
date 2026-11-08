@@ -3,6 +3,8 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { previewLink, publishPost, saveEdit } from "@/app/feed/actions";
 import { inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
+import { AppDialog } from "./AppDialog";
+import { MentionField } from "./Mentions";
 import { Person } from "./Person";
 import { toast } from "./Toaster";
 
@@ -39,7 +41,7 @@ const KINDS = [
   { id: "video", label: "Video", Icon: IconVideo }
 ];
 
-export function Composer({ name = "You", image = "", projectSlug = "", projects = [], trigger = true }) {
+export function Composer({ name = "You", image = "", projectSlug = "", projects = [], people = [], trigger = true }) {
   const dialog = useRef(null);
   const seen = useRef(null);
   const seenEdit = useRef(null);
@@ -156,9 +158,10 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
           ))}
         </div>
       </div> : null}
-      <dialog
+      <AppDialog
+        sheet
         className="composer-dialog"
-        ref={dialog}
+        dialogRef={dialog}
         aria-labelledby="composer-title"
         onClose={() => setEditing(null)}
         onClick={(event) => {
@@ -184,14 +187,16 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
           </label>
           <label className="field">
             Note
-            <textarea
+            <MentionField
+              as="textarea"
               name="text"
               required
               maxLength={500}
               rows={4}
               placeholder="A note for the board"
               value={text}
-              onChange={(event) => setText(event.target.value)}
+              people={people}
+              onChange={setText}
             />
           </label>
           {kind === "image" ? (
@@ -256,13 +261,13 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
           ) : null}
           {formState?.error && !formState?.saved ? <p className="warning">{formState.error}</p> : null}
           <div className="dialog-actions">
-            <button className="text-btn" type="button" onClick={() => dialog.current?.close()}>Cancel</button>
+            <button className="btn btn-secondary" type="button" onClick={() => dialog.current?.close()}>Cancel</button>
             <button className="btn" type="submit" disabled={busy || text.trim().length === 0 || mediaInvalid}>
               {busy ? (editing ? "Saving…" : "Posting…") : editing ? "Save" : "Post"}
             </button>
           </div>
         </form>
-      </dialog>
+      </AppDialog>
     </>
   );
 }

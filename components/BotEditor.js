@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { saveBotCard } from "@/app/admin/actions";
 import { PLATFORMS } from "@/lib/platforms";
+import { AppDialog } from "./AppDialog";
 import { AvatarFields } from "./GrantAccess";
 
 export function BotEditor({ bot }) {
@@ -14,7 +15,7 @@ export function BotEditor({ bot }) {
   return (
     <>
       <button className="btn" type="button" onClick={() => dialog.current?.showModal()}>Edit</button>
-      <dialog className="confirm-dialog bot-edit-dialog" ref={dialog}>
+      <AppDialog dialogRef={dialog} className="confirm-dialog bot-edit-dialog">
         <form action={action}>
           <h2>Edit bot</h2>
           <input type="hidden" name="slug" value={bot.slug} />
@@ -40,11 +41,11 @@ export function BotEditor({ bot }) {
           </fieldset>
           {state?.error ? <p className="warning">{state.error}</p> : null}
           <div className="dialog-actions">
-            <button className="text-btn" type="button" onClick={() => dialog.current?.close()}>Cancel</button>
+            <button className="btn btn-secondary" type="button" onClick={() => dialog.current?.close()}>Cancel</button>
             <button className="btn" type="submit" disabled={pending}>{pending ? "Saving…" : "Save"}</button>
           </div>
         </form>
-      </dialog>
+      </AppDialog>
     </>
   );
 }

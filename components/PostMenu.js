@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { purgePost, restorePost, retirePost } from "@/app/feed/actions";
+import { AppDialog } from "./AppDialog";
 import { scheduleDelete } from "./delete-undo";
 
 export function PostMenu({ postId, canEdit, edit, onHide, onShow }) {
   const menu = useRef(null);
   const confirmDialog = useRef(null);
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -75,19 +73,14 @@ export function PostMenu({ postId, canEdit, edit, onHide, onShow }) {
           </button>
         </div>
       ) : null}
-      {mounted ? createPortal(
-        <>
-          <dialog className="confirm-dialog" ref={confirmDialog}>
-            <h2>Delete this post?</h2>
-            <p>Comments and reactions are removed with it. You can undo for a few seconds.</p>
-            <div className="dialog-actions">
-              <button className="text-btn" type="button" onClick={() => confirmDialog.current?.close()}>Cancel</button>
-              <button className="btn btn-pink" type="button" onClick={commitDelete}>Delete</button>
-            </div>
-          </dialog>
-        </>,
-        document.body
-      ) : null}
+      <AppDialog dialogRef={confirmDialog} className="confirm-dialog">
+        <h2>Delete this post?</h2>
+        <p>Comments and reactions are removed with it. You can undo for a few seconds.</p>
+        <div className="dialog-actions">
+          <button className="btn btn-secondary" type="button" onClick={() => confirmDialog.current?.close()}>Cancel</button>
+          <button className="btn btn-pink" type="button" onClick={commitDelete}>Delete</button>
+        </div>
+      </AppDialog>
     </div>
   );
 }
