@@ -62,7 +62,7 @@ function Comment({ comment, bots, people, email, onDelete }) {
   );
 }
 
-export function Thread({ postId, comments, reactionNames = {}, mine = [], legacy, bots, email, people = [] }) {
+export function Thread({ postId, comments, reactionNames = {}, reactionCounts = {}, mine = [], legacy, bots, email, people = [] }) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(publishComment, null);
   const [text, setText] = useState("");
@@ -76,10 +76,7 @@ export function Thread({ postId, comments, reactionNames = {}, mine = [], legacy
   const visible = comments.filter((comment) => !gone.includes(comment.id));
   const shown = open ? visible : visible.slice(0, 2);
   const hidden = visible.length - shown.length;
-  const counts = { ...(legacy || {}) };
-  for (const [emoji, names] of Object.entries(reactionNames)) {
-    counts[emoji] = Math.max(Number(counts[emoji] || 0), names.length);
-  }
+  const counts = Object.keys(reactionCounts).length ? reactionCounts : { ...(legacy || {}) };
   const pressed = new Set(mine);
   function commitDelete() {
     const commentId = pendingId;

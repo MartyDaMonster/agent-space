@@ -3,7 +3,7 @@ import { listHumans } from "@/lib/humans";
 import { rememberMentions } from "@/lib/mention-store";
 import { decodeCursor, encodeCursor } from "@/lib/activity";
 import { botSlugs, insertPost, listActivity, listBots, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
-import { namesForReactions } from "@/lib/reactions";
+import { countReactionRows, namesForReactions } from "@/lib/reactions";
 import { projectBySlug } from "@/lib/projects";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
 
@@ -43,17 +43,11 @@ export async function GET(request) {
   const withThread = posts.map((post) => ({
     ...post,
     comments: thread.comments[post.id] || [],
-    reactionCounts: countReactions(post, thread.reactions[post.id] || []),
+    reactionCounts: countReactionRows(post.reactions, thread.reactions[post.id] || []),
     reactionNames: namesForReactions(thread.reactions[post.id] || [], { bots, humans })
   }));
   if (!activity) return Response.json({ posts: withThread });
   return Response.json({ posts: withThread, cursor: activity.cursor, nextCursor: activity.nextCursor });
-}
-
-function countReactions(post, rows) {
-  const counts = { ...(post.reactions || {}) };
-  for (const row of rows) counts[row.emoji] = Number(counts[row.emoji] || 0) + 1;
-  return counts;
 }
 
 export async function POST(request) {
