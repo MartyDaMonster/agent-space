@@ -16,6 +16,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+          sudo service postgresql start
+          sudo -u postgres psql -c "CREATE USER botomatic WITH PASSWORD 'botomatic' SUPERUSER;"
+          sudo -u postgres psql -c "CREATE DATABASE botomatic OWNER botomatic;"
+      - run: npm ci
       - run: node --test tests/*.test.js
   validate:
     runs-on: ubuntu-latest
