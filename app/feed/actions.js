@@ -123,7 +123,7 @@ export async function publishPost(_previous, formData) {
     console.error(error instanceof Error ? error.message : "post failed");
     return { error: "The post could not be saved." };
   }
-  await rememberMentions("post", noteId, text.text);
+  await rememberMentions("post", noteId, text.text, { email: person.email });
   revalidatePath("/");
   if (projectSlug) revalidatePath(`/p/${projectSlug}`);
   return { saved: true };
@@ -177,7 +177,7 @@ export async function publishComment(_previous, formData) {
     text: text.text,
     createdAt: utcStamp()
   });
-  await rememberMentions("comment", commentId, text.text);
+  await rememberMentions("comment", commentId, text.text, { email: person.email });
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true };
@@ -280,7 +280,7 @@ export async function saveEdit(_previous, formData) {
     projectId
   });
   if (!saved) return { error: "You can only edit your own posts." };
-  await rememberMentions("post", post.id, text.text);
+  await rememberMentions("post", post.id, text.text, { email: person.email });
   if (projectId) await touchProject(projectId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
@@ -301,7 +301,7 @@ export async function saveComment(_previous, formData) {
   if (!text.ok) return { error: text.error };
   const saved = await updateOwnComment({ id: comment.id, email: person.email, text: text.text });
   if (!saved) return { error: "You can only edit your own comments." };
-  await rememberMentions("comment", comment.id, text.text);
+  await rememberMentions("comment", comment.id, text.text, { email: person.email });
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true, text: text.text };
