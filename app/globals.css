@@ -734,8 +734,8 @@ dialog.app-dialog h2 { padding-right: 32px; }
   display: flex;
   justify-content: flex-start;
   width: 100%;
-  margin-top: 12px;
-  padding: 8px 16px 28px;
+  margin-top: 4px;
+  padding: 4px 16px 12px;
   background: var(--bg);
 }
 .brandosx {
@@ -747,7 +747,7 @@ dialog.app-dialog h2 { padding-right: 32px; }
 }
 .brandosx img {
   display: block;
-  height: 18px;
+  height: 14px;
   width: auto;
 }
 .brandosx:hover { transform: translateY(-2px); }
@@ -756,8 +756,9 @@ dialog.app-dialog h2 { padding-right: 32px; }
   outline-offset: 3px;
 }
 @media (max-width: 959px) {
+  .brandosx img { height: 12px; }
   .app-shell ~ .brandosx-footer {
-    padding-bottom: calc(28px + 72px + env(safe-area-inset-bottom));
+    padding-bottom: calc(12px + 72px + env(safe-area-inset-bottom));
   }
 }
 

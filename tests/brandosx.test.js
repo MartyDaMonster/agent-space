@@ -16,6 +16,9 @@ test("the real BrandOSX logo is the last left-aligned footer mark", () => {
   assert.match(layout, /<footer className="brandosx-footer">\s*<BrandOsx \/>/);
   assert.doesNotMatch(layout, /href="\/privacy"|href="\/terms"/);
   const access = readFileSync(new URL("../lib/access.js", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(access, /path\.startsWith\("\/brand\/"\)/);
+  assert.match(css, /\.brandosx img \{[^}]*height: 14px;/);
+  assert.match(css, /\.brandosx img \{ height: 12px; \}/);
   assert.doesNotMatch(shell, /BrandOsx/);
 });
