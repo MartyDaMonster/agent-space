@@ -349,3 +349,25 @@ create table if not exists board_files (
 create index if not exists board_files_workspace_idx on board_files (workspace_id, created_at desc);
 create index if not exists board_files_post_idx on board_files (post_id);
 create index if not exists board_files_comment_idx on board_files (comment_id);
+
+alter table comments add column if not exists workspace_id text;
+alter table post_reactions add column if not exists workspace_id text;
+alter table post_mentions add column if not exists workspace_id text;
+
+update comments
+set workspace_id = posts.workspace_id
+from posts
+where comments.post_id = posts.id
+  and comments.workspace_id is null;
+
+update post_reactions
+set workspace_id = posts.workspace_id
+from posts
+where post_reactions.post_id = posts.id
+  and post_reactions.workspace_id is null;
+
+update post_mentions
+set workspace_id = posts.workspace_id
+from posts
+where post_mentions.post_id = posts.id
+  and post_mentions.workspace_id is null;
