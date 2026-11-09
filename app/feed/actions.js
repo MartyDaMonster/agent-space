@@ -27,7 +27,7 @@ import {
   updateOwnComment
 } from "@/lib/posts";
 import { prepareProject } from "@/lib/project-fields";
-import { archiveProject, createProject, projectBySlug, touchProject } from "@/lib/projects";
+import { archiveProject, createProject, projectBySlug, renameProject, touchProject } from "@/lib/projects";
 import { classifyMedia } from "@/scripts/media.js";
 import { utcStamp } from "@/scripts/schema.js";
 
@@ -147,6 +147,18 @@ export async function startProject(_previous, formData) {
   if (!created.ok) return { error: created.error };
   revalidatePath("/");
   redirect(`/p/${created.slug}`);
+}
+
+export async function renameProjectAction(_previous, formData) {
+  const person = await human();
+  if (!person) return { error: "You need to be signed in." };
+  const slug = String(formData.get("slug") || "");
+  const renamed = await renameProject(slug, formData.get("name"));
+  if (!renamed.ok) return { error: renamed.error };
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath(`/p/${slug}`);
+  return { saved: true, name: renamed.name };
 }
 
 export async function closeProject(formData) {

@@ -1404,6 +1404,9 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 }
 .side-nav a[aria-current="page"] { background: #32364f; color: #fff; }
 .side-label, .side-empty { margin: 12px 12px 4px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.side-project { display: grid; }
+.side-rename { margin: 0 12px 8px; text-align: left; }
+.project-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .side-empty { text-transform: none; letter-spacing: 0; font-weight: 500; }
 .page-header { display: grid; gap: 8px; }
 .page-header h1, .page-header p { margin: 0; }
