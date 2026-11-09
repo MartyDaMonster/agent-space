@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/app/actions";
-import { BrandOsx } from "./BrandOsx";
 import { Wordmark } from "./Wordmark";
 import { Person } from "./Person";
 import { PageFade } from "./PageFade";
@@ -82,9 +81,6 @@ export function AppShell({ name, image, projects = [], activePath = "", children
         </aside>
         <main className="app-main" id="content">
           <PageFade>{children}</PageFade>
-          <footer className="app-footer">
-            <BrandOsx />
-          </footer>
         </main>
       </div>
       <nav className="tab-bar" aria-label="App">

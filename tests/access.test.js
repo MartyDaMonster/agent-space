@@ -25,6 +25,7 @@ test("only login and the auth callback stay reachable when signed out", () => {
   assert.equal(decideAccess({ pathname: "/login", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/promo/botomatic-promo.mp4", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/promo/botomatic-promo.jpg", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/brand/brandosx-logo.png", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/api/auth/callback/google", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/_vercel/insights/script.js", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/_vercel/insights/view", hasSession: false }).ok, true);

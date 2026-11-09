@@ -730,25 +730,38 @@ dialog.app-dialog h2 { padding-right: 32px; }
 .site-footer nav { display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .site-footer a { color: var(--muted); font-weight: 500; text-decoration: none; }
 .site-footer a:hover { color: #fff; }
+.brandosx-footer {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 16px 28px;
+}
 .brandosx {
   display: inline-flex;
-  width: fit-content;
-  color: var(--muted);
-  font-family: var(--serif);
-  font-size: 0.95rem;
-  font-weight: 560;
-  letter-spacing: -0.03em;
-  line-height: 1;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f4f6f8;
+  line-height: 0;
   text-decoration: none;
-  transition: transform 140ms ease-out, color 140ms ease-out;
+  transition: transform 140ms ease-out;
 }
-.brandosx:hover { color: #fff; transform: translateY(-2px); }
+.brandosx img {
+  display: block;
+  height: 18px;
+  width: auto;
+}
+.brandosx:hover { transform: translateY(-2px); }
 .brandosx:focus-visible {
   outline: 2px solid var(--cyan);
-  outline-offset: 4px;
-  border-radius: 4px;
+  outline-offset: 3px;
 }
-.app-footer { margin-top: 28px; }
+@media (max-width: 959px) {
+  .app-shell ~ .brandosx-footer {
+    padding-bottom: calc(28px + 72px + env(safe-area-inset-bottom));
+  }
+}
 
 .btn {
   position: relative;
