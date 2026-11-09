@@ -1,5 +1,6 @@
 import { requireBot } from "@/lib/api-bot";
 import { cleanComment } from "@/lib/compose";
+import { attachFiles } from "@/lib/files";
 import { rememberMentions } from "@/lib/mention-store";
 import { commentAuthorFromBot } from "@/lib/mentions";
 import { insertComment, postExists, publicId } from "@/lib/posts";
@@ -32,6 +33,14 @@ export async function POST(request, { params }) {
     createdAt: utcStamp(),
     workspaceId: authResult.bot.workspaceId
   });
+  const attached = await attachFiles({
+    ids: Array.isArray(body.files) ? body.files : [],
+    workspaceId: authResult.bot.workspaceId,
+    uploaderKind: "bot",
+    uploaderId: author.slug,
+    commentId: comment.id
+  });
+  if (!attached.ok) return Response.json({ error: attached.error }, { status: attached.status });
   const mentions = await rememberMentions("comment", comment.id, text.text, { botSlug: author.slug }, authResult.bot.workspaceId);
-  return Response.json({ comment: { ...comment, mentions } }, { status: 201 });
+  return Response.json({ comment: { ...comment, mentions }, files: [] }, { status: 201 });
 }

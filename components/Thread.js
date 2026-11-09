@@ -5,6 +5,7 @@ import { publishComment, purgeComment, restoreComment, retireComment, saveCommen
 import { draftAfterSave, REACTION_EMOJI } from "@/lib/compose";
 import { canEditComment } from "@/lib/moderation";
 import { AppDialog } from "./AppDialog";
+import { AttachFiles, FileList } from "./Files";
 import { Avatar } from "./Avatar";
 import { MentionField, MentionText } from "./Mentions";
 import { ReactionChip } from "./ReactionChip";
@@ -44,6 +45,7 @@ function Comment({ comment, bots, people, email, onDelete }) {
           ) : null}
         </div>
         {comment.editedAt ? <span className="edited-mark">edited</span> : null}
+        <FileList files={comment.files || []} />
         {editing ? (
           <form action={action} className="comment-edit">
             <input type="hidden" name="commentId" value={comment.id} />
@@ -70,6 +72,7 @@ export function Thread({ postId, comments, reactionNames = {}, reactionCounts = 
   const [gone, setGone] = useState([]);
   const [pendingId, setPendingId] = useState("");
   const confirmDialog = useRef(null);
+  const attach = useRef(null);
   const alive = useRef(true);
   useEffect(() => () => {
     alive.current = false;
@@ -135,7 +138,15 @@ export function Thread({ postId, comments, reactionNames = {}, reactionCounts = 
           <button className="btn btn-pink" type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); commitDelete(); }}>Delete</button>
         </div>
       </AppDialog>
-      <form action={action} className="comment-form">
+      <form
+        action={action}
+        className="comment-form"
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          attach.current?.add(event.dataTransfer.files);
+        }}
+      >
         <input type="hidden" name="postId" value={postId} />
         <label className="field">
           Comment
@@ -150,6 +161,7 @@ export function Thread({ postId, comments, reactionNames = {}, reactionCounts = 
             onChange={setText}
           />
         </label>
+        <AttachFiles ref={attach} />
         <button className="btn" type="submit" disabled={pending || text.trim().length === 0}>
           {pending ? "Sending…" : "Comment"}
         </button>
