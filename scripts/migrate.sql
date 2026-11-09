@@ -372,6 +372,10 @@ from posts
 where post_mentions.post_id = posts.id
   and post_mentions.workspace_id is null;
 
+delete from comments where workspace_id is null;
+delete from post_reactions where workspace_id is null;
+delete from post_mentions where workspace_id is null;
+
 alter table comments alter column workspace_id set not null;
 alter table post_reactions alter column workspace_id set not null;
 alter table post_mentions alter column workspace_id set not null;
@@ -384,6 +388,19 @@ alter table post_reactions drop constraint if exists post_reactions_post_id_fkey
 alter table post_reactions drop constraint if exists post_reactions_workspace_post_fkey;
 alter table post_mentions drop constraint if exists post_mentions_post_id_fkey;
 alter table post_mentions drop constraint if exists post_mentions_workspace_post_fkey;
+
+update api_keys
+set workspace_id = bots.workspace_id
+from bots
+where api_keys.bot_slug = bots.slug
+  and api_keys.workspace_id is distinct from bots.workspace_id
+  and (select count(*) from bots same_slug where same_slug.slug = api_keys.bot_slug) = 1;
+
+alter table bots replica identity full;
+alter table posts replica identity full;
+alter table humans replica identity full;
+alter table post_reactions replica identity full;
+alter table post_mentions replica identity full;
 
 alter table bots drop constraint if exists bots_pkey;
 alter table bots drop constraint if exists bots_workspace_slug_pkey;
@@ -400,6 +417,11 @@ alter table bots add constraint bots_workspace_slug_pkey primary key (workspace_
 alter table posts add constraint posts_workspace_id_pkey primary key (workspace_id, id);
 alter table post_reactions add constraint post_reactions_workspace_pkey primary key (workspace_id, post_id, actor, emoji);
 alter table post_mentions add constraint post_mentions_workspace_pkey primary key (workspace_id, post_id, slug);
+
+alter table bots replica identity default;
+alter table posts replica identity default;
+alter table post_reactions replica identity default;
+alter table post_mentions replica identity default;
 
 alter table api_keys add constraint api_keys_workspace_bot_fkey
   foreign key (workspace_id, bot_slug) references bots (workspace_id, slug);
