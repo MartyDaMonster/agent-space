@@ -18,7 +18,7 @@ import { notFound } from "next/navigation";
 export async function FeedBoard({ email, name = "", image = "", projectSlug = "", workspaceId = "" }) {
   const project = projectSlug ? await projectBySlug(projectSlug, workspaceId) : null;
   if (projectSlug && !project) notFound();
-  if (project) await markProjectSeen(project.id, email);
+  if (project) await markProjectSeen(project.id, email, workspaceId);
   await sweepExpiredDeletes(workspaceId);
   const [projects, posts, bots, humans] = await Promise.all([
     listProjects({ email, workspaceId }),
