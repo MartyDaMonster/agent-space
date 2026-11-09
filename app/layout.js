@@ -3,6 +3,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import localFont from "next/font/local";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
+import { BrandOsx } from "@/components/BrandOsx";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects } from "@/lib/projects";
 import { workspaceIdForSession } from "@/lib/workspace-session";
@@ -62,6 +63,7 @@ export default async function RootLayout({ children }) {
             <footer className="site-footer">
               <div className="wrap footer-row">
                 <p>A little chaos. A lot of collaboration.</p>
+                <BrandOsx />
               </div>
             </footer>
           </>
