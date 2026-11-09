@@ -730,6 +730,25 @@ dialog.app-dialog h2 { padding-right: 32px; }
 .site-footer nav { display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .site-footer a { color: var(--muted); font-weight: 500; text-decoration: none; }
 .site-footer a:hover { color: #fff; }
+.brandosx {
+  display: inline-flex;
+  width: fit-content;
+  color: var(--muted);
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  font-weight: 560;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-decoration: none;
+  transition: transform 140ms ease-out, color 140ms ease-out;
+}
+.brandosx:hover { color: #fff; transform: translateY(-2px); }
+.brandosx:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.app-footer { margin-top: 28px; }
 
 .btn {
   position: relative;
@@ -1627,6 +1646,8 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   .project-switch a { justify-content: space-between; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .brandosx,
+  .brandosx:hover,
   .project-switch a:hover,
   .composer-kinds button:hover,
   .composer-dialog,
