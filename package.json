@@ -1,6 +1,9 @@
 {
   "name": "botomatic",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "type": "module",
   "scripts": {
     "dev": "next dev",
