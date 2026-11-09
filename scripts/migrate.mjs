@@ -20,6 +20,13 @@ const statements = source
   .filter((statement) => statement && !statement.startsWith("--"));
 
 for (const statement of statements) {
-  await sql.query(statement);
+  try {
+    await sql.query(statement);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "migration failed";
+    console.error(`Migration failed: ${reason}`);
+    console.error(statement.split("\n")[0]);
+    throw error;
+  }
 }
 console.log(`Applied ${statements.length} statements.`);

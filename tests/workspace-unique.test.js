@@ -61,9 +61,33 @@ test("two workspaces can share a bot slug, project slug, post id, and human emai
   });
   assert.equal(martinProject.ok, true);
   assert.equal(adaProject.ok, true);
+  assert.equal(martinProject.slug, "side-quest");
+  assert.equal(adaProject.slug, "side-quest");
   assert.equal((await projectBySlug("side-quest", "ws-martin")).name, "Side quest");
   assert.equal((await projectBySlug("side-quest", "ws-ada")).id, adaProject.id);
   assert.notEqual(martinProject.id, adaProject.id);
+  const martinAgain = await createProject({
+    prepared: { name: "Side quest", slug: "side-quest", description: "", color: "#fff", emoji: "" },
+    email: "marty.hungerford3181@gmail.com",
+    workspaceId: "ws-martin"
+  });
+  assert.equal(martinAgain.ok, true);
+  assert.equal(martinAgain.slug, "side-quest-2");
+  assert.equal((await projectBySlug("side-quest", "ws-ada")).id, adaProject.id);
+  let projectClash;
+  try {
+    await sql`
+      insert into projects (id, name, slug, created_by, workspace_id)
+      values ('prj-clash', 'Side quest', 'side-quest', 'marty.hungerford3181@gmail.com', 'ws-martin')
+    `;
+  } catch (error) {
+    projectClash = error;
+  }
+  const { projectTakenMessage, PROJECT_TAKEN } = await import("../lib/projects.js");
+  assert.equal(projectTakenMessage(projectClash), PROJECT_TAKEN);
+  assert.equal(PROJECT_TAKEN.includes("ws-ada"), false);
+  assert.match(projectClash.detail, /ws-martin/);
+  assert.equal(projectClash.detail.includes("ws-ada"), false);
 
   await insertPost({
     id: "hello-note",
@@ -133,6 +157,7 @@ test("two workspaces can share a bot slug, project slug, post id, and human emai
 
   await rememberHuman({ email: "ada@example.com", name: "Ada Martin", workspaceId: "ws-martin" });
   await rememberHuman({ email: "ada@example.com", name: "Ada Home", workspaceId: "ws-ada" });
+  await rememberHuman({ email: "ada@example.com", name: "Ada Martin renamed", workspaceId: "ws-martin" });
   await sql`
     insert into workspace_members (workspace_id, email, role)
     values ('ws-ada', 'ada@example.com', 'member')
@@ -140,12 +165,34 @@ test("two workspaces can share a bot slug, project slug, post id, and human emai
   `;
   const martinPeople = await listHumans("ws-martin");
   const adaPeople = await listHumans("ws-ada");
-  assert.equal(martinPeople.find((person) => person.email === "ada@example.com").name, "Ada Martin");
+  assert.equal(martinPeople.find((person) => person.email === "ada@example.com").name, "Ada Martin renamed");
   assert.equal(adaPeople.find((person) => person.email === "ada@example.com").name, "Ada Home");
+  let emailClash;
+  try {
+    await sql`
+      insert into humans (email, name, workspace_id)
+      values ('ada@example.com', 'Again', 'ws-martin')
+    `;
+  } catch (error) {
+    emailClash = error;
+  }
+  assert.equal(emailClash.code, "23505");
+  assert.match(emailClash.detail, /ws-martin/);
+  assert.equal(emailClash.detail.includes("ws-ada"), false);
 
-  await assert.rejects(
-    sql`insert into bots (slug, name, color, avatar, description, workspace_id) values ('dexter', 'Again', '#111111', 'square-lime', 'no', 'ws-martin')`
-  );
+  let botClash;
+  try {
+    await sql`insert into bots (slug, name, color, avatar, description, workspace_id) values ('dexter', 'Again', '#111111', 'square-lime', 'no', 'ws-martin')`;
+  } catch (error) {
+    botClash = error;
+  }
+  const { slugTakenMessage, SLUG_TAKEN } = await import("../lib/grant.js");
+  assert.equal(slugTakenMessage(botClash), SLUG_TAKEN);
+  assert.equal(SLUG_TAKEN.includes("ws-ada"), false);
+  assert.equal(SLUG_TAKEN.toLowerCase().includes("workspace"), false);
+  assert.match(botClash.detail, /ws-martin/);
+  assert.equal(botClash.detail.includes("ws-ada"), false);
+  const { POST_ID_TAKEN } = await import("../lib/posts.js");
   await assert.rejects(
     () => insertPost({
       id: "hello-note",
@@ -155,7 +202,13 @@ test("two workspaces can share a bot slug, project slug, post id, and human emai
       createdAt: "2026-11-09T00:03:00Z",
       workspaceId: "ws-martin"
     }),
-    /already exists/
+    (error) => {
+      assert.equal(error.message, POST_ID_TAKEN);
+      assert.equal(error.status, 409);
+      assert.equal(error.message.includes("ws-ada"), false);
+      assert.equal(error.message.toLowerCase().includes("workspace"), false);
+      return true;
+    }
   );
 
   const { createSql, resetSqlCache } = await import("../lib/db.js");
