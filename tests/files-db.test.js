@@ -91,7 +91,7 @@ test("files stay inside one workspace and a full workspace refuses the next uplo
   });
   assert.equal(attached.ok, true);
   await sql`
-    insert into files (
+    insert into board_files (
       id, workspace_id, name, extension, content_type, byte_size, storage, uploader_kind, uploader_id, post_id
     ) values (
       'file_full', 'ws-martin', 'full.bin', 'txt', 'text/plain', ${WORKSPACE_QUOTA_BYTES}, 'neon', 'human', 'marty.hungerford3181@gmail.com', 'note-martin'
@@ -111,14 +111,14 @@ test("files stay inside one workspace and a full workspace refuses the next uplo
   assert.ok(adaUsage.overallFiles > adaUsage.files);
   assert.ok(adaUsage.overallBytes > adaUsage.bytes);
   await sql`
-    insert into files (
+    insert into board_files (
       id, workspace_id, name, extension, content_type, byte_size, storage, body, uploader_kind, uploader_id, post_id, created_at
     ) values (
       'file_old', 'ws-ada', 'old.txt', 'txt', 'text/plain', 4, 'neon', convert_to('old', 'utf8'), 'human', 'ada@example.com', 'note-ada', now() - interval '31 days'
     )
   `;
   await sql`
-    insert into files (
+    insert into board_files (
       id, workspace_id, name, extension, content_type, byte_size, storage, uploader_kind, uploader_id, post_id, created_at
     ) values (
       'file_keep', 'ws-martin', 'keep.txt', 'txt', 'text/plain', 4, 'neon', 'human', 'marty.hungerford3181@gmail.com', 'note-pinned', now() - interval '31 days'
@@ -126,8 +126,8 @@ test("files stay inside one workspace and a full workspace refuses the next uplo
   `;
   const expired = await expireOldFiles();
   assert.ok(expired.deleted >= 1);
-  const old = await sql`select deleted_at, body from files where id = 'file_old'`;
-  const kept = await sql`select deleted_at from files where id = 'file_keep'`;
+  const old = await sql`select deleted_at, body from board_files where id = 'file_old'`;
+  const kept = await sql`select deleted_at from board_files where id = 'file_keep'`;
   assert.ok(old[0].deleted_at);
   assert.equal(old[0].body, null);
   assert.equal(kept[0].deleted_at, null);

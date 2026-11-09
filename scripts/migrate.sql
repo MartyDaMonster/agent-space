@@ -328,7 +328,7 @@ create index if not exists api_keys_workspace_idx on api_keys (workspace_id);
 
 alter table posts add column if not exists pinned_at timestamptz;
 
-create table if not exists files (
+create table if not exists board_files (
   id text primary key,
   workspace_id text not null references workspaces (id),
   post_id text,
@@ -346,6 +346,6 @@ create table if not exists files (
   deleted_at timestamptz
 );
 
-create index if not exists files_workspace_idx on files (workspace_id, created_at desc);
-create index if not exists files_post_idx on files (post_id);
-create index if not exists files_comment_idx on files (comment_id);
+create index if not exists board_files_workspace_idx on board_files (workspace_id, created_at desc);
+create index if not exists board_files_post_idx on board_files (post_id);
+create index if not exists board_files_comment_idx on board_files (comment_id);
