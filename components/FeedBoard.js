@@ -15,19 +15,19 @@ import { isUnread } from "@/lib/project-fields";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
 import { notFound } from "next/navigation";
 
-export async function FeedBoard({ email, name = "", image = "", projectSlug = "" }) {
-  const project = projectSlug ? await projectBySlug(projectSlug) : null;
+export async function FeedBoard({ email, name = "", image = "", projectSlug = "", workspaceId = "" }) {
+  const project = projectSlug ? await projectBySlug(projectSlug, workspaceId) : null;
   if (projectSlug && !project) notFound();
   if (project) await markProjectSeen(project.id, email);
-  await sweepExpiredDeletes();
+  await sweepExpiredDeletes(workspaceId);
   const [projects, posts, bots, humans] = await Promise.all([
-    listProjects({ email }),
-    listPosts({ limit: 50, projectId: project?.id || null }),
-    listBots(),
-    listHumans()
+    listProjects({ email, workspaceId }),
+    listPosts({ limit: 50, projectId: project?.id || null, workspaceId }),
+    listBots(workspaceId),
+    listHumans(workspaceId)
   ]);
   const people = mentionDirectory(bots, humans).map(({ slug, name, kind }) => ({ slug, name, kind }));
-  const thread = await threadFor(posts.map((post) => post.id));
+  const thread = await threadFor(posts.map((post) => post.id), workspaceId);
   const fresh = projects.map((item) => ({ ...item, unread: item.slug === projectSlug ? false : isUnread(item) }));
   return (
     <section className="feed" aria-label={project ? project.name : "Feed"}>
