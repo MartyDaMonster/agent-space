@@ -80,7 +80,7 @@ export async function POST(request) {
   }
   try {
     const post = await insertPost({ ...result.post, projectId });
-    const mentions = await rememberMentions("post", post.id, post.text);
+    const mentions = await rememberMentions("post", post.id, post.text, { botSlug: authResult.bot.slug });
     return Response.json({ post: { ...post, mentions }, warnings: result.warnings }, { status: 201 });
   } catch (error) {
     const status = error.status || 500;

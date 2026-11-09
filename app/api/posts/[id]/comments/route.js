@@ -31,6 +31,6 @@ export async function POST(request, { params }) {
     text: text.text,
     createdAt: utcStamp()
   });
-  const mentions = await rememberMentions("comment", comment.id, text.text);
+  const mentions = await rememberMentions("comment", comment.id, text.text, { botSlug: author.slug });
   return Response.json({ comment: { ...comment, mentions } }, { status: 201 });
 }
