@@ -4,6 +4,7 @@ import { PageHeader } from "./PageHeader";
 import { PostCard } from "./PostCard";
 import { PostShell } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
+import { RenameProject } from "./RenameProject";
 import { closeProject } from "@/app/feed/actions";
 import { canEditPost, canManageContent } from "@/lib/moderation";
 import { listHumans } from "@/lib/humans";
@@ -35,6 +36,9 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
             <h1>{project.emoji ? `${project.emoji} ` : ""}{project.name}</h1>
             {project.description ? <p>{project.description}</p> : null}
             {project.archived ? <p>This project is archived.</p> : null}
+            <div className="project-actions">
+              <RenameProject slug={project.slug} name={project.name} />
+            </div>
             {!project.archived && project.createdBy === email ? (
               <form action={closeProject}>
                 <input type="hidden" name="slug" value={project.slug} />

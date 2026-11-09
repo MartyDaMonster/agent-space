@@ -7,6 +7,7 @@ import { Wordmark } from "./Wordmark";
 import { Person } from "./Person";
 import { PageFade } from "./PageFade";
 import { ProjectDialog } from "./ProjectDialog";
+import { RenameProject } from "./RenameProject";
 import { Toaster } from "./Toaster";
 import { requestCompose } from "./compose-bus";
 
@@ -61,10 +62,15 @@ export function AppShell({ name, image, projects = [], activePath = "", children
           <div className="side-scroll">
             <p className="side-label">Projects</p>
             {projects.length ? projects.map((project) => (
-              <a key={project.slug} href={`/p/${project.slug}`} aria-current={pathname === `/p/${project.slug}` ? "page" : undefined}>
-                <span>{project.emoji ? `${project.emoji} ` : ""}{project.name}</span>
-                {project.unread ? <span className="activity-dot" /> : null}
-              </a>
+              <div className="side-project" key={project.slug}>
+                <a href={`/p/${project.slug}`} aria-current={pathname === `/p/${project.slug}` ? "page" : undefined}>
+                  <span>{project.emoji ? `${project.emoji} ` : ""}{project.name}</span>
+                  {project.unread ? <span className="activity-dot" /> : null}
+                </a>
+                {pathname === `/p/${project.slug}` ? (
+                  <RenameProject slug={project.slug} name={project.name} className="text-btn side-rename" />
+                ) : null}
+              </div>
             )) : <p className="side-empty">No projects yet</p>}
           </div>
           <div className="side-foot">

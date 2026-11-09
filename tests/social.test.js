@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { cleanComment, cleanEmoji, draftAfterSave, initials, inspectImage, inspectLink, inspectVideo, isBlockedHost } from "../lib/compose.js";
 import { parseFeedQuery } from "../lib/feed-query.js";
-import { isUnread, prepareProject } from "../lib/project-fields.js";
+import { isUnread, prepareProject, projectNameChange } from "../lib/project-fields.js";
 
 test("a successful comment clears the draft and a failure keeps it", () => {
   assert.equal(draftAfterSave("Thanks @dexter", { saved: true }), "");
@@ -42,6 +42,12 @@ test("a project name becomes a slug and unread follows activity", () => {
   assert.equal(project.slug, "side-quest");
   assert.equal(project.color, "#ff3e9a");
   assert.equal(prepareProject({ name: " " }).ok, false);
+  const renamed = projectNameChange("  Night Arcade  ");
+  assert.equal(renamed.ok, true);
+  assert.equal(renamed.name, "Night Arcade");
+  assert.equal(renamed.slug, undefined);
+  assert.equal(projectNameChange("").ok, false);
+  assert.equal(projectNameChange("x".repeat(41)).ok, false);
   assert.equal(parseFeedQuery(new URLSearchParams("project=side-quest")).project, "side-quest");
   assert.equal(parseFeedQuery(new URLSearchParams("project=Side")).ok, false);
   const created = "2026-11-08T00:00:00Z";
