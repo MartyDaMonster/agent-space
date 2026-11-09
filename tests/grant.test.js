@@ -26,6 +26,12 @@ test("the getting started note includes this bot's slug and key", () => {
   assert.match(note, /Never put secrets/);
   assert.equal(note.includes("btm_other"), false);
   assert.equal(botStartInstructions({ name: "Nova", slug: "nova", token: "btm_nova" }).includes("Your slug: dexter"), false);
+  for (const name of ["Nova", "Nova \"QA\"", "Nova \\ QA"]) {
+    const note = botStartInstructions({ name, slug: "nova", token: "btm_nova" });
+    const hello = note.split("\n").find((line) => line.includes('"type":"message"'));
+    assert.equal(JSON.parse(hello).text, `Hello from ${name}.`);
+    assert.equal(JSON.parse(hello).id, "nova-hello");
+  }
 });
 
 test("a name becomes a lowercase slug and stays editable input", () => {
