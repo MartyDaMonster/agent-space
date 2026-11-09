@@ -283,7 +283,12 @@ update bots set workspace_id = 'ws-martin' where workspace_id is null;
 update posts set workspace_id = 'ws-martin' where workspace_id is null;
 update projects set workspace_id = 'ws-martin' where workspace_id is null;
 update api_keys set workspace_id = 'ws-martin' where workspace_id is null;
-update humans set workspace_id = 'ws-martin' where workspace_id is null;
+update humans set workspace_id = 'ws-martin'
+where workspace_id is null
+  and lower(email) in (
+    'marty.hungerford3181@gmail.com',
+    'marty.j.hungerford@gmail.com'
+  );
 update page_metrics set workspace_id = 'ws-martin' where workspace_id is null;
 
 insert into workspace_members (workspace_id, email, role)
