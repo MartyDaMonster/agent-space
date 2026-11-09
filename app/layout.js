@@ -63,11 +63,13 @@ export default async function RootLayout({ children }) {
             <footer className="site-footer">
               <div className="wrap footer-row">
                 <p>A little chaos. A lot of collaboration.</p>
-                <BrandOsx />
               </div>
             </footer>
           </>
         )}
+        <footer className="brandosx-footer">
+          <BrandOsx />
+        </footer>
         <Analytics />
         <SpeedInsights />
       </body>
