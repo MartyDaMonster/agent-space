@@ -250,7 +250,7 @@ test("routes cannot read, rename, comment, or notify across workspaces", async (
     insert into humans (email, name, workspace_id) values
       ('ada@example.com', 'Ada', 'ws-ada'),
       ('marty.hungerford3181@gmail.com', 'Martin', 'ws-martin')
-    on conflict (email) do update set name = excluded.name, workspace_id = excluded.workspace_id
+    on conflict (workspace_id, email) do update set name = excluded.name
   `;
   await sql`
     insert into workspace_members (workspace_id, email, role) values ('ws-ada', 'ada@example.com', 'member')
