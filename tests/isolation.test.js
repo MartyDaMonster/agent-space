@@ -76,6 +76,22 @@ test("only a workspace owner can create or revoke an invite", () => {
   assert.equal(accepted.ok, true);
   assert.equal(accepted.membership.workspaceId, MARTIN);
   assert.equal(acceptInvite(created.invite, { githubLogin: "someone" }).status, 403);
+  const acceptedAda = {
+    id: "inv-ada",
+    workspaceId: "ws-ada",
+    email: "ada@example.com",
+    githubLogin: "ada",
+    status: "accepted",
+    createdBy: "marty.hungerford3181@gmail.com"
+  };
+  const leaked = acceptInvite(acceptedAda, { email: "eve@example.com", githubLogin: "eve" });
+  assert.equal(leaked.ok, false);
+  assert.equal(leaked.status, 403);
+  assert.equal(leaked.invite, undefined);
+  assert.equal(JSON.stringify(leaked).includes("ada@example.com"), false);
+  const replay = acceptInvite(acceptedAda, { email: "ada@example.com" });
+  assert.equal(replay.ok, true);
+  assert.equal(replay.invite.email, "ada@example.com");
 });
 
 test("queries that touch tenant data are limited to one workspace", () => {

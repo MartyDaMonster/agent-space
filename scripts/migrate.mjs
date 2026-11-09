@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { neon } from "@neondatabase/serverless";
+import { createSql } from "../lib/db.js";
 
 const optional = process.argv.includes("--optional");
 const url = process.env.DATABASE_URL;
@@ -12,7 +12,7 @@ if (!url) {
   process.exit(1);
 }
 
-const sql = neon(url);
+const sql = createSql(url);
 const source = readFileSync(new URL("./migrate.sql", import.meta.url), "utf8");
 const statements = source
   .split(/;\s*(?:\n|$)/)

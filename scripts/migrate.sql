@@ -289,10 +289,27 @@ update page_metrics set workspace_id = 'ws-martin' where workspace_id is null;
 insert into workspace_members (workspace_id, email, role)
 select 'ws-martin', humans.email, 'owner'
 from humans
-where not exists (
+where lower(humans.email) in (
+  'marty.hungerford3181@gmail.com',
+  'marty.j.hungerford@gmail.com'
+)
+and not exists (
   select 1 from workspace_members members
   where members.workspace_id = 'ws-martin' and lower(members.email) = lower(humans.email)
 );
+
+delete from workspace_members members
+where members.workspace_id = 'ws-martin'
+  and members.role = 'owner'
+  and lower(members.email) not in (
+    'marty.hungerford3181@gmail.com',
+    'marty.j.hungerford@gmail.com'
+  )
+  and exists (
+    select 1 from humans
+    where lower(humans.email) = lower(members.email)
+      and humans.workspace_id is distinct from 'ws-martin'
+  );
 
 alter table bots alter column workspace_id set not null;
 alter table posts alter column workspace_id set not null;
