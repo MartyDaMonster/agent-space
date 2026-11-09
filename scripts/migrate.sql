@@ -223,3 +223,83 @@ create table if not exists page_metrics (
 );
 
 create index if not exists page_metrics_created_at_idx on page_metrics (created_at);
+
+create table if not exists workspaces (
+  id text primary key,
+  name text not null,
+  slug text not null unique,
+  created_at timestamptz not null default now()
+);
+
+insert into workspaces (id, name, slug)
+select 'ws-martin', 'Martin', 'martin'
+where not exists (select 1 from workspaces where id = 'ws-martin');
+
+create table if not exists workspace_members (
+  workspace_id text not null references workspaces (id),
+  email text not null,
+  github_login text,
+  role text not null default 'member',
+  created_at timestamptz not null default now(),
+  primary key (workspace_id, email)
+);
+
+insert into workspace_members (workspace_id, email, github_login, role)
+select 'ws-martin', 'marty.hungerford3181@gmail.com', 'MartyDaMonster', 'owner'
+where not exists (
+  select 1 from workspace_members
+  where workspace_id = 'ws-martin' and lower(email) = 'marty.hungerford3181@gmail.com'
+);
+
+insert into workspace_members (workspace_id, email, github_login, role)
+select 'ws-martin', 'marty.j.hungerford@gmail.com', 'MartyDaMonster', 'owner'
+where not exists (
+  select 1 from workspace_members
+  where workspace_id = 'ws-martin' and lower(email) = 'marty.j.hungerford@gmail.com'
+);
+
+create table if not exists workspace_invites (
+  id text primary key,
+  workspace_id text not null references workspaces (id),
+  email text,
+  github_login text,
+  status text not null default 'pending',
+  created_by text not null,
+  created_at timestamptz not null default now(),
+  accepted_at timestamptz,
+  revoked_at timestamptz
+);
+
+create index if not exists workspace_invites_workspace_idx on workspace_invites (workspace_id, created_at desc);
+
+alter table bots add column if not exists workspace_id text references workspaces (id);
+alter table posts add column if not exists workspace_id text references workspaces (id);
+alter table projects add column if not exists workspace_id text references workspaces (id);
+alter table api_keys add column if not exists workspace_id text references workspaces (id);
+alter table humans add column if not exists workspace_id text references workspaces (id);
+alter table page_metrics add column if not exists workspace_id text references workspaces (id);
+
+update bots set workspace_id = 'ws-martin' where workspace_id is null;
+update posts set workspace_id = 'ws-martin' where workspace_id is null;
+update projects set workspace_id = 'ws-martin' where workspace_id is null;
+update api_keys set workspace_id = 'ws-martin' where workspace_id is null;
+update humans set workspace_id = 'ws-martin' where workspace_id is null;
+update page_metrics set workspace_id = 'ws-martin' where workspace_id is null;
+
+insert into workspace_members (workspace_id, email, role)
+select 'ws-martin', humans.email, 'owner'
+from humans
+where not exists (
+  select 1 from workspace_members members
+  where members.workspace_id = 'ws-martin' and lower(members.email) = lower(humans.email)
+);
+
+alter table bots alter column workspace_id set not null;
+alter table posts alter column workspace_id set not null;
+alter table projects alter column workspace_id set not null;
+alter table api_keys alter column workspace_id set not null;
+
+create index if not exists bots_workspace_idx on bots (workspace_id, slug);
+create index if not exists posts_workspace_created_idx on posts (workspace_id, created_at desc);
+create index if not exists projects_workspace_idx on projects (workspace_id, slug);
+create index if not exists api_keys_workspace_idx on api_keys (workspace_id);

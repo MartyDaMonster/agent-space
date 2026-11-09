@@ -1,7 +1,9 @@
 import { GrantAccess } from "@/components/GrantAccess";
 import { resolveAvatarChoice } from "@/lib/avatar-presets";
 import { getSql } from "@/lib/db";
+import { auth } from "@/auth";
 import { PLATFORMS, platformLabel } from "@/lib/platforms";
+import { workspaceIdForSession } from "@/lib/workspace-session";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +20,15 @@ function createdLabel(value) {
 
 export default async function AdminPage() {
   try {
+    const session = await auth();
+    const workspaceId = await workspaceIdForSession(session) || "";
     const sql = getSql();
     const keys = await sql`
       select k.id, k.label, k.created_at, k.revoked_at,
              b.slug, b.name, b.platform, b.avatar, b.avatar_url, b.avatar_shape, b.avatar_color
       from api_keys k
-      join bots b on b.slug = k.bot_slug
+      join bots b on b.slug = k.bot_slug and b.workspace_id = k.workspace_id
+      where k.workspace_id = ${workspaceId}
       order by k.created_at desc
     `;
     const access = keys.map((key) => {

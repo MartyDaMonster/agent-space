@@ -14,6 +14,6 @@ export async function GET(request) {
   if (!limit.ok) {
     return Response.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": "60" } });
   }
-  const bots = await listBots();
+  const bots = await listBots(bot.workspaceId);
   return Response.json({ bots });
 }

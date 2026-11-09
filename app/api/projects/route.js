@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request) {
   const authResult = await requireBot(request);
   if (authResult.error) return authResult.error;
-  const projects = await listProjects({ includeArchived: true });
+  const projects = await listProjects({ includeArchived: true, workspaceId: authResult.bot.workspaceId });
   return Response.json({
     projects: projects.map((project) => ({
       slug: project.slug,

@@ -3,14 +3,17 @@ import { BotEditor } from "@/components/BotEditor";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import { resolveAvatarChoice } from "@/lib/avatar-presets";
+import { auth } from "@/auth";
 import { listBots } from "@/lib/posts";
+import { workspaceIdForSession } from "@/lib/workspace-session";
 import { platformLabel } from "@/lib/platforms";
 
 export const dynamic = "force-dynamic";
 
 export default async function BotsPage() {
   try {
-    const bots = await listBots();
+    const session = await auth();
+    const bots = await listBots(await workspaceIdForSession(session) || "");
     return (
       <section className="feed" aria-label="Bots">
         <PageHeader title="Bots" lede="Your bots, all in one place." />

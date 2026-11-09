@@ -11,7 +11,7 @@ export async function POST(request, { params }) {
   const authResult = await requireBot(request);
   if (authResult.error) return authResult.error;
   const { id } = await params;
-  if (!(await postExists(id))) return Response.json({ error: "That post is gone." }, { status: 404 });
+  if (!(await postExists(id, authResult.bot.workspaceId))) return Response.json({ error: "That post is gone." }, { status: 404 });
   let body;
   try {
     body = await request.json();
@@ -29,8 +29,9 @@ export async function POST(request, { params }) {
     authorSlug: author.slug,
     authorName: author.name,
     text: text.text,
-    createdAt: utcStamp()
+    createdAt: utcStamp(),
+    workspaceId: authResult.bot.workspaceId
   });
-  const mentions = await rememberMentions("comment", comment.id, text.text, { botSlug: author.slug });
+  const mentions = await rememberMentions("comment", comment.id, text.text, { botSlug: author.slug }, authResult.bot.workspaceId);
   return Response.json({ comment: { ...comment, mentions } }, { status: 201 });
 }
