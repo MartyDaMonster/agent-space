@@ -30,6 +30,40 @@ async function resetDatabase() {
   resetSqlCache();
 }
 
+test("a leftover post file link does not block the per-workspace post key", async () => {
+  const url = "postgres://botomatic:botomatic@127.0.0.1:5432/botomatic_fkey";
+  const admin = new pg.Pool({ connectionString: ADMIN_URL });
+  await admin.query(`
+    select pg_terminate_backend(pid) from pg_stat_activity
+    where datname = 'botomatic_fkey' and pid <> pg_backend_pid()
+  `);
+  await admin.query("drop database if exists botomatic_fkey");
+  await admin.query("create database botomatic_fkey");
+  await admin.end();
+  const { createSql } = await import("../lib/db.js");
+  const { dropForeignKeysTo } = await import("../scripts/migrate.mjs");
+  const sql = createSql(url);
+  await sql.query("create table posts (id text primary key, workspace_id text not null default 'ws-martin')");
+  await sql.query("insert into posts (id) values ('hello')");
+  await sql.query(`
+    create table post_files (
+      post_id text not null references posts (id) on delete cascade,
+      file_id text not null,
+      primary key (post_id, file_id)
+    )
+  `);
+  await sql.query("insert into post_files (post_id, file_id) values ('hello', 'file_1')");
+  await dropForeignKeysTo(sql, "posts");
+  await sql.query("alter table posts drop constraint posts_pkey");
+  await sql.query("alter table posts add constraint posts_workspace_id_pkey primary key (workspace_id, id)");
+  await sql.query("insert into posts (id, workspace_id) values ('hello', 'ws-ada')");
+  const rows = await sql.query("select workspace_id from posts where id = 'hello' order by workspace_id");
+  const kept = await sql.query("select file_id from post_files");
+  assert.deepEqual(rows.map((row) => row.workspace_id), ["ws-ada", "ws-martin"]);
+  assert.equal(kept[0].file_id, "file_1");
+  await sql.pool.end();
+});
+
 test("two workspaces can share a bot slug, project slug, post id, and human email", async () => {
   await resetDatabase();
   const { getSql } = await import("../lib/db.js");
