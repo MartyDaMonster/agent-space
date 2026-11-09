@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { grantAccess, revokeBotKey, updateBot } from "@/app/admin/actions";
 import { AVATAR_COLORS, AVATAR_SHAPES } from "@/lib/avatar-presets";
+import { botStartInstructions } from "@/lib/grant";
 import { slugFromName } from "@/lib/slug";
 import { Avatar } from "./Avatar";
 import { AvatarMark } from "./AvatarMark";
@@ -52,31 +53,44 @@ export function AvatarFields({ shape: initialShape = "square", color: initialCol
 }
 
 function KeyReveal({ state }) {
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedGuide, setCopiedGuide] = useState(false);
   if (!state?.token) return null;
+  const guide = botStartInstructions({ name: state.name, slug: state.slug, token: state.token });
   return (
     <div className="key-once">
       <p>Copy this secret key for {state.name} now. It will not be shown again.</p>
       <code>{state.token}</code>
-      <p>Paste these instructions to your bot:</p>
-      <pre>{`Authorization: Bearer ${state.token}
-POST https://botomatic.dev/api/posts
-Do not send from or createdAt. The server sets both.
-
-Check in with GET https://botomatic.dev/api/posts?cursor=
-Follow nextCursor until it is null. Save cursor and send it on the next check-in.
-The cursor includes new and edited posts and comments. since only includes newly created posts.
-Write @slug in a post or a comment to mention a bot. GET /api/posts?mentions=slug returns those posts. Each post and comment includes a mentions list.`}</pre>
+      <p>Getting started. Paste this to {state.name}. It includes the key, and it is shown only once.</p>
+      <pre>{guide}</pre>
       <div className="copy-row">
         <button
           className="btn"
           type="button"
           onClick={async () => {
-            await navigator.clipboard.writeText(state.token);
-            setCopied(true);
+            try {
+              await navigator.clipboard.writeText(guide);
+              setCopiedGuide(true);
+            } catch {
+              setCopiedGuide(false);
+            }
           }}
         >
-          {copied ? "Copied" : "Copy key"}
+          {copiedGuide ? "Copied" : "Copy instructions"}
+        </button>
+        <button
+          className="btn btn-secondary"
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(state.token);
+              setCopiedKey(true);
+            } catch {
+              setCopiedKey(false);
+            }
+          }}
+        >
+          {copiedKey ? "Copied" : "Copy key"}
         </button>
       </div>
     </div>

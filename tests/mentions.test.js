@@ -10,6 +10,7 @@ import {
   mentionDirectory,
   mentionNotice,
   mentionSlugsIn,
+  notifySlugs,
   splitMentions
 } from "../lib/mentions.js";
 import { canEditComment } from "../lib/moderation.js";
@@ -30,7 +31,7 @@ test("mentions match bots and humans and can be filtered", () => {
     [{ slug: "dexter", name: "Dexter" }],
     [{ email: "ada@example.com", name: "Ada Lovelace" }]
   );
-  assert.deepEqual(people.map((person) => person.slug), ["dexter", "ada-lovelace"]);
+  assert.deepEqual(people.map((person) => person.slug), ["everyone", "dexter", "ada-lovelace"]);
   assert.deepEqual(mentionSlugsIn("Hello @dexter and @nope", people.map((person) => person.slug)), ["dexter"]);
   assert.equal(mentionAtCaret("ping @de", 8).query, "de");
   assert.equal(filterMentions(people, "ada")[0].name, "Ada Lovelace");
@@ -38,6 +39,35 @@ test("mentions match bots and humans and can be filtered", () => {
   assert.equal(splitMentions("Hi @dexter", people)[1].slug, "dexter");
   assert.equal(parseFeedQuery(new URLSearchParams("mentions=dexter")).mentions, "dexter");
   assert.equal(parseFeedQuery(new URLSearchParams("mentions=Dexter")).ok, false);
+});
+
+test("@everyone notifies every bot and person except the author", () => {
+  const people = mentionDirectory(
+    [
+      { slug: "crabby", name: "Claude" },
+      { slug: "codiculious", name: "Codiculious" },
+      { slug: "dexter", name: "Dexter" }
+    ],
+    [
+      { email: "marty.hungerford3181@gmail.com", name: "Martin" },
+      { email: "ada@example.com", name: "Ada Lovelace" }
+    ]
+  );
+  assert.equal(filterMentions(people, "every")[0].slug, "everyone");
+  assert.equal(splitMentions("Hello @everyone", people).find((part) => part.slug === "everyone").kind, "everyone");
+  assert.deepEqual(
+    notifySlugs("Hey @everyone", people, { exclude: ["martin"] }),
+    ["crabby", "codiculious", "dexter", "ada-lovelace"]
+  );
+  assert.deepEqual(
+    notifySlugs("@everyone", people, { exclude: ["dexter"] }),
+    ["crabby", "codiculious", "martin", "ada-lovelace"]
+  );
+  assert.deepEqual(
+    notifySlugs("@everyone please, @dexter", people, { exclude: ["martin"] }),
+    ["crabby", "codiculious", "dexter", "ada-lovelace"]
+  );
+  assert.deepEqual(mentionNotice("Hey @everyone", people), ["everyone"]);
 });
 
 test("a note mentions and notifies the same people as a comment", () => {
@@ -82,11 +112,11 @@ test("notes store mentions with the same call comments use", () => {
   const api = readFileSync(new URL("../app/api/posts/route.js", import.meta.url), "utf8");
   const store = readFileSync(new URL("../lib/mention-store.js", import.meta.url), "utf8");
   const posts = readFileSync(new URL("../lib/posts.js", import.meta.url), "utf8");
-  assert.match(actions, /rememberMentions\("post", noteId, text\.text\)/);
-  assert.match(actions, /rememberMentions\("post", post\.id, text\.text\)/);
-  assert.match(actions, /rememberMentions\("comment", commentId, text\.text\)/);
-  assert.match(actions, /rememberMentions\("comment", comment\.id, text\.text\)/);
-  assert.match(api, /rememberMentions\("post", post\.id, post\.text\)/);
+  assert.match(actions, /rememberMentions\("post", noteId, text\.text/);
+  assert.match(actions, /rememberMentions\("post", post\.id, text\.text/);
+  assert.match(actions, /rememberMentions\("comment", commentId, text\.text/);
+  assert.match(actions, /rememberMentions\("comment", comment\.id, text\.text/);
+  assert.match(api, /rememberMentions\("post", post\.id, post\.text/);
   assert.match(api, /exposeMentions\(/);
   assert.match(store, /from post_mentions/);
   assert.match(store, /from comment_mentions/);

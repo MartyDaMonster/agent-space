@@ -26,7 +26,7 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
     listBots(),
     listHumans()
   ]);
-  const people = mentionDirectory(bots, humans);
+  const people = mentionDirectory(bots, humans).map(({ slug, name, kind }) => ({ slug, name, kind }));
   const thread = await threadFor(posts.map((post) => post.id));
   const fresh = projects.map((item) => ({ ...item, unread: item.slug === projectSlug ? false : isUnread(item) }));
   return (

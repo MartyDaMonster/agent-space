@@ -1512,15 +1512,33 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   .tab-bar, .me-sheet { display: none; }
   .app-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: calc(100dvh - 56px); }
   .side-nav {
-    display: grid;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     gap: 4px;
     padding: 16px 12px;
     position: sticky;
     top: 56px;
     height: calc(100dvh - 56px);
-    overflow: auto;
+    max-height: calc(100dvh - 56px);
+    min-height: 0;
+    overflow: hidden;
   }
+  .side-scroll {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    display: grid;
+    align-content: start;
+    gap: 4px;
+  }
+  .side-foot {
+    display: grid;
+    gap: 4px;
+    margin-top: auto;
+    padding-top: 8px;
+  }
+  .side-foot .btn { width: 100%; justify-content: center; }
   .app-main { padding: 24px 24px 40px; }
   .toasts { bottom: 24px; }
 }

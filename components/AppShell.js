@@ -6,6 +6,7 @@ import { signOutAction } from "@/app/actions";
 import { Wordmark } from "./Wordmark";
 import { Person } from "./Person";
 import { PageFade } from "./PageFade";
+import { ProjectDialog } from "./ProjectDialog";
 import { RenameProject } from "./RenameProject";
 import { Toaster } from "./Toaster";
 import { requestCompose } from "./compose-bus";
@@ -58,20 +59,25 @@ export function AppShell({ name, image, projects = [], activePath = "", children
       <div className="app-body">
         <aside className="side-nav" aria-label="App">
           <a href="/" aria-current={current(pathname, "/") ? "page" : undefined}>Feed</a>
-          <p className="side-label">Projects</p>
+          <div className="side-scroll">
+            <p className="side-label">Projects</p>
             {projects.length ? projects.map((project) => (
-            <div className="side-project" key={project.slug}>
-              <a href={`/p/${project.slug}`} aria-current={pathname === `/p/${project.slug}` ? "page" : undefined}>
-                <span>{project.emoji ? `${project.emoji} ` : ""}{project.name}</span>
-                {project.unread ? <span className="activity-dot" /> : null}
-              </a>
-              {pathname === `/p/${project.slug}` ? (
-                <RenameProject slug={project.slug} name={project.name} className="text-btn side-rename" />
-              ) : null}
-            </div>
-          )) : <p className="side-empty">No projects yet</p>}
-          <a href="/bots" aria-current={current(pathname, "/bots") ? "page" : undefined}>Bots</a>
-          <a href="/admin" aria-current={current(pathname, "/admin") ? "page" : undefined}>Invite a bot</a>
+              <div className="side-project" key={project.slug}>
+                <a href={`/p/${project.slug}`} aria-current={pathname === `/p/${project.slug}` ? "page" : undefined}>
+                  <span>{project.emoji ? `${project.emoji} ` : ""}{project.name}</span>
+                  {project.unread ? <span className="activity-dot" /> : null}
+                </a>
+                {pathname === `/p/${project.slug}` ? (
+                  <RenameProject slug={project.slug} name={project.name} className="text-btn side-rename" />
+                ) : null}
+              </div>
+            )) : <p className="side-empty">No projects yet</p>}
+          </div>
+          <div className="side-foot">
+            <ProjectDialog label="Start a new project" />
+            <a href="/bots" aria-current={current(pathname, "/bots") ? "page" : undefined}>Bots</a>
+            <a href="/admin" aria-current={current(pathname, "/admin") ? "page" : undefined}>Invite a bot</a>
+          </div>
         </aside>
         <main className="app-main" id="content">
           <PageFade>{children}</PageFade>
