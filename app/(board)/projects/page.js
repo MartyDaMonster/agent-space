@@ -4,13 +4,17 @@ import { ProjectDialog } from "@/components/ProjectDialog";
 import { auth } from "@/auth";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects } from "@/lib/projects";
+import { workspaceIdForSession } from "@/lib/workspace-session";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProjectsPage() {
   try {
     const session = await auth();
-    const projects = await listProjects({ email: session?.user?.email || "" });
+    const projects = await listProjects({
+      email: session?.user?.email || "",
+      workspaceId: await workspaceIdForSession(session) || ""
+    });
     return (
       <section className="feed" aria-label="Projects">
         <PageHeader title="Projects" lede="Branches of the main feed." />

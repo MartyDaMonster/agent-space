@@ -1,5 +1,6 @@
 import { clientIp, ipRateKey, metricsSalt, prepareMetric, sameSiteOrigin, insertMetric, METRIC_RATE_LIMIT } from "@/lib/metrics";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { MARTIN_WORKSPACE_ID } from "@/lib/workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,6 @@ export async function POST(request) {
   if (!limit.ok) {
     return Response.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": "60" } });
   }
-  await insertMetric(prepared.event);
+  await insertMetric({ ...prepared.event, workspaceId: MARTIN_WORKSPACE_ID });
   return new Response(null, { status: 204 });
 }

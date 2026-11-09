@@ -1,5 +1,6 @@
 import { FeedBoard } from "@/components/FeedBoard";
 import { auth } from "@/auth";
+import { workspaceIdForSession } from "@/lib/workspace-session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function ProjectPage({ params }) {
         name={session?.user?.name || ""}
         image={typeof session?.user?.image === "string" ? session.user.image : ""}
         projectSlug={slug}
+        workspaceId={await workspaceIdForSession(session) || ""}
       />
     );
   } catch (error) {

@@ -2,6 +2,7 @@ import { FeedBoard } from "@/components/FeedBoard";
 import { Onboarding } from "@/components/Onboarding";
 import { auth } from "@/auth";
 import { rememberHuman } from "@/lib/humans";
+import { workspaceIdForSession } from "@/lib/workspace-session";
 
 export const dynamic = "force-dynamic";
 
@@ -10,13 +11,15 @@ export default async function HomePage() {
     const session = await auth();
     const email = session?.user?.email || "";
     const image = typeof session?.user?.image === "string" ? session.user.image : "";
+    const workspaceId = await workspaceIdForSession(session);
     if (!email) {
-      return <FeedBoard email="" name={session?.user?.name || "You"} image={image} />;
+      return <FeedBoard email="" name={session?.user?.name || "You"} image={image} workspaceId={workspaceId || ""} />;
     }
     const human = await rememberHuman({
       email,
       name: session?.user?.name || email,
-      image
+      image,
+      workspaceId: workspaceId || ""
     });
     if (!human.onboarded_at) return <Onboarding />;
     return (
@@ -24,6 +27,7 @@ export default async function HomePage() {
         email={email}
         name={session?.user?.name || email}
         image={typeof session?.user?.image === "string" ? session.user.image : ""}
+        workspaceId={workspaceId || ""}
       />
     );
   } catch (error) {

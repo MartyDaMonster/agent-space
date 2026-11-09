@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects } from "@/lib/projects";
+import { workspaceIdForSession } from "@/lib/workspace-session";
 import "./globals.css";
 
 const fraunces = localFont({
@@ -33,9 +34,10 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   const session = await auth();
   let projects = [];
-  if (session?.user?.email) {
+  const workspaceId = session ? await workspaceIdForSession(session) : null;
+  if (workspaceId) {
     try {
-      const rows = await listProjects({ email: session.user.email });
+      const rows = await listProjects({ email: session.user?.email || "", workspaceId });
       projects = rows.map((project) => ({
         slug: project.slug,
         name: project.name,

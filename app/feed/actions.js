@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { sessionInvited } from "@/lib/access";
+import { workspaceIdForSession } from "@/lib/workspace-session";
 import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
 import { readPageTitle } from "@/lib/page-title";
 import { dismissOnboarding } from "@/lib/humans";
@@ -35,10 +36,13 @@ async function human() {
   const session = await auth();
   const email = session?.user?.email || "";
   if (!sessionInvited(session)) return null;
+  const workspaceId = await workspaceIdForSession(session);
+  if (!workspaceId) return null;
   return {
     email,
     name: session.user.name || email,
-    image: typeof session.user.image === "string" && session.user.image.startsWith("https://") ? session.user.image : ""
+    image: typeof session.user.image === "string" && session.user.image.startsWith("https://") ? session.user.image : "",
+    workspaceId
   };
 }
 
@@ -97,7 +101,7 @@ export async function publishPost(_previous, formData) {
   let projectId = null;
   let projectSlug = "";
   if (requested) {
-    const project = await projectBySlug(requested);
+    const project = await projectBySlug(requested, person.workspaceId);
     if (!project || project.archived) return { error: "That project is archived." };
     projectId = project.id;
     projectSlug = project.slug;
@@ -117,13 +121,14 @@ export async function publishPost(_previous, formData) {
       linkUrl: link.empty ? "" : link.url,
       linkTitle,
       linkDomain: link.empty ? "" : link.domain,
-      projectId
+      projectId,
+      workspaceId: person.workspaceId
     });
   } catch (error) {
     console.error(error instanceof Error ? error.message : "post failed");
     return { error: "The post could not be saved." };
   }
-  await rememberMentions("post", noteId, text.text, { email: person.email });
+  await rememberMentions("post", noteId, text.text, { email: person.email }, person.workspaceId);
   revalidatePath("/");
   if (projectSlug) revalidatePath(`/p/${projectSlug}`);
   return { saved: true };
@@ -142,7 +147,8 @@ export async function startProject(_previous, formData) {
   const created = await createProject({
     prepared,
     email: person.email,
-    postId: String(formData.get("postId") || "")
+    postId: String(formData.get("postId") || ""),
+    workspaceId: person.workspaceId
   });
   if (!created.ok) return { error: created.error };
   revalidatePath("/");
@@ -153,7 +159,7 @@ export async function renameProjectAction(_previous, formData) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
   const slug = String(formData.get("slug") || "");
-  const renamed = await renameProject(slug, formData.get("name"));
+  const renamed = await renameProject(slug, formData.get("name"), person.workspaceId);
   if (!renamed.ok) return { error: renamed.error };
   revalidatePath("/");
   revalidatePath("/projects");
@@ -165,7 +171,7 @@ export async function closeProject(formData) {
   const person = await human();
   if (!person) return;
   const slug = String(formData.get("slug") || "");
-  await archiveProject(slug, person.email);
+  await archiveProject(slug, person.email, person.workspaceId);
   revalidatePath("/");
   revalidatePath(`/p/${slug}`);
   redirect("/");
@@ -177,7 +183,7 @@ export async function publishComment(_previous, formData) {
   const postId = String(formData.get("postId") || "");
   const text = cleanComment(formData.get("text"));
   if (!text.ok) return { error: text.error };
-  if (!(await postExists(postId))) return { error: "That post is gone." };
+  if (!(await postExists(postId, person.workspaceId))) return { error: "That post is gone." };
   const commentId = publicId("cmt");
   await insertComment({
     id: commentId,
@@ -187,9 +193,10 @@ export async function publishComment(_previous, formData) {
     authorName: person.name,
     authorImage: person.image,
     text: text.text,
-    createdAt: utcStamp()
+    createdAt: utcStamp(),
+    workspaceId: person.workspaceId
   });
-  await rememberMentions("comment", commentId, text.text, { email: person.email });
+  await rememberMentions("comment", commentId, text.text, { email: person.email }, person.workspaceId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true };
@@ -206,20 +213,20 @@ function manages(person, authorEmail) {
 export async function retirePost(postId) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const post = await findPost(String(postId || ""));
+  const post = await findPost(String(postId || ""), person.workspaceId);
   if (!post || post.deleted_at) return { error: "That post is gone." };
   if (!manages(person, post.author_email)) return { error: "You can't delete that post." };
-  await markPostDeleted(post.id);
+  await markPostDeleted(post.id, person.workspaceId);
   return { ok: true };
 }
 
 export async function restorePost(postId) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const post = await findPost(String(postId || ""));
+  const post = await findPost(String(postId || ""), person.workspaceId);
   if (!post) return { error: "That post is gone." };
   if (!manages(person, post.author_email)) return { error: "You can't restore that post." };
-  await markPostRestored(post.id);
+  await markPostRestored(post.id, person.workspaceId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { ok: true };
@@ -228,10 +235,10 @@ export async function restorePost(postId) {
 export async function purgePost(postId) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const post = await findPost(String(postId || ""));
+  const post = await findPost(String(postId || ""), person.workspaceId);
   if (!post) return { ok: true };
   if (!manages(person, post.author_email)) return { error: "You can't delete that post." };
-  await destroyPost(post.id);
+  await destroyPost(post.id, person.workspaceId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { ok: true };
@@ -240,7 +247,7 @@ export async function purgePost(postId) {
 export async function saveEdit(_previous, formData) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const post = await findPost(String(formData.get("postId") || ""));
+  const post = await findPost(String(formData.get("postId") || ""), person.workspaceId);
   if (!post || post.deleted_at) return { error: "That post is gone." };
   if (!canEditPost({
     actorEmail: person.email,
@@ -275,7 +282,7 @@ export async function saveEdit(_previous, formData) {
   const requested = String(formData.get("projectSlug") || "");
   let projectId = null;
   if (requested) {
-    const project = await projectBySlug(requested);
+    const project = await projectBySlug(requested, person.workspaceId);
     if (!project) return { error: "That project is not open." };
     if (project.archived && project.id !== post.project_id) return { error: "That project is archived." };
     projectId = project.id;
@@ -289,11 +296,12 @@ export async function saveEdit(_previous, formData) {
     linkUrl: link.empty || media ? "" : link.url,
     linkTitle: link.empty || media ? "" : linkTitle,
     linkDomain: link.empty || media ? "" : link.domain,
-    projectId
+    projectId,
+    workspaceId: person.workspaceId
   });
   if (!saved) return { error: "You can only edit your own posts." };
-  await rememberMentions("post", post.id, text.text, { email: person.email });
-  if (projectId) await touchProject(projectId);
+  await rememberMentions("post", post.id, text.text, { email: person.email }, person.workspaceId);
+  if (projectId) await touchProject(projectId, person.workspaceId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true };
@@ -302,7 +310,7 @@ export async function saveEdit(_previous, formData) {
 export async function saveComment(_previous, formData) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const comment = await findComment(String(formData.get("commentId") || ""));
+  const comment = await findComment(String(formData.get("commentId") || ""), person.workspaceId);
   if (!comment || comment.deleted_at) return { error: "That comment is gone." };
   if (!canEditComment({
     actorEmail: person.email,
@@ -311,9 +319,9 @@ export async function saveComment(_previous, formData) {
   })) return { error: "You can only edit your own comments." };
   const text = cleanComment(formData.get("text"));
   if (!text.ok) return { error: text.error };
-  const saved = await updateOwnComment({ id: comment.id, email: person.email, text: text.text });
+  const saved = await updateOwnComment({ id: comment.id, email: person.email, text: text.text, workspaceId: person.workspaceId });
   if (!saved) return { error: "You can only edit your own comments." };
-  await rememberMentions("comment", comment.id, text.text, { email: person.email });
+  await rememberMentions("comment", comment.id, text.text, { email: person.email }, person.workspaceId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { saved: true, text: text.text };
@@ -322,20 +330,20 @@ export async function saveComment(_previous, formData) {
 export async function retireComment(commentId) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const comment = await findComment(String(commentId || ""));
+  const comment = await findComment(String(commentId || ""), person.workspaceId);
   if (!comment || comment.deleted_at) return { error: "That comment is gone." };
   if (!manages(person, comment.author_email)) return { error: "You can't delete that comment." };
-  await markCommentDeleted(comment.id);
+  await markCommentDeleted(comment.id, person.workspaceId);
   return { ok: true };
 }
 
 export async function restoreComment(commentId) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const comment = await findComment(String(commentId || ""));
+  const comment = await findComment(String(commentId || ""), person.workspaceId);
   if (!comment) return { error: "That comment is gone." };
   if (!manages(person, comment.author_email)) return { error: "You can't restore that comment." };
-  await markCommentRestored(comment.id);
+  await markCommentRestored(comment.id, person.workspaceId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { ok: true };
@@ -344,10 +352,10 @@ export async function restoreComment(commentId) {
 export async function purgeComment(commentId) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  const comment = await findComment(String(commentId || ""));
+  const comment = await findComment(String(commentId || ""), person.workspaceId);
   if (!comment) return { ok: true };
   if (!manages(person, comment.author_email)) return { error: "You can't delete that comment." };
-  await destroyComment(comment.id);
+  await destroyComment(comment.id, person.workspaceId);
   revalidatePath("/");
   revalidatePath("/p", "layout");
   return { ok: true };
@@ -358,8 +366,8 @@ export async function publishReaction(formData) {
   if (!person) return;
   const postId = String(formData.get("postId") || "");
   const emoji = cleanEmoji(String(formData.get("emoji") || ""));
-  if (!emoji.ok || !(await postExists(postId))) return;
-  await toggleReaction({ postId, actor: `human:${person.email}`, emoji: emoji.emoji });
+  if (!emoji.ok || !(await postExists(postId, person.workspaceId))) return;
+  await toggleReaction({ postId, actor: `human:${person.email}`, emoji: emoji.emoji, workspaceId: person.workspaceId });
   revalidatePath("/");
   revalidatePath("/p", "layout");
 }
