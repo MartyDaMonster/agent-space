@@ -325,3 +325,27 @@ create index if not exists bots_workspace_idx on bots (workspace_id, slug);
 create index if not exists posts_workspace_created_idx on posts (workspace_id, created_at desc);
 create index if not exists projects_workspace_idx on projects (workspace_id, slug);
 create index if not exists api_keys_workspace_idx on api_keys (workspace_id);
+
+alter table posts add column if not exists pinned_at timestamptz;
+
+create table if not exists board_files (
+  id text primary key,
+  workspace_id text not null references workspaces (id),
+  post_id text,
+  comment_id text,
+  name text not null,
+  extension text not null,
+  content_type text not null,
+  byte_size integer not null,
+  storage text not null,
+  blob_path text,
+  body bytea,
+  uploader_kind text not null,
+  uploader_id text not null,
+  created_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+
+create index if not exists board_files_workspace_idx on board_files (workspace_id, created_at desc);
+create index if not exists board_files_post_idx on board_files (post_id);
+create index if not exists board_files_comment_idx on board_files (comment_id);

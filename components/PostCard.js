@@ -1,4 +1,5 @@
 import { Avatar } from "./Avatar";
+import { FileList } from "./Files";
 import { Person } from "./Person";
 import { PostActions, PostText } from "./PostShell";
 import { ProjectDialog } from "./ProjectDialog";
@@ -127,6 +128,7 @@ export function PostCard({ post, bots, comments = [], reactionNames = {}, reacti
         </a>
       ) : null}
       <Media media={post.media} />
+      <FileList files={post.files || []} />
       <Thread
         postId={post.id}
         comments={comments.map((comment) => ({

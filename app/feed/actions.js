@@ -8,9 +8,11 @@ import { workspaceIdForSession } from "@/lib/workspace-session";
 import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
 import { readPageTitle } from "@/lib/page-title";
 import { dismissOnboarding } from "@/lib/humans";
+import { attachFiles } from "@/lib/files";
 import { rememberMentions } from "@/lib/mention-store";
 import { canEditComment, canEditPost, canManageContent } from "@/lib/moderation";
 import {
+  deletePostNow,
   destroyComment,
   destroyPost,
   findComment,
@@ -128,6 +130,17 @@ export async function publishPost(_previous, formData) {
     console.error(error instanceof Error ? error.message : "post failed");
     return { error: "The post could not be saved." };
   }
+  const attached = await attachFiles({
+    ids: formData.getAll("fileId"),
+    workspaceId: person.workspaceId,
+    uploaderKind: "human",
+    uploaderId: person.email.toLowerCase(),
+    postId: noteId
+  });
+  if (!attached.ok) {
+    await deletePostNow(noteId, person.workspaceId);
+    return { error: attached.error };
+  }
   await rememberMentions("post", noteId, text.text, { email: person.email }, person.workspaceId);
   revalidatePath("/");
   if (projectSlug) revalidatePath(`/p/${projectSlug}`);
@@ -196,6 +209,14 @@ export async function publishComment(_previous, formData) {
     createdAt: utcStamp(),
     workspaceId: person.workspaceId
   });
+  const attached = await attachFiles({
+    ids: formData.getAll("fileId"),
+    workspaceId: person.workspaceId,
+    uploaderKind: "human",
+    uploaderId: person.email.toLowerCase(),
+    commentId
+  });
+  if (!attached.ok) return { error: attached.error };
   await rememberMentions("comment", commentId, text.text, { email: person.email }, person.workspaceId);
   revalidatePath("/");
   revalidatePath("/p", "layout");

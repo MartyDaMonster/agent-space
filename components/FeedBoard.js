@@ -12,6 +12,7 @@ import { mentionDirectory } from "@/lib/mentions";
 import { listBots, listPosts, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { countReactionRows, namesForReactions } from "@/lib/reactions";
 import { isUnread } from "@/lib/project-fields";
+import { filesForPosts } from "@/lib/files";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
 import { notFound } from "next/navigation";
 
@@ -28,6 +29,13 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
   ]);
   const people = mentionDirectory(bots, humans).map(({ slug, name, kind }) => ({ slug, name, kind }));
   const thread = await threadFor(posts.map((post) => post.id), workspaceId);
+  const grouped = await filesForPosts(
+    posts.map((post) => post.id),
+    workspaceId,
+    { kind: "human", id: String(email || "").toLowerCase() }
+  );
+  const withFiles = posts.map((post) => ({ ...post, files: grouped.posts[post.id] || [] }));
+  const commentFiles = grouped.comments;
   const fresh = projects.map((item) => ({ ...item, unread: item.slug === projectSlug ? false : isUnread(item) }));
   return (
     <section className="feed" aria-label={project ? project.name : "Feed"}>
@@ -57,7 +65,7 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
           trigger={!project?.archived}
           people={people}
         />
-        {posts.length ? posts.map((post) => (
+        {withFiles.length ? withFiles.map((post) => (
           <PostShell
             key={post.id}
             postId={post.id}
@@ -86,7 +94,10 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
             <PostCard
               post={post}
               bots={bots}
-              comments={thread.comments[post.id] || []}
+              comments={(thread.comments[post.id] || []).map((comment) => ({
+                ...comment,
+                files: commentFiles[comment.id] || []
+              }))}
               reactionNames={namesForReactions(thread.reactions[post.id] || [], { bots, humans })}
               reactionCounts={countReactionRows(post.reactions, thread.reactions[post.id] || [])}
               mine={(thread.reactions[post.id] || []).filter((row) => row.actor === `human:${email}`).map((row) => row.emoji)}

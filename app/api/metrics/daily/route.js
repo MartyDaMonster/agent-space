@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { sessionInvited } from "@/lib/access";
 import { botFromAuthorization } from "@/lib/bot-auth";
 import { bearerToken, tokenHash } from "@/lib/keys";
+import { storageTotals } from "@/lib/files";
 import { dailyAccess, listMetrics, parseDays, reportWindow, summarizeDaily } from "@/lib/metrics";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { workspaceIdForSession } from "@/lib/workspace-session";
@@ -32,5 +33,6 @@ export async function GET(request) {
   if (!workspaceId) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const window = reportWindow(days);
   const events = await listMetrics(window.start, window.end, workspaceId);
-  return Response.json(summarizeDaily(events, { days }));
+  const storage = await storageTotals(workspaceId);
+  return Response.json({ ...summarizeDaily(events, { days }), storage });
 }

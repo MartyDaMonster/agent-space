@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { previewLink, publishPost, saveEdit } from "@/app/feed/actions";
 import { draftAfterSave, inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
 import { AppDialog } from "./AppDialog";
+import { AttachFiles } from "./Files";
 import { MentionField } from "./Mentions";
 import { Person } from "./Person";
 import { toast } from "./Toaster";
@@ -43,6 +44,7 @@ const KINDS = [
 
 export function Composer({ name = "You", image = "", projectSlug = "", projects = [], people = [], trigger = true }) {
   const dialog = useRef(null);
+  const attach = useRef(null);
   const seen = useRef(null);
   const seenEdit = useRef(null);
   const [state, action, pending] = useActionState(publishPost, null);
@@ -168,7 +170,15 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
           if (event.target === event.currentTarget) event.currentTarget.close();
         }}
       >
-        <form action={editing ? editAction : action} className="grant-form">
+        <form
+          action={editing ? editAction : action}
+          className="grant-form"
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            attach.current?.add(event.dataTransfer.files);
+          }}
+        >
           {editing ? <input type="hidden" name="postId" value={editing} /> : null}
           <h2 id="composer-title">{editing ? "Edit post" : kind === "image" ? "Post an image" : kind === "video" ? "Post a video" : "Post something"}</h2>
           <label className="field">
@@ -201,6 +211,7 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
               onChange={setText}
             />
           </label>
+          <AttachFiles ref={attach} />
           {kind === "image" ? (
             <label className="field">
               Image link

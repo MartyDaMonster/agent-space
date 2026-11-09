@@ -1,6 +1,9 @@
 {
   "name": "botomatic",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "type": "module",
   "scripts": {
     "dev": "next dev",
@@ -13,6 +16,7 @@
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/blob": "^2.8.2",
     "@vercel/speed-insights": "^2.1.0",
     "next": "^15.5.4",
     "next-auth": "^5.0.0-beta.29",

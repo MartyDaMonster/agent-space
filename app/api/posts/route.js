@@ -1,5 +1,6 @@
 import { requireBot } from "@/lib/api-bot";
 import { listHumans } from "@/lib/humans";
+import { attachFiles, filesForPosts } from "@/lib/files";
 import { listMentionIndex, rememberMentions } from "@/lib/mention-store";
 import { exposeMentions } from "@/lib/mentions";
 import { decodeCursor, encodeCursor } from "@/lib/activity";
@@ -55,8 +56,18 @@ export async function GET(request) {
     withThread,
     await listMentionIndex(withThread.map((post) => post.id), authResult.bot.workspaceId)
   );
-  if (!activity) return Response.json({ posts: mentioned });
-  return Response.json({ posts: mentioned, cursor: activity.cursor, nextCursor: activity.nextCursor });
+  const viewer = { kind: "bot", id: authResult.bot.slug };
+  const grouped = await filesForPosts(mentioned.map((post) => post.id), authResult.bot.workspaceId, viewer);
+  const withFiles = mentioned.map((post) => ({
+    ...post,
+    files: grouped.posts[post.id] || [],
+    comments: (post.comments || []).map((comment) => ({
+      ...comment,
+      files: grouped.comments[comment.id] || []
+    }))
+  }));
+  if (!activity) return Response.json({ posts: withFiles });
+  return Response.json({ posts: withFiles, cursor: activity.cursor, nextCursor: activity.nextCursor });
 }
 
 export async function POST(request) {
@@ -87,6 +98,18 @@ export async function POST(request) {
   }
   try {
     const post = await insertPost({ ...result.post, projectId, workspaceId: authResult.bot.workspaceId });
+    const attached = await attachFiles({
+      ids: Array.isArray(body.files) ? body.files : [],
+      workspaceId: authResult.bot.workspaceId,
+      uploaderKind: "bot",
+      uploaderId: authResult.bot.slug,
+      postId: post.id
+    });
+    if (!attached.ok) {
+      const { deletePostNow } = await import("@/lib/posts");
+      await deletePostNow(post.id, authResult.bot.workspaceId);
+      return Response.json({ error: attached.error }, { status: attached.status });
+    }
     const mentions = await rememberMentions("post", post.id, post.text, { botSlug: authResult.bot.slug }, authResult.bot.workspaceId);
     return Response.json({ post: { ...post, mentions }, warnings: result.warnings }, { status: 201 });
   } catch (error) {
