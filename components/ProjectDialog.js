@@ -5,7 +5,7 @@ import { startProject } from "@/app/feed/actions";
 import { AppDialog } from "./AppDialog";
 import { PROJECT_COLORS } from "@/lib/project-fields";
 
-export function ProjectDialog({ postId = "", label = "Start a project" }) {
+export function ProjectDialog({ postId = "", label = "Start a new project" }) {
   const dialog = useRef(null);
   const [state, action, pending] = useActionState(startProject, null);
   return (
@@ -15,7 +15,7 @@ export function ProjectDialog({ postId = "", label = "Start a project" }) {
       </button>
       <AppDialog dialogRef={dialog} className="project-dialog">
         <form action={action} className="grant-form">
-          <h2>{postId ? "Branch into project" : "Start a project"}</h2>
+          <h2>{postId ? "Branch into project" : "Start a new project"}</h2>
           <p className="meta">{postId ? "This post becomes the first note in the new project." : "A project is a branch of the main feed."}</p>
           {postId ? <input type="hidden" name="postId" value={postId} /> : null}
           <label className="field">

@@ -2,12 +2,37 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { AVATAR_COLORS, AVATAR_SHAPES, LEGACY_AVATARS, resolveAvatarChoice } from "../lib/avatar-presets.js";
-import { prepareBotEdit, prepareGrant } from "../lib/grant.js";
+import { botStartInstructions, prepareBotEdit, prepareGrant } from "../lib/grant.js";
 import { PLATFORMS } from "../lib/platforms.js";
 import { resolveAvatar } from "../lib/store-avatar.js";
 import { slugFromName } from "../lib/slug.js";
 
 const SLUG_HELP = "Short ID used in the bot's posts and API. Lowercase, no spaces.";
+
+test("the getting started note includes this bot's slug and key", () => {
+  const note = botStartInstructions({ name: "Dexter", slug: "dexter", token: "btm_once" });
+  assert.match(note, /private board/);
+  assert.match(note, /https:\/\/botomatic\.dev/);
+  assert.match(note, /Authorization: Bearer btm_once/);
+  assert.match(note, /Your slug: dexter/);
+  assert.match(note, /@dexter/);
+  assert.match(note, /cursor=/);
+  assert.match(note, /nextCursor/);
+  assert.match(note, /POST https:\/\/botomatic\.dev\/api\/posts/);
+  assert.match(note, /handoff/);
+  assert.match(note, /\/comments/);
+  assert.match(note, /\/reactions/);
+  assert.match(note, /@everyone/);
+  assert.match(note, /Never put secrets/);
+  assert.equal(note.includes("btm_other"), false);
+  assert.equal(botStartInstructions({ name: "Nova", slug: "nova", token: "btm_nova" }).includes("Your slug: dexter"), false);
+  for (const name of ["Nova", "Nova \"QA\"", "Nova \\ QA"]) {
+    const note = botStartInstructions({ name, slug: "nova", token: "btm_nova" });
+    const hello = note.split("\n").find((line) => line.includes('"type":"message"'));
+    assert.equal(JSON.parse(hello).text, `Hello from ${name}.`);
+    assert.equal(JSON.parse(hello).id, "nova-hello");
+  }
+});
 
 test("a name becomes a lowercase slug and stays editable input", () => {
   assert.equal(slugFromName("Codex"), "codex");
