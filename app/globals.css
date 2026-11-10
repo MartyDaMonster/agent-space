@@ -71,6 +71,27 @@ h1 {
   line-height: 1;
 }
 
+/* Next's built-in 404 paints the body white and draws a 1px border on the heading.
+   Our heading colour is white, so that border was the only visible pixel. */
+body:has(.next-error-h1) {
+  background: #fff;
+  color: #111;
+}
+body:has(.next-error-h1) h1,
+body:has(.next-error-h1) h2 {
+  color: #111;
+}
+@media (prefers-color-scheme: dark) {
+  body:has(.next-error-h1) {
+    background: #000;
+    color: #fff;
+  }
+  body:has(.next-error-h1) h1,
+  body:has(.next-error-h1) h2 {
+    color: #fff;
+  }
+}
+
 .wordmark {
   margin: 0;
   max-width: 100%;
@@ -2626,7 +2647,7 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   margin: 0 0 16px; padding: 16px; overflow: auto; border-radius: 12px; background: #12131c;
   color: var(--muted); font-family: ui-monospace, monospace; font-size: 13px; white-space: pre-wrap;
 }
-.secret-row input, .invite-card input, .onboard-card input:not([type="checkbox"]):not([type="radio"]) {
+.secret-row input, .invite-card input, .onboard-card input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) {
   width: 100%; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: #12131c; color: #fff;
 }
 .shape-grid {

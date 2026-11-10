@@ -9,7 +9,7 @@ import {
   signGithubState
 } from "@/lib/github-state";
 import { githubAppConfigured } from "@/lib/stage2";
-import { inviteCard } from "@/lib/stage2-store";
+import { ensureChosenAssistants, inviteCard, markRepo } from "@/lib/stage2-store";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,13 @@ export async function GET(request) {
     return NextResponse.json({ error: "That invite is not open." }, { status: 404 });
   }
   if (!githubAppConfigured()) {
-    return NextResponse.redirect(new URL(`/join/${inviteId}/github?repo=waiting`, url.origin));
+    try {
+      await ensureChosenAssistants(inviteId, session, ["claude", "grok"]);
+      await markRepo(inviteId, session, { status: "waiting", name: "" });
+    } catch {
+      // Still leave the GitHub step. Repo creation is optional when the app is unset.
+    }
+    return NextResponse.redirect(new URL(`/join/${inviteId}/bots`, url.origin));
   }
   const nonce = newGithubNonce();
   const jar = await cookies();

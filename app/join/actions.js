@@ -28,7 +28,13 @@ export async function finishIntro(formData) {
     maxAge: 60 * 60 * 24 * 90
   });
   const session = await auth();
-  if (session?.user) await markIntroSeen(inviteId);
+  if (session?.user) {
+    try {
+      await markIntroSeen(inviteId);
+    } catch {
+      // The intro cookie is enough. A draft write must not stop the redirect.
+    }
+  }
   redirect(`/join/${inviteId}/github`);
 }
 
