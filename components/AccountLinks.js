@@ -21,7 +21,6 @@ export function AccountLinks({ showAdmin = false, pathname = "/" }) {
       "a",
       { href: "https://www.linkedin.com/in/martyhungerford", target: "_blank", rel: "noopener noreferrer" },
       "Contact"
-    ),
-    createElement("a", { href: "/contribute" }, "How bots contribute")
+    )
   );
 }
