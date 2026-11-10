@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { finishAllowed, maskLiveKey, waitingLabel } from "@/lib/stage2";
+import { finishAllowed, maskLiveKey } from "@/lib/stage2";
 
-export function BotSetup({ inviteId, workspaceName, repo, bots, prompts, secrets, regenerate, finish }) {
-  const [open, setOpen] = useState(bots.find((bot) => !bot.connected)?.slug || "");
+export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish }) {
+  const [open, setOpen] = useState("");
   const [rows, setRows] = useState(bots);
   const [shown, setShown] = useState(secrets || {});
   const allowed = finishAllowed(rows);
   const connected = rows.filter((bot) => bot.connected).length;
-  const waiting = rows.filter((bot) => !bot.connected);
   useEffect(() => {
     let stop = false;
     async function refresh() {
@@ -50,34 +49,29 @@ export function BotSetup({ inviteId, workspaceName, repo, bots, prompts, secrets
       bot.slug === slug ? { ...bot, last4: next.last4, connected: false } : bot
     )));
   }
+  if (allowed) {
+    return (
+      <div>
+        <h1>You’re all set. Let’s make great things together.</h1>
+        <form action={finish}>
+          <input type="hidden" name="inviteId" value={inviteId} />
+          <button className="btn" type="submit">Go to the board</button>
+        </form>
+      </div>
+    );
+  }
   return (
     <div>
+      <h1>Give each bot its key and they’re ready to go.</h1>
       <p className="onboard-progress">Connected <b>{connected} of {rows.length}</b></p>
-      <div className="progress-bar" aria-hidden="true">
-        {rows.map((bot) => <i key={bot.slug} data-on={bot.connected ? "yes" : "no"} />)}
-      </div>
       {rows.map((bot) => {
         const prompt = prompts[bot.slug] || "";
         const visible = shown[bot.slug];
         const field = visible || maskLiveKey(bot.last4);
         return (
           <article className="bot-setup" key={bot.slug}>
-            <header>
-              <h2>{bot.name}</h2>
-              <span className={bot.connected ? "pill connected" : "pill waiting"}>
-                {bot.connected ? "Connected" : "Waiting"}
-              </span>
-            </header>
-            <div className="bot-setup-actions">
-              <button className="btn btn-quiet" type="button" onClick={() => copyPrompt(bot.slug)}>
-                {visible ? "Copy instructions and key" : "Copy setup instructions"}
-              </button>
-              <button className="text-link" type="button" onClick={() => setOpen(open === bot.slug ? "" : bot.slug)}>
-                {open === bot.slug ? "Hide setup instructions" : "Read setup instructions"}
-              </button>
-            </div>
-            {open === bot.slug ? <pre className="setup-prompt">{prompt}</pre> : null}
-            <p className="onboard-label">Secret code</p>
+            <h2>{bot.name}</h2>
+            <button className="btn btn-quiet" type="button" onClick={() => copyPrompt(bot.slug)}>Copy setup</button>
             <div className="secret-row">
               <input readOnly value={field} aria-label={`${bot.name} secret code`} />
               <button className="btn btn-quiet" type="button" onClick={() => copySecret(bot.slug)} disabled={!visible}>Copy</button>
@@ -87,19 +81,13 @@ export function BotSetup({ inviteId, workspaceName, repo, bots, prompts, secrets
               {" "}
               <button type="button" className="text-link" onClick={() => renew(bot.slug)}>Regenerate</button>
             </p>
+            <button className="text-link" type="button" onClick={() => setOpen(open === bot.slug ? "" : bot.slug)}>
+              {open === bot.slug ? "Hide setup instructions" : "Read setup instructions"}
+            </button>
+            {open === bot.slug ? <pre className="setup-prompt">{prompt}</pre> : null}
           </article>
         );
       })}
-      <p className="onboard-note">{waitingLabel(rows)}</p>
-      {waiting.length ? (
-        <ul className="waiting-list">
-          {waiting.map((bot) => <li key={bot.slug}>{bot.name} is still waiting</li>)}
-        </ul>
-      ) : null}
-      <form action={finish}>
-        <input type="hidden" name="inviteId" value={inviteId} />
-        <button className="btn" type="submit" disabled={!allowed}>Go to the board</button>
-      </form>
     </div>
   );
 }

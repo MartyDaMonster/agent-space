@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { OnboardingFrame } from "@/components/OnboardingFrame";
 import { OnboardArt } from "@/components/OnboardArt";
-import { ProviderMark } from "@/components/ProviderMark";
 import { githubAppConfigured } from "@/lib/stage2";
 import { bindDraftToSession, inviteCard } from "@/lib/stage2-store";
 
@@ -20,37 +19,15 @@ export default async function GithubStep({ params, searchParams }) {
   if (!invite) notFound();
   const ready = query?.repo === "created" || query?.repo === "exists" || bound.draft.repoStatus === "created";
   const waiting = !githubAppConfigured() || query?.repo === "waiting" || bound.draft.repoStatus === "waiting";
+  const onward = waiting || ready;
   return (
     <OnboardingFrame step={2}>
-      {ready ? (
-        <>
-          <p className="repo-check" aria-hidden="true">✓</p>
-          <h1>Repo created</h1>
-          <p>Your private workspace repo is ready.</p>
-          <p className="repo-chip"><ProviderMark id="github" /> {bound.draft.repoName}</p>
-          <Link className="btn" href={`/join/${inviteId}/workspace`}>Continue</Link>
-        </>
+      <OnboardArt variant="connect" repo={bound.draft.repoName} />
+      <h1>Connect GitHub and we’ll make a private home for your bots.</h1>
+      {onward ? (
+        <Link className="btn" href={`/join/${inviteId}/workspace`}>Connect GitHub</Link>
       ) : (
-        <>
-          <OnboardArt variant="connect" />
-          <h1>Connect GitHub</h1>
-          <p>
-            Just one click. We’ll create a private repo, <b>{bound.draft.repoName}</b>, for your bots, and it’s the only repo we can see.
-          </p>
-          <div className="repo-row">
-            <ProviderMark id="github" />
-            <span>
-              <strong>Private repo for {invite.workspaceName}</strong>
-              <small>Files and handoffs stay in a repo only Botomatic can reach</small>
-            </span>
-          </div>
-          <p className="onboard-note">You’ll approve it on GitHub, then come straight back.</p>
-          {waiting ? (
-            <Link className="btn" href={`/join/${inviteId}/workspace`}>Connect GitHub</Link>
-          ) : (
-            <a className="btn" href={`/api/github/start?invite=${inviteId}`}>Connect GitHub</a>
-          )}
-        </>
+        <a className="btn" href={`/api/github/start?invite=${inviteId}`}>Connect GitHub</a>
       )}
     </OnboardingFrame>
   );

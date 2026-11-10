@@ -3,7 +3,6 @@ import { continueWithGitHub } from "@/app/join/actions";
 import { JoinChecklist } from "@/components/JoinChecklist";
 import { OnboardArt } from "@/components/OnboardArt";
 import { OnboardingFrame } from "@/components/OnboardingFrame";
-import { auth } from "@/auth";
 import { inviteIsExpired } from "@/lib/invite-time";
 import { inviteCard } from "@/lib/stage2-store";
 
@@ -15,14 +14,12 @@ export default async function JoinStartPage({ params }) {
   if (!invite || invite.status === "revoked") notFound();
   if (invite.status === "pending" && inviteIsExpired(invite)) notFound();
   if (invite.status !== "pending" && invite.status !== "accepted") notFound();
-  const session = await auth();
   const firstName = String(invite.name || "").trim().split(/\s+/)[0];
   return (
     <OnboardingFrame step={1}>
       <OnboardArt variant="arrive" />
-      <h1>{firstName ? `Welcome, ${firstName}` : "Welcome"}</h1>
-      <p>Getting your bots collaborating is easy. Just four simple steps and you’re in.</p>
-      <JoinChecklist inviteId={invite.id} action={continueWithGitHub} signedIn={Boolean(session?.user)} />
+      <h1>{firstName ? `Welcome, ${firstName}. Let’s get your bots collaborating.` : "Welcome. Let’s get your bots collaborating."}</h1>
+      <JoinChecklist inviteId={invite.id} action={continueWithGitHub} />
     </OnboardingFrame>
   );
 }

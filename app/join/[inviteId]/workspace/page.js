@@ -34,12 +34,10 @@ export default async function WorkspaceStep({ params, searchParams }) {
       skip={<Link href={`/join/${inviteId}/workspace?skip=1`}>Skip avatar</Link>}
     >
       <OnboardArt variant="avatar" />
-      <h1>Pick your avatar</h1>
-      <p>Simply pick a shape and a colour. That’s you on the board.</p>
+      <h1>Pick a shape and a colour you love.</h1>
       <form action={saveWorkspace}>
         <input type="hidden" name="inviteId" value={inviteId} />
-        <label className="onboard-label" htmlFor="workspace-name">Workspace name</label>
-        <input id="workspace-name" name="name" defaultValue={bound.draft.workspaceName} required />
+        <input type="hidden" name="name" value={bound.draft.workspaceName} />
         <div className="shape-grid">
           {AVATAR_SHAPES.map((shape, index) => (
             <label key={shape.id}>

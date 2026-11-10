@@ -81,11 +81,12 @@ function Arrive() {
   );
 }
 
-function Connect() {
+function Connect({ repo = "" }) {
   const [ref, paused] = useOffscreenPause();
+  const name = String(repo || "").trim();
   return (
     <div ref={ref}>
-      <Frame variant="connect" paused={paused} label="GitHub connects to one private Botomatic repo, and only that repo.">
+      <Frame variant="connect" paused={paused} label={name ? `GitHub connects to one private repo, ${name}, and only that repo.` : "GitHub connects to one private Botomatic repo, and only that repo."}>
         <Marks />
         <span className="illu-dash" />
         <span className="illu-lock">
@@ -102,6 +103,7 @@ function Connect() {
             <path d="M17.2 17 v-2.2 a2.8 2.8 0 0 1 5.6 0 V17" fill="none" stroke="#12131c" strokeWidth="1.7" />
           </svg>
         </span>
+        {name ? <p className="illu-repo">{name} · private</p> : null}
       </Frame>
     </div>
   );
@@ -200,8 +202,8 @@ function Setup({ bots = [] }) {
   );
 }
 
-export function OnboardArt({ variant = "arrive", bots = [] }) {
-  if (variant === "connect") return <Connect />;
+export function OnboardArt({ variant = "arrive", bots = [], repo = "" }) {
+  if (variant === "connect") return <Connect repo={repo} />;
   if (variant === "avatar") return <AvatarPick />;
   if (variant === "setup") return <Setup bots={bots} />;
   return <Arrive />;
