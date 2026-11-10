@@ -1,9 +1,13 @@
 import { GrantAccess } from "@/components/GrantAccess";
+import { AdminPanel } from "@/components/AdminPanel";
 import { resolveAvatarChoice } from "@/lib/avatar-presets";
 import { getSql } from "@/lib/db";
 import { auth } from "@/auth";
+import { listAdminInvites, listAudit, listPeople } from "@/lib/admin-store";
+import { martinAdmin } from "@/lib/admin-panel";
 import { PLATFORMS, platformLabel } from "@/lib/platforms";
 import { workspaceIdForSession } from "@/lib/workspace-session";
+import { revokeInviteAction, resendInvite, revokeKeyAction, sendAdminInvite, suspendAccess } from "@/app/admin/panel-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -53,11 +57,37 @@ export default async function AdminPage() {
         color: choice.color
       };
     });
+    const martin = martinAdmin(session);
+    const panel = martin
+      ? {
+        invites: (await listAdminInvites(session)).invites || [],
+        people: (await listPeople(session)).people || [],
+        audit: (await listAudit(session)).audit || []
+      }
+      : null;
+    const workspaces = panel
+      ? [...new Map(panel.people.map((person) => [person.workspaceId, { id: person.workspaceId, name: person.workspaceName }])).values()]
+      : [];
     return (
-      <GrantAccess
-        platforms={PLATFORMS}
-        access={access}
-      />
+      <>
+        {panel ? (
+          <AdminPanel
+            workspaces={workspaces}
+            invites={panel.invites}
+            people={panel.people}
+            audit={panel.audit}
+            send={sendAdminInvite}
+            resend={resendInvite}
+            revoke={revokeInviteAction}
+            suspend={suspendAccess}
+            revokeKey={revokeKeyAction}
+          />
+        ) : null}
+        <GrantAccess
+          platforms={PLATFORMS}
+          access={access}
+        />
+      </>
     );
   } catch (error) {
     console.error(error instanceof Error ? error.message : "admin failed");

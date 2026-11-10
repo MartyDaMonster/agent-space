@@ -1742,6 +1742,12 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .invite-list li { margin: 8px 0; padding: 12px 16px; border-radius: 16px; background: #1a1c2e; }
 .btn-pink { background: var(--pink); color: #12131c; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.admin-panel { width: min(760px, 100%); margin: 0 auto 32px; }
+.admin-panel h1 { margin-bottom: 8px; }
+.person-row { margin-top: 24px; padding-top: 16px; border-top: 1px solid #3a3e58; }
+.activity-feed { margin: 8px 0 0; padding-left: 16px; color: var(--muted); }
+.confirm-dialog { position: fixed; inset: 0; margin: auto; width: min(420px, calc(100% - 32px)); height: fit-content; }
+.onboard-card select { width: 100%; min-height: 44px; border: 0; border-radius: 12px; background: #12131c; color: #fff; }
 @media (prefers-reduced-motion: reduce) {
   .brandosx,
   .brandosx:hover,

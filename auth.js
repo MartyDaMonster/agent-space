@@ -23,16 +23,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const email = user?.email || profile?.email || "";
       const githubLogin = provider === "github" ? profile?.login || "" : "";
       const emailVerified = provider === "google" ? profile?.email_verified !== false : profile?.email_verified;
-      if (inviteAllowed({
+      const allowed = inviteAllowed({
         email,
         emailVerified,
         githubLogin,
         emails: process.env.ALLOWED_EMAILS,
         githubLogins: process.env.ALLOWED_GITHUB_LOGINS
-      })) return true;
-      if (provider !== "github") return false;
-      const invited = await pendingInviteForIdentity({ email, githubLogin });
-      return Boolean(invited);
+      });
+      const invited = !allowed && provider === "github"
+        ? await pendingInviteForIdentity({ email, githubLogin })
+        : null;
+      if (!allowed && !invited) return false;
+      const { identityWorkspace } = await import("./lib/workspace.js");
+      const { recordEvent } = await import("./lib/account-events.js");
+      await recordEvent({
+        workspaceId: identityWorkspace({ email, githubLogin }) || invited?.workspaceId || "",
+        email,
+        kind: "sign-in"
+      });
+      return true;
     },
     async jwt({ token, user, profile }) {
       if (user?.name) token.name = user.name;
