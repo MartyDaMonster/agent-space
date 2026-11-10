@@ -15,9 +15,10 @@ const html = `<!doctype html>
 <meta charset="utf-8" />
 <style>
   @font-face {
-    font-family: Fraunces;
-    src: url("file:///workspace/assets/fonts/fraunces-black-soft.woff2") format("woff2");
-    font-weight: 900;
+    font-family: "Fraunces Site";
+    src: url("file:///workspace/assets/fonts/fraunces-variable.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
   }
   html, body { margin: 0; background: #22243a; }
   .stage {
@@ -33,20 +34,22 @@ const html = `<!doctype html>
     align-items: baseline;
     margin: 0;
     color: #fff;
-    font-family: Fraunces, serif;
+    font-family: "Fraunces Site", serif;
     font-weight: 900;
-    font-size: 156px;
+    font-size: 148px;
+    font-variation-settings: "SOFT" 100, "opsz" 144, "wght" 900;
     line-height: 1;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.045em;
   }
   .wm-bot {
     display: block;
-    height: 0.58em;
-    margin: 0 0.03em -0.02em;
+    align-self: baseline;
+    height: 1ex;
+    margin: 0 0.03em;
     line-height: 0;
   }
-  .wm-square { width: calc(0.58em * 46 / 40.6); }
-  .wm-cloud { width: calc(0.58em * 87.33 / 48.01); }
+  .wm-square { width: 1ex; }
+  .wm-cloud { width: calc(1ex * 87.33 / 48.01); }
   svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .eyes { transform-box: fill-box; transform-origin: center; }
 </style>
@@ -56,7 +59,7 @@ const html = `<!doctype html>
     <div class="wordmark" aria-label="Botomatic">
       <span>B</span>
       <span class="wm-bot wm-square">
-        <svg viewBox="-1 0 46 40.6">
+        <svg viewBox="0.1 0.8 38.7 38.7">
           <g transform="rotate(-8 22 38)">
             <rect x="4" y="2" width="36" height="36" rx="11" fill="#a3d32b" />
             <g class="eyes" id="square-eyes">
@@ -71,8 +74,8 @@ const html = `<!doctype html>
         <svg viewBox="0 7.99 87.33 48.01">
           <path fill="#FF3E9A" transform="matrix(1.515 0 0 1.515 -12.7 -20.46)" d="M16 42c-6 0-9-5-7-10 1-6 8-9 13-6 2-7 12-10 18-4 7-6 18-2 18 7 6 0 10 6 7 12-2 4-8 7-14 5-4 5-14 6-20 2-2 2-8 2-15-6z" />
           <g class="eyes" id="cloud-eyes">
-            <circle cx="26.7" cy="31.05" r="6.2" fill="#fff" />
-            <circle cx="47.9" cy="31.05" r="6.2" fill="#fff" />
+            <circle cx="26.7" cy="31.05" r="7.6" fill="#fff" />
+            <circle cx="47.9" cy="31.05" r="7.6" fill="#fff" />
           </g>
         </svg>
       </span>
@@ -126,6 +129,20 @@ const browser = await playwright.chromium.launch();
 const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: 1 });
 await page.setContent(html, { waitUntil: "load" });
 await page.evaluate(() => document.fonts.ready);
+const fontCheck = await page.evaluate(() => {
+  const node = document.querySelector(".wordmark");
+  const style = getComputedStyle(node);
+  return {
+    family: style.fontFamily,
+    variation: style.fontVariationSettings,
+    weight: style.fontWeight,
+    letter: style.letterSpacing
+  };
+});
+console.log("wordmark font", JSON.stringify(fontCheck));
+if (!String(fontCheck.variation || "").includes("SOFT")) {
+  throw new Error("The site Fraunces variation settings were not applied.");
+}
 
 for (let i = 0; i < FRAMES; i += 1) {
   const poseNow = pose(i / FRAMES);
