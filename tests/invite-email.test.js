@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import pg from "pg";
 import { devPreviewBlocked } from "../lib/dev-preview.js";
-import { buildInviteEmail } from "../lib/invite-email.js";
-import { renderCountdownGif } from "../lib/countdown-gif.js";
+import { buildInviteEmail, formatExpiry } from "../lib/invite-email.js";
+import { renderCountdownPng } from "../lib/countdown-png.js";
+import { hoursLeftLabel } from "../lib/invite-time.js";
 
 const ADMIN_URL = "postgres://botomatic:botomatic@127.0.0.1:5432/botomatic";
 const DATABASE_URL = "postgres://botomatic:botomatic@127.0.0.1:5432/botomatic_invite_mail";
@@ -42,7 +43,7 @@ test("invite email is a table and the countdown gif ticks until it expires", asy
     firstName: "Ada",
     joinUrl: "https://botomatic.dev/join/inv-ada",
     expiresAt: new Date("2026-11-12T09:00:00Z"),
-    countdownUrl: "https://botomatic.dev/api/invite/inv-ada/countdown.gif",
+    countdownUrl: "https://botomatic.dev/api/invite/inv-ada/countdown.png",
     privacyUrl: "https://botomatic.dev/privacy",
     assetOrigin: "https://botomatic.dev"
   });
@@ -51,7 +52,13 @@ test("invite email is a table and the countdown gif ticks until it expires", asy
   assert.match(message.html, /PRIVATE BETA/);
   assert.match(message.html, /Ada, you're invited\./);
   assert.match(message.html, /Accept your invite/);
-  assert.match(message.html, /https:\/\/botomatic\.dev\/api\/invite\/inv-ada\/countdown\.gif/);
+  assert.match(message.html, /https:\/\/botomatic\.dev\/api\/invite\/inv-ada\/countdown\.png/);
+  assert.match(message.html, /Expires 12 Nov 2026, 8:00pm AEDT/);
+  assert.match(message.html, new RegExp(`alt="${hoursLeftLabel(new Date("2026-11-12T09:00:00Z"))}"`));
+  assert.equal(formatExpiry(new Date("2026-11-12T21:20:00Z")), "13 Nov 2026, 8:20am AEDT");
+  assert.equal(hoursLeftLabel(new Date(Date.now() + 48 * 3600 * 1000 + 1000)), "48 hrs left");
+  assert.equal(hoursLeftLabel(new Date(Date.now() + 30 * 60 * 1000)), "Less than 1 hr left");
+  assert.equal(hoursLeftLabel(new Date(Date.now() - 1000)), "Expired");
   assert.match(message.html, /email\/wordmark\.png/);
   assert.match(message.html, /ALL YOU NEED/);
   assert.match(message.html, /That's it\. You're in\./);
@@ -81,7 +88,7 @@ test("invite email is a table and the countdown gif ticks until it expires", asy
     firstName: "Ada\r\nBcc: evil@example.com <img>",
     joinUrl: "https://botomatic.dev/join/inv-ada",
     expiresAt: new Date("2026-11-12T09:00:00Z"),
-    countdownUrl: "https://botomatic.dev/api/invite/inv-ada/countdown.gif",
+    countdownUrl: "https://botomatic.dev/api/invite/inv-ada/countdown.png",
     privacyUrl: "https://botomatic.dev/privacy",
     assetOrigin: "https://botomatic.dev"
   });
@@ -89,11 +96,11 @@ test("invite email is a table and the countdown gif ticks until it expires", asy
   assert.doesNotMatch(hostile.html, /<img>/);
   assert.match(hostile.html, /&lt;img&gt;/);
   assert.match(message.text, /https:\/\/botomatic\.dev\/join\/inv-ada/);
-  const live = await renderCountdownGif(new Date(Date.now() + 90_000));
-  const expired = await renderCountdownGif(new Date(Date.now() - 1000));
-  assert.equal(live.subarray(0, 6).toString(), "GIF89a");
-  assert.equal(expired.subarray(0, 6).toString(), "GIF89a");
-  assert.ok(live.length > expired.length);
+  const live = await renderCountdownPng(new Date(Date.now() + 48 * 3600 * 1000));
+  const expired = await renderCountdownPng(new Date(Date.now() - 1000));
+  assert.equal(live.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  assert.equal(expired.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  assert.ok(live.length > 500);
 });
 
 test("an invite is created and emailed, and a missing key keeps the link", async () => {
@@ -110,7 +117,7 @@ test("an invite is created and emailed, and a missing key keeps the link", async
     send: async (payload) => { sent.push(payload); }
   });
   assert.equal(created.ok, true);
-  assert.equal(created.notice, "");
+  assert.equal(created.notice, "Sent to ada@example.com");
   assert.equal(sent.length, 1);
   assert.match(sent[0].html, /Ada, you're invited/);
   assert.match(sent[0].text, /\/join\//);
@@ -124,7 +131,7 @@ test("an invite is created and emailed, and a missing key keeps the link", async
   await sql`update admin_audit set created_at = now() - interval '2 minutes' where action = 'invite.created'`;
   const quiet = await createAdminInvite(martin, { name: "Bea", email: "bea@example.com" });
   assert.equal(quiet.ok, true);
-  assert.equal(quiet.notice, "Email not sent. Copy the link instead.");
+  assert.match(quiet.notice, /Email isn't set up: RESEND_API_KEY is not set\./);
   const listed = await listAdminInvites(martin);
   const bea = listed.invites.find((invite) => invite.email === "bea@example.com");
   assert.equal(bea.sentAt, null);
@@ -148,13 +155,16 @@ test("an invite is created and emailed, and a missing key keeps the link", async
   assert.equal(missing.status, 404);
   const found = await countdownResponse(again.inviteId);
   assert.equal(found.status, 200);
-  assert.match(found.headers.get("cache-control"), /private/);
+  assert.equal(found.headers.get("content-type"), "image/png");
+  assert.match(found.headers.get("cache-control"), /no-store/);
+  assert.equal(found.headers.get("expires"), "0");
   const bytes = Buffer.from(await found.arrayBuffer());
-  assert.equal(bytes.subarray(0, 6).toString(), "GIF89a");
+  assert.equal(bytes.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
   assert.equal(bytes.toString("utf8").includes("ada@example.com"), false);
   const hidden = await countdownResponse("preview");
   assert.equal(hidden.status, 200);
-  assert.equal(hidden.headers.get("content-type"), "image/gif");
+  assert.equal(hidden.headers.get("content-type"), "image/png");
+  assert.match(hidden.headers.get("cache-control"), /no-store/);
   assert.equal(hidden.headers.get("content-type").includes("html"), false);
   process.env.VERCEL_ENV = "production";
   assert.equal(devPreviewBlocked(), true);
@@ -166,7 +176,7 @@ test("an invite is created and emailed, and a missing key keeps the link", async
     origin: "https://botomatic.dev",
     send: async (payload) => { sent.push(payload); }
   });
-  assert.equal(preview.notice, "Test email sent.");
+  assert.equal(preview.notice, "Sent to marty.hungerford3181@gmail.com");
   assert.equal(sent.at(-1).to, "marty.hungerford3181@gmail.com");
-  assert.match(sent.at(-1).html, /countdown\.gif/);
+  assert.match(sent.at(-1).html, /countdown\.png/);
 });

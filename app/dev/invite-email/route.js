@@ -10,7 +10,7 @@ export async function GET(request) {
     firstName: "Ada",
     joinUrl: `${origin}/join/inv-preview`,
     expiresAt: new Date(Date.now() + 36 * 60 * 60 * 1000),
-    countdownUrl: `${origin}/dev/invite-countdown.gif`,
+    countdownUrl: `${origin}/api/invite/preview/countdown.png`,
     privacyUrl: `${origin}/privacy`,
     assetOrigin: origin
   });

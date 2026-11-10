@@ -2460,11 +2460,15 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .welcome-in { margin: 0 0 22px; font-family: var(--font-fraunces), Georgia, serif; font-size: 1.4rem; font-weight: 900; }
 .welcome-sign { margin: 0 0 6px; color: var(--muted); font-family: var(--font-fraunces), Georgia, serif; font-size: 1.15rem; }
 .welcome-team { margin: 0; color: #fff; font-weight: 800; }
-.clock { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: min(464px, 100%); margin: 12px auto 0; }
-.clock div { padding: 18px 8px 14px; border-radius: 16px; background: #1b1d2c; text-align: center; }
-.clock strong { display: block; color: #fff; font-family: var(--font-manrope), Manrope, sans-serif; font-size: clamp(2rem, 8vw, 2.4rem); font-weight: 800; }
-.clock span { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
-.clock-expired, .welcome-closed { color: var(--muted); font-weight: 700; }
+.hours-left {
+  margin: 8px 0 0;
+  color: var(--pink);
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: clamp(2rem, 8vw, 2.75rem);
+  line-height: 1.1;
+}
+.welcome-closed { color: var(--muted); font-weight: 700; }
 .onboard-card select { width: 100%; min-height: 44px; border: 0; border-radius: 12px; background: #12131c; color: #fff; }
 @media (prefers-reduced-motion: reduce) {
   .brandosx,

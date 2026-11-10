@@ -64,13 +64,17 @@ export function AdminPanel({ invites = [], people = [], audit = [], stats = null
   const [auditOpen, setAuditOpen] = useState(false);
   const [sent, sendForm, sending] = useActionState(send, null);
   const [tested, testForm, testing] = useActionState(sendTest, null);
+  const [resent, resendForm, resending] = useActionState(resend, null);
   const shownAudit = auditOpen ? audit : audit.slice(0, 20);
   useEffect(() => {
-    if (sent?.notice) setNotice(sent.notice);
-    else if (sent?.error) setNotice(sent.error);
-    else if (tested?.notice) setNotice(tested.notice);
-    else if (tested?.error) setNotice(tested.error);
-  }, [sent, tested]);
+    if (sent) setNotice(sent.notice || sent.error || "");
+  }, [sent]);
+  useEffect(() => {
+    if (tested) setNotice(tested.notice || tested.error || "");
+  }, [tested]);
+  useEffect(() => {
+    if (resent) setNotice(resent.notice || resent.error || "");
+  }, [resent]);
 
   async function copy(id) {
     await navigator.clipboard.writeText(joinLink(window.location.origin, id));
@@ -83,7 +87,7 @@ export function AdminPanel({ invites = [], people = [], audit = [], stats = null
         <h1>Admin</h1>
         <p>Invite-only beta</p>
       </header>
-      {notice ? <p className="admin-note">{notice}</p> : null}
+      {notice ? <p className="admin-note" role="status">{notice}</p> : null}
 
       <section className="admin-card">
         <div className="admin-card-head">
@@ -109,13 +113,14 @@ export function AdminPanel({ invites = [], people = [], audit = [], stats = null
               <strong>{invite.name ? `${invite.name} · ` : ""}{invite.email || `@${invite.githubLogin}`}</strong>
               <Pill state={invite.state} />
               <p className="admin-meta">{invite.githubLogin ? `@${invite.githubLogin} · ` : ""}{invite.workspaceName}{sentLabel(invite) ? ` · ${sentLabel(invite)}` : ""}</p>
+              {invite.sendError ? <p className="admin-meta">{invite.sendError}</p> : null}
             </div>
             <div className="admin-actions">
               <button className="admin-btn" type="button" onClick={() => copy(invite.id)}>Copy</button>
               {invite.state === "pending" || invite.state === "expired" ? (
-                <form action={resend}>
+                <form action={resendForm}>
                   <input type="hidden" name="inviteId" value={invite.id} />
-                  <button className="admin-btn" type="submit">Resend</button>
+                  <button className="admin-btn" type="submit" disabled={resending}>{resending ? "Sending…" : "Resend"}</button>
                 </form>
               ) : null}
               {invite.state === "pending" || invite.state === "expired" ? (
