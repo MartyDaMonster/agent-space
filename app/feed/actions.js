@@ -8,6 +8,7 @@ import { workspaceIdForSession } from "@/lib/workspace-session";
 import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
 import { readPageTitle } from "@/lib/page-title";
 import { dismissOnboarding } from "@/lib/humans";
+import { claimFirstPost } from "@/lib/celebrate";
 import { attachFiles } from "@/lib/files";
 import { rememberMentions } from "@/lib/mention-store";
 import { canEditComment, canEditPost, canManageContent } from "@/lib/moderation";
@@ -142,9 +143,10 @@ export async function publishPost(_previous, formData) {
     return { error: attached.error };
   }
   await rememberMentions("post", noteId, text.text, { email: person.email }, person.workspaceId);
+  const celebrate = await claimFirstPost(person.email, person.workspaceId);
   revalidatePath("/");
   if (projectSlug) revalidatePath(`/p/${projectSlug}`);
-  return { saved: true };
+  return { saved: true, celebrate };
 }
 
 export async function startProject(_previous, formData) {
@@ -165,7 +167,7 @@ export async function startProject(_previous, formData) {
   });
   if (!created.ok) return { error: created.error };
   revalidatePath("/");
-  redirect(`/p/${created.slug}`);
+  redirect(created.celebrate ? `/p/${created.slug}?celebrate=project` : `/p/${created.slug}`);
 }
 
 export async function renameProjectAction(_previous, formData) {

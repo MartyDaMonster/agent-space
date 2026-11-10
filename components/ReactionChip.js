@@ -6,6 +6,7 @@ import { reactionPhrase } from "@/lib/reactions";
 
 export function ReactionChip({ postId, emoji, count, names = [], pressed = false }) {
   const [open, setOpen] = useState(false);
+  const [pop, setPop] = useState(false);
   const held = useRef(false);
   const timer = useRef(0);
   const wrap = useRef(null);
@@ -38,7 +39,7 @@ export function ReactionChip({ postId, emoji, count, names = [], pressed = false
       <input type="hidden" name="postId" value={postId} />
       <input type="hidden" name="emoji" value={emoji} />
       <button
-        className={pressed ? "react on" : "react"}
+        className={pressed ? `react on${pop ? " is-pop" : ""}` : `react${pop ? " is-pop" : ""}`}
         type="submit"
         aria-pressed={pressed}
         aria-label={phrase || emoji}
@@ -52,13 +53,17 @@ export function ReactionChip({ postId, emoji, count, names = [], pressed = false
           setOpen(true);
         }}
         onClick={(event) => {
-          if (!held.current) return;
-          event.preventDefault();
-          held.current = false;
+          if (held.current) {
+            event.preventDefault();
+            held.current = false;
+            return;
+          }
+          setPop(true);
+          window.setTimeout(() => setPop(false), 220);
         }}
       >
         <span aria-hidden="true">{emoji}</span>
-        <span className="react-count">{count || 0}</span>
+        <span className={pop ? "react-count is-tick" : "react-count"}>{count || 0}</span>
       </button>
       {phrase ? <span className="react-tip" role="tooltip">{phrase}</span> : null}
     </form>

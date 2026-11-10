@@ -276,6 +276,8 @@ alter table api_keys add column if not exists last_seen_at timestamptz;
 alter table api_keys add column if not exists key_last4 text;
 alter table humans add column if not exists avatar_shape text;
 alter table humans add column if not exists avatar_color text;
+alter table humans add column if not exists first_post_at timestamptz;
+alter table humans add column if not exists first_project_at timestamptz;
 
 alter table workspace_invites add column if not exists expires_at timestamptz;
 alter table workspace_invites add column if not exists own_workspace boolean not null default false;
