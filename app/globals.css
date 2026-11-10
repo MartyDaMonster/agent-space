@@ -89,6 +89,22 @@ h1 {
   max-width: 100%;
 }
 
+.wordmark-frame {
+  width: 796px;
+  height: 214px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #22243a;
+}
+.wordmark-frame .wordmark { font-size: 132px; }
+.wordmark-frame .look-square,
+.wordmark-frame .look-cloud,
+.wordmark-frame .express-square,
+.wordmark-frame .express-cloud,
+.wordmark-frame .wm-square .blink,
+.wordmark-frame .wm-cloud .blink { animation: none !important; }
+
 .wm-b,
 .wm-t,
 .wm-matic {

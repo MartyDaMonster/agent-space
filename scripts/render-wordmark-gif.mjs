@@ -8,82 +8,7 @@ const FRAMES = 42;
 const FPS = 12;
 const OUT_DIR = "public/email";
 const FRAME_DIR = "/tmp/wordmark-frames";
-
-const html = `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<style>
-  @font-face {
-    font-family: "Fraunces Site";
-    src: url("file:///workspace/assets/fonts/fraunces-variable.woff2") format("woff2");
-    font-weight: 100 900;
-    font-style: normal;
-  }
-  html, body { margin: 0; background: #22243a; }
-  .stage {
-    width: ${WIDTH}px;
-    height: ${HEIGHT}px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #22243a;
-  }
-  .wordmark {
-    display: inline-flex;
-    align-items: baseline;
-    margin: 0;
-    color: #fff;
-    font-family: "Fraunces Site", serif;
-    font-weight: 900;
-    font-size: 148px;
-    font-variation-settings: "SOFT" 100, "opsz" 144, "wght" 900;
-    line-height: 1;
-    letter-spacing: -0.045em;
-  }
-  .wm-bot {
-    display: block;
-    align-self: baseline;
-    height: 1ex;
-    margin: 0 0.03em;
-    line-height: 0;
-  }
-  .wm-square { width: 1ex; }
-  .wm-cloud { width: calc(1ex * 87.33 / 48.01); }
-  svg { display: block; width: 100%; height: 100%; overflow: visible; }
-  .eyes { transform-box: fill-box; transform-origin: center; }
-</style>
-</head>
-<body>
-  <div class="stage">
-    <div class="wordmark" aria-label="Botomatic">
-      <span>B</span>
-      <span class="wm-bot wm-square">
-        <svg viewBox="0.1 0.8 38.7 38.7">
-          <g transform="rotate(-8 22 38)">
-            <rect x="4" y="2" width="36" height="36" rx="11" fill="#a3d32b" />
-            <g class="eyes" id="square-eyes">
-              <circle cx="18" cy="20" r="3.4" fill="#fff" />
-              <circle cx="27" cy="20" r="3.4" fill="#fff" />
-            </g>
-          </g>
-        </svg>
-      </span>
-      <span>t</span>
-      <span class="wm-bot wm-cloud">
-        <svg viewBox="0 7.99 87.33 48.01">
-          <path fill="#FF3E9A" transform="matrix(1.515 0 0 1.515 -12.7 -20.46)" d="M16 42c-6 0-9-5-7-10 1-6 8-9 13-6 2-7 12-10 18-4 7-6 18-2 18 7 6 0 10 6 7 12-2 4-8 7-14 5-4 5-14 6-20 2-2 2-8 2-15-6z" />
-          <g class="eyes" id="cloud-eyes">
-            <circle cx="26.7" cy="31.05" r="7.6" fill="#fff" />
-            <circle cx="47.9" cy="31.05" r="7.6" fill="#fff" />
-          </g>
-        </svg>
-      </span>
-      <span>matic</span>
-    </div>
-  </div>
-</body>
-</html>`;
+const PAGE = process.env.WORDMARK_FRAME_URL || "http://127.0.0.1:3066/dev/wordmark-frame";
 
 function smooth(u) {
   const x = Math.min(1, Math.max(0, u));
@@ -116,21 +41,20 @@ function blink(t, start) {
 }
 
 function pose(t) {
-  const squareLook = look(t, 0);
-  const cloudLook = look(t, 0.12);
   return {
-    square: { x: squareLook * 3.2, y: Math.abs(squareLook) * -0.4, sy: blink(t, 0.66) },
-    cloud: { x: cloudLook * 6.4, y: Math.abs(cloudLook) * -0.6, sy: blink(t, 0.74) }
+    square: { x: look(t, 0) * 0.12, y: 0, sy: blink(t, 0.66) },
+    cloud: { x: look(t, 0.12) * 0.14, y: 0, sy: blink(t, 0.74) }
   };
 }
 
 mkdirSync(FRAME_DIR, { recursive: true });
 const browser = await playwright.chromium.launch();
-const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: 1 });
-await page.setContent(html, { waitUntil: "load" });
+const page = await browser.newPage({ viewport: { width: 900, height: 320 }, deviceScaleFactor: 1 });
+await page.goto(PAGE, { waitUntil: "networkidle" });
 await page.evaluate(() => document.fonts.ready);
 const fontCheck = await page.evaluate(() => {
-  const node = document.querySelector(".wordmark");
+  const node = document.querySelector("#wordmark-frame .wordmark");
+  if (!node) return null;
   const style = getComputedStyle(node);
   return {
     family: style.fontFamily,
@@ -140,22 +64,22 @@ const fontCheck = await page.evaluate(() => {
   };
 });
 console.log("wordmark font", JSON.stringify(fontCheck));
-if (!String(fontCheck.variation || "").includes("SOFT")) {
-  throw new Error("The site Fraunces variation settings were not applied.");
+if (!fontCheck || !String(fontCheck.variation || "").includes("SOFT") || !String(fontCheck.variation).includes("wght")) {
+  throw new Error("The real site wordmark font was not loaded.");
 }
 
 for (let i = 0; i < FRAMES; i += 1) {
   const poseNow = pose(i / FRAMES);
   await page.evaluate(({ square, cloud }) => {
-    const set = (id, eye) => {
-      const node = document.getElementById(id);
-      node.style.transform = `translate(${eye.x}px, ${eye.y}px) scaleY(${eye.sy})`;
+    const set = (selector, eye) => {
+      const node = document.querySelector(selector);
+      node.style.transform = `translate(${eye.x}em, ${eye.y}em) scaleY(${eye.sy})`;
     };
-    set("square-eyes", square);
-    set("cloud-eyes", cloud);
+    set(".wm-square .blink", square);
+    set(".wm-cloud .blink", cloud);
   }, poseNow);
   const file = `${FRAME_DIR}/frame-${String(i).padStart(3, "0")}.png`;
-  await page.locator(".stage").screenshot({ path: file });
+  await page.locator("#wordmark-frame").screenshot({ path: file });
 }
 await browser.close();
 
