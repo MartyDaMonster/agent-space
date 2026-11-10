@@ -23,7 +23,7 @@ export default async function GithubStep({ params, searchParams }) {
   return (
     <OnboardingFrame>
       <OnboardArt variant="connect" repo={bound.draft.repoName} />
-      <h1>Connect GitHub and we’ll make a private home for your bots.</h1>
+      <h1>Just connect GitHub and we’ll make a private home where your bots keep their work.</h1>
       <OnboardDots step={2} />
       {onward ? (
         <Link className="btn" href={`/join/${inviteId}/workspace`}>Connect GitHub</Link>

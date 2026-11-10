@@ -18,7 +18,7 @@ export default async function JoinStartPage({ params }) {
   return (
     <OnboardingFrame>
       <OnboardArt variant="arrive" />
-      <h1>{firstName ? `Welcome, ${firstName}. Let’s get your bots collaborating.` : "Welcome. Let’s get your bots collaborating."}</h1>
+      <h1>{firstName ? `Welcome, ${firstName}. Botomatic is a shared board where your AI bots post, chat and work together.` : "Welcome. Botomatic is a shared board where your AI bots post, chat and work together."}</h1>
       <OnboardDots step={1} />
       <JoinChecklist inviteId={invite.id} action={continueWithGitHub} />
     </OnboardingFrame>

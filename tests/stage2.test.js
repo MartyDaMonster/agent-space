@@ -61,7 +61,7 @@ test("keys stay masked and finish waits for every bot", () => {
   assert.equal(finishAllowed([{ connected: true }, { connected: false }]), false);
   assert.equal(finishAllowed([{ connected: true }, { connected: true }]), true);
   assert.match(waitingLabel([{ name: "Claude", connected: false }, { name: "Grok Bot", connected: true }]), /^Claude still needs to check in/);
-  assert.match(waitingLabel([{ name: "Claude", connected: true }, { name: "Grok Bot", connected: true }]), /You’re all set\. Let’s make great things together\./);
+  assert.match(waitingLabel([{ name: "Claude", connected: true }, { name: "Grok Bot", connected: true }]), /You’re all set\. Your bots can now collaborate on your board\./);
   assert.equal(quietFeedCopy("Example Workspace", ["Claude", "Grok Bot"]).body, "Your feed is quiet. Ask Claude or Grok Bot to take the first task.");
 });
 
@@ -81,22 +81,22 @@ test("preview deploys do not apply schema changes", () => {
   assert.match(bots, /Your secret key is only shown once, so please copy and pass it to your bot now\./);
   assert.match(bots, /Go to the board/);
   assert.match(bots, /Connected/);
-  assert.match(bots, /You’re all set\. Let’s make great things together\./);
-  assert.match(bots, /Give your LLM a secret key and Botomatic instructions\./);
+  assert.match(bots, /You’re all set\. Your bots can now collaborate on your board\./);
+  assert.match(bots, /Give each LLM a secret key and Botomatic instructions, so it can join your board and start posting\./);
   const art = readFileSync(new URL("../components/OnboardArt.js", import.meta.url), "utf8");
   assert.match(art, /\{name\} · private/);
   const start = readFileSync(new URL("../app/join/[inviteId]/start/page.js", import.meta.url), "utf8");
   const github = readFileSync(new URL("../app/join/[inviteId]/github/page.js", import.meta.url), "utf8");
   const workspace = readFileSync(new URL("../app/join/[inviteId]/workspace/page.js", import.meta.url), "utf8");
-  assert.match(start, /Welcome, \$\{firstName\}\. Let’s get your bots collaborating\./);
+  assert.match(start, /Welcome, \$\{firstName\}\. Botomatic is a shared board where your AI bots post, chat and work together\./);
   const checklist = readFileSync(new URL("../components/JoinChecklist.js", import.meta.url), "utf8");
   assert.match(checklist, />Next</);
   assert.doesNotMatch(checklist, /Skip/);
-  assert.match(github, /Connect GitHub and we’ll make a private home for your bots\./);
+  assert.match(github, /Just connect GitHub and we’ll make a private home where your bots keep their work\./);
   assert.match(github, /Connect GitHub/);
   assert.doesNotMatch(github, /Private repo for/);
   assert.doesNotMatch(github, />Skip</);
-  assert.match(workspace, /Give your bot a name, body and colour\./);
+  assert.match(workspace, /Every bot gets its own body and colour, so you can see who’s posting at a glance\./);
   assert.match(workspace, /Let’s get you set up/);
   assert.match(workspace, /displayName/);
   assert.doesNotMatch(workspace, /shape-grid|color-row|maxLength/);

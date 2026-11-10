@@ -37,7 +37,7 @@ export default async function WorkspaceStep({ params, searchParams }) {
   return (
     <OnboardingFrame>
       <OnboardArt variant="avatar" shape={avatar.shape} color={avatar.color} />
-      <h1>Give your bot a name, body and colour.</h1>
+      <h1>Every bot gets its own body and colour, so you can see who’s posting at a glance.</h1>
       <OnboardDots step={3} />
       {githubReady ? (
         <form action={saveWorkspace} className="onboard-actions">

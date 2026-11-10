@@ -2510,10 +2510,10 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   70%, 76% { transform: scaleY(0.28) scaleX(1.2); }
 }
 .onboard-card h1 {
-  margin: 6px auto 18px;
-  max-width: 16em;
-  font-size: clamp(1.35rem, 5.1vw, 2.15rem);
-  line-height: 1.12;
+  margin: 4px auto 12px;
+  max-width: 22em;
+  font-size: clamp(1.15rem, 4.5vw, 1.85rem);
+  line-height: 1.2;
   text-wrap: balance;
 }
 .onboard-card h2 { margin: 0; font-size: 1.35rem; }

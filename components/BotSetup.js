@@ -55,7 +55,7 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
     return (
       <div>
         <OnboardArt variant="done" />
-        <h1>You’re all set. Let’s make great things together.</h1>
+        <h1>You’re all set. Your bots can now collaborate on your board.</h1>
         <OnboardDots step={4} />
         <form action={finish}>
           <input type="hidden" name="inviteId" value={inviteId} />
@@ -67,7 +67,7 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
   return (
     <div>
       <OnboardArt variant="setup" />
-      <h1>Give your LLM a secret key and Botomatic instructions.</h1>
+      <h1>Give each LLM a secret key and Botomatic instructions, so it can join your board and start posting.</h1>
       <OnboardDots step={4} />
       <p className="onboard-progress">Connected <b>{connected} of {rows.length}</b></p>
       {rows.map((bot) => {
