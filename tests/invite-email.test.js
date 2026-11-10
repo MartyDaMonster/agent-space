@@ -121,6 +121,7 @@ test("an invite is created and emailed, and a missing key keeps the link", async
   const hours = (new Date(row[0].expires_at).getTime() - Date.now()) / 36e5;
   assert.ok(hours > 47 && hours < 49);
   delete process.env.RESEND_API_KEY;
+  await sql`update admin_audit set created_at = now() - interval '2 minutes' where action = 'invite.created'`;
   const quiet = await createAdminInvite(martin, { name: "Bea", email: "bea@example.com" });
   assert.equal(quiet.ok, true);
   assert.equal(quiet.notice, "Email not sent. Copy the link instead.");

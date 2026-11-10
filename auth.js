@@ -45,6 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         : { ok: false };
       if (!decision.ok) return false;
       user.email = email;
+      user.emailSource = provider === "github" || provider === "google" ? provider : "";
       user.inviteEmail = decision.inviteEmail || "";
       user.githubId = githubId;
       user.githubLogin = githubLogin;
@@ -60,6 +61,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async jwt({ token, user, profile }) {
       if (user?.email) token.email = user.email;
+      if (user?.emailSource) token.emailSource = user.emailSource;
       if (user?.inviteEmail) token.inviteEmail = user.inviteEmail;
       if (user?.name) token.name = user.name;
       if (user?.githubId) token.githubId = user.githubId;
@@ -78,6 +80,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.githubLogin = token.githubLogin || "";
         session.user.githubId = token.githubId || "";
         session.user.inviteEmail = token.inviteEmail || "";
+        session.user.emailSource = token.emailSource || "";
       }
       return session;
     }

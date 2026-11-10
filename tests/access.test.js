@@ -59,6 +59,8 @@ test("the default invite list is Martin, including his GitHub user id", () => {
   assert.equal(inviteAllowed({ email: "someone@example.com", githubLogin: "MartyDaMonster" }), false);
   assert.equal(inviteAllowed({ email: "ada@example.com", emails: "ada@example.com", githubIds: "" }), true);
   assert.equal(inviteAllowed({ email: "marty.hungerford3181@gmail.com", emails: "" }), false);
+  assert.equal(inviteAllowed({ email: "marty.hungerford3181@gmail.com", emailSource: "invite" }), false);
+  assert.equal(inviteAllowed({ email: "marty.hungerford3181@gmail.com", emailSource: "google" }), true);
 });
 
 test("only an Auth.js session cookie counts as signed in", () => {

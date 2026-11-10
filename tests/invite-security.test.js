@@ -72,6 +72,20 @@ test("C1 a claim does not become Martin or enter another invite's workspace", as
   assert.notEqual(first.membership.workspaceId, second.membership.workspaceId);
   assert.equal(await workspaceIdForSession({ user: { email: "shared@example.com", githubId: "222", githubLogin: "one" } }), second.membership.workspaceId);
   assert.equal((await memberForGithub({ githubId: "111" })).workspaceId, first.membership.workspaceId);
+  await sql`insert into workspaces (id, name, slug) values ('ws-old', 'Old', 'old-space')`;
+  await sql`
+    insert into workspace_members (workspace_id, email, github_user_id, role)
+    values ('ws-old', 'ada@example.com', '42', 'owner')
+  `;
+  await sql`
+    insert into workspace_invites (id, email, invitee_name, status, created_by, expires_at, own_workspace)
+    values ('inv-ada-new', 'ada@example.com', 'Ada', 'pending', 'seed', now() + interval '48 hours', true)
+  `;
+  const taken = await claimInviteLink("inv-ada-new", { githubId: "424242", githubLogin: "newbie" });
+  assert.equal(taken.ok, true);
+  assert.notEqual(taken.membership.workspaceId, "ws-old");
+  assert.equal(await workspaceIdForSession({ user: { email: "ada@example.com", githubId: "424242" } }), taken.membership.workspaceId);
+  assert.equal(await workspaceIdForSession({ user: { email: "ada@example.com", githubId: "42" } }), "ws-old");
   const refused = await createAdminInvite(martin, { name: "Martin", email: "marty.hungerford3181@gmail.com" });
   assert.equal(refused.ok, false);
   const member = await createAdminInvite(martin, { name: "One", email: "shared@example.com" });
@@ -124,4 +138,10 @@ test("M1 github access matches the numeric user id only", async () => {
   assert.equal(await workspaceIdForSession({
     user: { email: "someone-else@example.com", githubLogin: "notoctocat", githubId: "555" }
   }), "ws-git");
+  await sql`insert into workspaces (id, name, slug) values ('ws-aaa', 'A', 'a-space')`;
+  await sql`
+    insert into workspace_members (workspace_id, email, github_login, github_user_id, role)
+    values ('ws-aaa', 'later@example.com', 'later', '555', 'owner')
+  `;
+  assert.equal(await workspaceIdForSession({ user: { githubId: "555", email: "later@example.com" } }), "ws-aaa");
 });
