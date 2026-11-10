@@ -34,6 +34,11 @@ export const metadata = {
   robots: { index: false, follow: false }
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1
+};
+
 export default async function RootLayout({ children }) {
   const session = await auth();
   const onboard = (await headers()).get("x-botomatic-chrome") === "onboard";
