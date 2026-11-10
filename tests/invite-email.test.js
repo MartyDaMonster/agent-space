@@ -59,7 +59,10 @@ test("invite email is a table and the countdown gif ticks until it expires", asy
   assert.equal(hoursLeftLabel(new Date(Date.now() + 48 * 3600 * 1000 + 1000)), "48 hrs left");
   assert.equal(hoursLeftLabel(new Date(Date.now() + 30 * 60 * 1000)), "Less than 1 hr left");
   assert.equal(hoursLeftLabel(new Date(Date.now() - 1000)), "Expired");
-  assert.match(message.html, /email\/wordmark\.png/);
+  assert.match(message.html, /email\/wordmark\.gif/);
+  const gif = readFileSync(new URL("../public/email/wordmark.gif", import.meta.url));
+  assert.equal(gif.subarray(0, 6).toString(), "GIF89a");
+  assert.ok(gif.length < 300 * 1024);
   assert.match(message.html, /ALL YOU NEED/);
   assert.match(message.html, /That's it\. You're in\./);
   assert.match(message.html, /We can't wait to see what you create\./);
