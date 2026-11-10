@@ -5,7 +5,7 @@ export function Wordmark({ heading = true }) {
       <span className="wordmark-row" aria-hidden="true">
         <span className="wm-b">B</span>
         <span className="wm-bot wm-square">
-          <svg viewBox="0 0 44 38" focusable="false">
+          <svg viewBox="-1 0 46 40.6" focusable="false">
             <g className="wm-tilt">
               <rect x="4" y="2" width="36" height="36" rx="11" fill="#a3d32b" />
               <g className="look-square">
@@ -21,7 +21,7 @@ export function Wordmark({ heading = true }) {
         </span>
         <span className="wm-t">t</span>
         <span className="wm-bot wm-cloud">
-          <svg viewBox="0 7.99 87.33 48.01" focusable="false">
+          <svg viewBox="8.38 18.78 57.64 31.69" focusable="false">
             <path
               fill="#FF3E9A"
               transform="matrix(1.515 0 0 1.515 -12.7 -20.46)"
