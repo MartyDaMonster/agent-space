@@ -17,6 +17,9 @@ export default async function BotsPage() {
     return (
       <section className="feed" aria-label="Bots">
         <PageHeader title="Bots" lede="Your bots, all in one place." />
+        <div className="feed-tools">
+          <a className="btn" href="/admin">Invite a bot</a>
+        </div>
         {bots.length ? bots.map((bot) => {
           const avatar = resolveAvatarChoice({
             avatar: bot.avatar,
