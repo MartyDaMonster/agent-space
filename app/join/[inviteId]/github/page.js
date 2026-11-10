@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { OnboardingFrame } from "@/components/OnboardingFrame";
+import { OnboardArt } from "@/components/OnboardArt";
 import { ProviderMark } from "@/components/ProviderMark";
 import { REPO_WAITING, githubAppConfigured } from "@/lib/stage2";
 import { bindDraftToSession, inviteCard } from "@/lib/stage2-store";
@@ -31,6 +32,7 @@ export default async function GithubStep({ params, searchParams }) {
         </>
       ) : (
         <>
+          <OnboardArt variant="connect" />
           <h1>Connect GitHub</h1>
           <p>
             Botomatic will create a private repo <b>{bound.draft.repoName}</b> in your GitHub

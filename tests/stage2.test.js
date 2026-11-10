@@ -24,10 +24,11 @@ test("an invite needs two assistants and a private repo name", () => {
   assert.equal(workspaceNameForInvitee("Ada Lovelace"), "Ada's workspace");
   assert.equal(workspaceNameForInvitee("  "), "My workspace");
   assert.equal(repoNameForSlug("ada-s-workspace"), "botomatic-ada-s-workspace");
-  const workspacePage = readFileSync(new URL("../app/join/[inviteId]/workspace/page.js", import.meta.url), "utf8");
-  assert.doesNotMatch(workspacePage, /workspace-name|Name your workspace/);
-  assert.match(workspacePage, /Pick your avatar/);
-  assert.match(workspacePage, /Choose a shape and a colour/);
+  const githubPage = readFileSync(new URL("../app/join/[inviteId]/github/page.js", import.meta.url), "utf8");
+  const onboardCss = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(githubPage, /OnboardArt/);
+  assert.match(onboardCss, /\.repo-row\s*\{[^}]*28px minmax\(0, 1fr\)/);
+  assert.match(onboardCss, /onboard-illu/);
   const prompt = setupPrompt({
     botName: "Claude",
     workspaceName: "Example Workspace",
