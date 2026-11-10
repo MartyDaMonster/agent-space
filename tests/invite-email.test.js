@@ -59,14 +59,41 @@ test("invite email is a table and the countdown gif ticks until it expires", asy
   assert.equal(hoursLeftLabel(new Date(Date.now() + 48 * 3600 * 1000 + 1000)), "48 hrs left");
   assert.equal(hoursLeftLabel(new Date(Date.now() + 30 * 60 * 1000)), "Less than 1 hr left");
   assert.equal(hoursLeftLabel(new Date(Date.now() - 1000)), "Expired");
+  const varied = buildInviteEmail({
+    firstName: "Ada",
+    joinUrl: "https://botomatic.dev/join/inv-ada",
+    expiresAt: new Date("2026-11-12T09:00:00Z"),
+    countdownUrl: "https://botomatic.dev/api/invite/inv-ada/countdown.png",
+    privacyUrl: "https://botomatic.dev/privacy",
+    assetOrigin: "https://botomatic.dev",
+    sendId: "abc123",
+    sentAt: new Date("2026-11-10T21:50:12Z")
+  });
+  const other = buildInviteEmail({
+    firstName: "Ada",
+    joinUrl: "https://botomatic.dev/join/inv-other",
+    expiresAt: new Date("2026-11-12T10:00:00Z"),
+    countdownUrl: "https://botomatic.dev/api/invite/inv-other/countdown.png",
+    privacyUrl: "https://botomatic.dev/privacy",
+    assetOrigin: "https://botomatic.dev",
+    sendId: "def456",
+    sentAt: new Date("2026-11-10T21:51:03Z")
+  });
+  assert.notEqual(varied.html, other.html);
+  assert.notEqual(varied.subject, other.subject);
+  assert.match(varied.subject, /Ada, you're invited to the Botomatic beta · 11 Nov 2026, 8:50:12am AEDT/);
+  assert.match(varied.html, /Sent to Ada on 11 Nov 2026, 8:50:12am AEDT/);
+  assert.match(varied.html, /Your invite link, Ada: <a href="https:\/\/botomatic\.dev\/join\/inv-ada"/);
+  assert.doesNotMatch(varied.html, /display:\s*none|mso-hide|blockquote|gmail_quote|wrote:/i);
+  assert.equal(varied.messageId, "<abc123@botomatic.dev>");
   assert.match(message.html, /email\/wordmark\.gif/);
   const gif = readFileSync(new URL("../public/email/wordmark.gif", import.meta.url));
   assert.equal(gif.subarray(0, 6).toString(), "GIF89a");
   assert.ok(gif.length < 300 * 1024);
   assert.match(message.html, /ALL YOU NEED/);
   assert.match(message.html, /That's it\. You're in\./);
-  assert.match(message.html, /We can't wait to see what you create\./);
-  assert.match(message.html, /The team at BrandOSX/);
+  assert.match(message.html, /We can't wait to see what you create/);
+  assert.match(message.html, /Sent to Ada on /);
   assert.match(message.html, /BrandOSX Automation Pty Ltd/);
   assert.match(message.html, /v:roundrect/);
   assert.match(message.html, /color-scheme/);
@@ -182,4 +209,9 @@ test("an invite is created and emailed, and a missing key keeps the link", async
   assert.equal(preview.notice, "Sent to marty.hungerford3181@gmail.com");
   assert.equal(sent.at(-1).to, "marty.hungerford3181@gmail.com");
   assert.match(sent.at(-1).html, /countdown\.png/);
+  assert.match(sent.at(-1).subject, / · \d+ \w+ \d{4}, \d+:\d{2}:\d{2}(am|pm) AEDT$/);
+  assert.match(sent.at(-1).html, /Sent to Martin on /);
+  assert.doesNotMatch(sent.at(-1).html, /display:\s*none|mso-hide/);
+  assert.match(sent.at(-1).headers["Message-ID"], /^<[a-f0-9]+@botomatic.dev>$/);
+  assert.notEqual(sent[0].headers["Message-ID"], sent.at(-1).headers["Message-ID"]);
 });
