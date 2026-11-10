@@ -36,6 +36,7 @@ async function resetDatabase() {
 test("a signed invite cookie cannot be swapped for another id", () => {
   const token = signInviteCookie("inv-ada", "claim-test-secret");
   assert.equal(readInviteCookie(token, "claim-test-secret"), "inv-ada");
+  assert.equal(readInviteCookie(token), "");
   const swapped = `${token.slice(0, -1)}${token.endsWith("a") ? "b" : "a"}`;
   assert.equal(readInviteCookie(swapped, "claim-test-secret"), "");
   assert.equal(readInviteCookie("", "claim-test-secret"), "");
@@ -58,7 +59,7 @@ test("a different GitHub account claims the link once, and expired or revoked li
     insert into workspace_invites (id, email, status, created_by, revoked_at, own_workspace)
     values ('inv-stop', 'stop@example.com', 'revoked', 'martin', now(), true)
   `;
-  const cookie = signInviteCookie("inv-ada", "claim-test-secret");
+  const cookie = signInviteCookie("inv-ada");
   const claimed = await authorizeGithubSignIn({
     email: "octocat@users.noreply.github.com",
     githubLogin: "octocat",
@@ -68,7 +69,8 @@ test("a different GitHub account claims the link once, and expired or revoked li
   });
   assert.equal(claimed.ok, true);
   assert.equal(claimed.created, true);
-  assert.equal(claimed.email, "ada@example.com");
+  assert.equal(claimed.email, "octocat@users.noreply.github.com");
+  assert.equal(claimed.inviteEmail, "ada@example.com");
   assert.notEqual(claimed.workspaceId, "ws-martin");
   const member = await sql`
     select email, github_login, github_user_id, role, workspace_id
@@ -101,7 +103,8 @@ test("a different GitHub account claims the link once, and expired or revoked li
   });
   assert.equal(retry.ok, true);
   assert.equal(retry.created, false);
-  assert.equal(retry.email, "ada@example.com");
+  assert.equal(retry.email, "octocat@users.noreply.github.com");
+  assert.equal(retry.inviteEmail, "ada@example.com");
 
   const expired = await claimInviteLink("inv-old", { githubId: "8", githubLogin: "old" });
   assert.equal(expired.ok, false);

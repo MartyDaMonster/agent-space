@@ -24,7 +24,9 @@ const objects = {
 test("Martin's sign-in still resolves to the original workspace", () => {
   assert.equal(identityWorkspace({ email: "Marty.Hungerford3181@gmail.com" }), MARTIN);
   assert.equal(identityWorkspace({ email: "marty.j.hungerford@gmail.com" }), MARTIN);
-  assert.equal(identityWorkspace({ githubLogin: "MartyDaMonster" }), MARTIN);
+  assert.equal(identityWorkspace({ githubId: "150204025" }), MARTIN);
+  assert.equal(identityWorkspace({ email: "marty.hungerford3181@gmail.com", githubId: "999" }), null);
+  assert.equal(identityWorkspace({ githubLogin: "MartyDaMonster" }), null);
   assert.equal(identityWorkspace({ email: "ada@example.com" }), null);
 });
 

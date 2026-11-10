@@ -128,27 +128,33 @@ test("an invite is created and emailed, and a missing key keeps the link", async
   const bea = listed.invites.find((invite) => invite.email === "bea@example.com");
   assert.equal(bea.sentAt, null);
   assert.match(bea.sendError, /RESEND_API_KEY/);
+  await sql`update workspace_invites set sent_at = now() - interval '2 minutes' where id = ${created.invite.id}`;
   const again = await resendAdminInvite(martin, created.invite.id, {
     origin: "https://botomatic.dev",
     send: async (payload) => { sent.push(payload); }
   });
   assert.equal(again.ok, true);
+  assert.notEqual(again.inviteId, created.invite.id);
   assert.equal(sent.length, 2);
-  const renewed = await sql`select expires_at from workspace_invites where id = ${created.invite.id}`;
+  const oldRow = await sql`select status from workspace_invites where id = ${created.invite.id}`;
+  assert.equal(oldRow[0].status, "revoked");
+  const renewed = await sql`select expires_at, status from workspace_invites where id = ${again.inviteId}`;
+  assert.equal(renewed[0].status, "pending");
   const left = (new Date(renewed[0].expires_at).getTime() - Date.now()) / 36e5;
   assert.ok(left > 47 && left < 49);
   const { countdownResponse } = await import("../lib/countdown-route.js");
   const missing = await countdownResponse("nope");
   assert.equal(missing.status, 404);
-  const found = await countdownResponse(created.invite.id);
+  const found = await countdownResponse(again.inviteId);
   assert.equal(found.status, 200);
   assert.match(found.headers.get("cache-control"), /private/);
   const bytes = Buffer.from(await found.arrayBuffer());
   assert.equal(bytes.subarray(0, 6).toString(), "GIF89a");
   assert.equal(bytes.toString("utf8").includes("ada@example.com"), false);
   const hidden = await countdownResponse("preview");
-  assert.equal(hidden.status, 404);
-  assert.equal(await hidden.text(), "Not found");
+  assert.equal(hidden.status, 200);
+  assert.equal(hidden.headers.get("content-type"), "image/gif");
+  assert.equal(hidden.headers.get("content-type").includes("html"), false);
   process.env.VERCEL_ENV = "production";
   assert.equal(devPreviewBlocked(), true);
   delete process.env.VERCEL_ENV;

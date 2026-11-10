@@ -58,12 +58,12 @@ test("invite, onboarding, and bot routes stay inside one workspace", async () =>
     values ('martin-secret', 'message', 'human', 'martin only', now(), 'ws-martin')
   `;
   await sql`
-    insert into workspace_invites (id, workspace_id, email, status, created_by)
-    values ('inv-ada', 'ws-ada', 'ada@example.com', 'pending', 'Alex Example')
+    insert into workspace_invites (id, workspace_id, email, status, created_by, expires_at)
+    values ('inv-ada', 'ws-ada', 'ada@example.com', 'pending', 'Alex Example', now() + interval '48 hours')
   `;
   await sql`
-    insert into workspace_invites (id, workspace_id, email, status, created_by)
-    values ('inv-eve', 'ws-martin', 'eve@example.com', 'pending', 'Martin')
+    insert into workspace_invites (id, workspace_id, email, status, created_by, expires_at)
+    values ('inv-eve', 'ws-martin', 'eve@example.com', 'pending', 'Martin', now() + interval '48 hours')
   `;
 
   const card = await inviteCard("inv-ada");

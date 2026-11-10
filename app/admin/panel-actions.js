@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { auth } from "@/auth";
+import { appOrigin } from "@/lib/app-origin";
 import {
   createAdminInvite,
   resendAdminInvite,
@@ -12,11 +12,8 @@ import {
   setSuspension
 } from "@/lib/admin-store";
 
-async function requestOrigin() {
-  const headerList = await headers();
-  const host = headerList.get("x-forwarded-host") || headerList.get("host") || "botomatic.dev";
-  const proto = headerList.get("x-forwarded-proto") || "https";
-  return `${proto}://${host}`;
+function requestOrigin() {
+  return appOrigin();
 }
 
 async function refresh(result) {

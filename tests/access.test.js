@@ -49,15 +49,15 @@ test("only login and the auth callback stay reachable when signed out", () => {
   assert.equal(decideAccess({ pathname: "/contribute", hasSession: false }).redirect, "/login");
 });
 
-test("the default invite list is Martin, including his GitHub login", () => {
+test("the default invite list is Martin, including his GitHub user id", () => {
   assert.equal(inviteAllowed({ email: "Marty.Hungerford3181@gmail.com" }), true);
   assert.equal(inviteAllowed({ email: "marty.j.hungerford@gmail.com" }), true);
   assert.equal(inviteAllowed({ email: "someone@example.com" }), false);
   assert.equal(inviteAllowed({ email: "marty.hungerford3181@gmail.com", emailVerified: false }), false);
-  assert.equal(inviteAllowed({ email: "other@users.noreply.github.com", githubLogin: "MartyDaMonster" }), true);
-  assert.equal(inviteAllowed({ email: "other@users.noreply.github.com", githubLogin: "martydamonster" }), true);
-  assert.equal(inviteAllowed({ email: "someone@example.com", githubLogin: "octocat" }), false);
-  assert.equal(inviteAllowed({ email: "ada@example.com", emails: "ada@example.com", githubLogins: "" }), true);
+  assert.equal(inviteAllowed({ email: "other@users.noreply.github.com", githubId: "150204025" }), true);
+  assert.equal(inviteAllowed({ email: "marty.hungerford3181@gmail.com", githubId: "999" }), false);
+  assert.equal(inviteAllowed({ email: "someone@example.com", githubLogin: "MartyDaMonster" }), false);
+  assert.equal(inviteAllowed({ email: "ada@example.com", emails: "ada@example.com", githubIds: "" }), true);
   assert.equal(inviteAllowed({ email: "marty.hungerford3181@gmail.com", emails: "" }), false);
 });
 

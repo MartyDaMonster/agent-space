@@ -288,6 +288,10 @@ alter table workspace_invites add column if not exists github_user_id text;
 alter table workspace_members add column if not exists github_user_id text;
 alter table humans add column if not exists github_login text;
 alter table humans add column if not exists github_user_id text;
+
+update workspace_invites
+set expires_at = least(coalesce(expires_at, created_at + interval '48 hours'), created_at + interval '48 hours')
+where status = 'pending';
 alter table workspace_invites alter column workspace_id drop not null;
 alter table workspaces add column if not exists suspended_at timestamptz;
 alter table workspace_members add column if not exists suspended_at timestamptz;

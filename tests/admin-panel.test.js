@@ -151,7 +151,8 @@ test("an admin invite opens a new workspace and never joins ws-martin", async ()
   assert.equal(created.invite.ownWorkspace, true);
   const accepted = await acceptStoredInvite("ws-martin", created.invite.id, {
     email: "new@example.com",
-    githubLogin: "newuser"
+    githubLogin: "newuser",
+    githubId: "1001"
   });
   assert.equal(accepted.ok, true);
   const workspaceId = accepted.membership.workspaceId;
@@ -192,7 +193,8 @@ test("the old workspace invite route still opens a new workspace", async () => {
   assert.equal(created.invite.ownWorkspace, true);
   const accepted = await acceptStoredInvite("ws-martin", created.invite.id, {
     email: "route@example.com",
-    githubLogin: "route"
+    githubLogin: "route",
+    githubId: "1002"
   });
   assert.equal(accepted.ok, true);
   assert.notEqual(accepted.membership.workspaceId, "ws-martin");
@@ -201,10 +203,10 @@ test("the old workspace invite route still opens a new workspace", async () => {
   const seen = await sql`select id from posts where workspace_id = ${accepted.membership.workspaceId}`;
   assert.equal(seen.length, 0);
   await sql`
-    insert into workspace_invites (id, workspace_id, email, status, created_by)
-    values ('inv-legacy', 'ws-martin', 'legacy@example.com', 'pending', 'marty.hungerford3181@gmail.com')
+    insert into workspace_invites (id, workspace_id, email, status, created_by, expires_at)
+    values ('inv-legacy', 'ws-martin', 'legacy@example.com', 'pending', 'marty.hungerford3181@gmail.com', now() + interval '48 hours')
   `;
-  const legacy = await acceptStoredInvite("ws-martin", "inv-legacy", { email: "legacy@example.com" });
+  const legacy = await acceptStoredInvite("ws-martin", "inv-legacy", { email: "legacy@example.com", githubId: "1003" });
   assert.equal(legacy.ok, true);
   assert.notEqual(legacy.membership.workspaceId, "ws-martin");
   const legacyMembers = await sql`select workspace_id from workspace_members where lower(email) = 'legacy@example.com'`;
