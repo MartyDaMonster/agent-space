@@ -21,6 +21,7 @@ html { font-size: 100%; color-scheme: dark; }
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: clip;
   font-family: var(--sans);
   font-size: 16px;
   font-weight: 400;
@@ -85,7 +86,7 @@ h1 {
 .wm-b,
 .wm-t,
 .wm-matic {
-  line-height: 0.72;
+  line-height: 1;
 }
 
 .wm-bot {
@@ -93,24 +94,33 @@ h1 {
   flex: 0 0 auto;
   z-index: 1;
   align-self: flex-end;
-  /* About 7% of the font size, so the avatars only nick the neighbouring letters. */
-  margin-inline: -0.07em;
-  margin-bottom: 0;
+  margin-inline: 0.05em;
+  margin-bottom: -0.13em;
+  line-height: 0;
 }
 
 .wm-square {
-  width: 0.52em;
-  height: 0.52em;
+  width: calc(1ex * 44 / 36);
+  height: calc(1ex * 38 / 36);
 }
 .wm-cloud {
-  width: 0.946em;
-  height: 0.52em;
+  width: calc(1ex * 87.33 / 48.01);
+  height: 1ex;
 }
 
 .wm-square svg,
-.wm-cloud svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.wm-cloud svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
 
-.wm-tilt { transform: rotate(-10deg); transform-origin: center; }
+.wm-tilt {
+  transform: rotate(-8deg);
+  transform-origin: 22px 38px;
+  transform-box: view-box;
+}
 
 .wordmark .look-square,
 .wordmark .look-cloud,
@@ -491,11 +501,16 @@ dialog.app-dialog h2 { padding-right: 32px; }
 .feed, .bot-directory {
   display: grid;
   gap: 16px;
-  width: min(640px, 100%);
+  width: 100%;
+  max-width: 640px;
+  min-width: 0;
   margin-inline: auto;
 }
 
 .card, .bot-card, .state-box {
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
   border-radius: 16px;
   background: var(--card);
   padding: 16px;
@@ -505,8 +520,10 @@ dialog.app-dialog h2 { padding-right: 32px; }
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: nowrap;
   min-width: 0;
+  max-width: 100%;
 }
 
 .name-row {
@@ -586,6 +603,7 @@ dialog.app-dialog h2 { padding-right: 32px; }
 .mention-chip {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
   margin: 0 2px;
   padding: 0 6px;
   border-radius: 999px;
@@ -593,6 +611,8 @@ dialog.app-dialog h2 { padding-right: 32px; }
   color: var(--cyan);
   font-weight: 700;
   text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .card a.mention-chip { color: var(--cyan); }
 .comment-edit { display: grid; gap: 8px; }
@@ -626,6 +646,7 @@ dialog.app-dialog h2 { padding-right: 32px; }
 .post-card:has(.post-menu-panel) { z-index: 4; }
 .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .who-line { flex: 1; min-width: 0; }
+.who-copy, .card-top, .post-card { min-width: 0; max-width: 100%; }
 .post-menu { position: relative; flex: 0 0 auto; }
 .icon-btn {
   width: 36px;
@@ -687,6 +708,8 @@ dialog.app-dialog h2 { padding-right: 32px; }
 
 .post-text {
   margin: 16px 0 0;
+  min-width: 0;
+  max-width: 100%;
   font-family: var(--sans);
   font-size: 1.125rem;
   font-weight: 400;
@@ -700,6 +723,9 @@ dialog.app-dialog h2 { padding-right: 32px; }
   width: 52px;
   height: 52px;
   flex: 0 0 auto;
+  align-self: flex-start;
+  margin-top: 0;
+  overflow: visible;
 }
 .post-card .avatar { width: 64px; height: 64px; }
 .post-card .avatar.pill { width: 44px; height: 44px; }
@@ -1145,7 +1171,9 @@ dialog.app-dialog h2 { padding-right: 32px; }
   animation: glance 8.4s ease-in-out infinite;
   animation-delay: var(--idle-delay, 0s);
 }
-.avatar svg, .avatar img { display: block; width: 100%; height: 100%; }
+.avatar svg, .avatar img { display: block; width: 100%; height: 100%; overflow: visible; }
+.who-line .avatar.pill .avatar-mark,
+.comments .avatar .avatar-mark { transform: translateY(-14%); }
 .avatar img { object-fit: cover; border-radius: 16px; }
 
 .tag-platform {
@@ -1177,7 +1205,7 @@ dialog.app-dialog h2 { padding-right: 32px; }
 
 .plain-link { margin: 14px 0 0; overflow-wrap: anywhere; }
 
-.reactions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.reactions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; max-width: 100%; min-width: 0; }
 .reaction {
   display: inline-flex;
   align-items: center;
@@ -1848,9 +1876,9 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .react.on { border-color: var(--lime); background: rgba(198, 255, 61, 0.12); }
 .react-count { color: var(--muted); font-size: 13px; display: inline-block; }
 .react-count.is-tick { animation: count-tick 200ms ease-out; }
-.comments { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.comments li { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: start; }
-.comments p { margin: 2px 0 0; }
+.comments { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; min-width: 0; max-width: 100%; }
+.comments li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 8px; align-items: start; min-width: 0; }
+.comments p { margin: 2px 0 0; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .comment-form { display: grid; gap: 8px; }
 .legal {
   width: min(680px, 100%);
@@ -1888,7 +1916,7 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   background: var(--bg);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-.app-bar .wordmark { font-size: 1.85rem; line-height: 0.72; }
+.app-bar .wordmark { font-size: 1.85rem; line-height: 1; }
 .app-bar .brand { text-decoration: none; color: inherit; }
 .account-trigger {
   display: inline-flex;
@@ -1941,7 +1969,7 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .me-sheet { display: none; }
 .app-body { min-height: calc(100dvh - 56px); }
 .side-nav { display: none; }
-.app-main { padding: 16px 16px 88px; }
+.app-main { padding: 16px 16px 88px; min-width: 0; max-width: 100%; }
 .tab-bar {
   position: fixed;
   left: 0;
@@ -2001,7 +2029,7 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .page-header { display: grid; gap: 8px; }
 .page-header h1, .page-header p { margin: 0; }
 .page-header p { color: var(--muted); }
-.page-fade { animation: page-fade 180ms ease-out; }
+.page-fade { animation: page-fade 180ms ease-out; min-width: 0; max-width: 100%; }
 @keyframes page-fade { from { opacity: 0; } to { opacity: 1; } }
 .empty-state { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 32px 16px; }
 .empty-art .avatar-mark { width: 88px; height: 88px; }
@@ -2217,7 +2245,13 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   .project-switch a { justify-content: space-between; }
 }
 .onboard-root { min-height: 100vh; }
-.onboard { width: min(640px, calc(100% - 32px)); margin: 24px auto 48px; }
+.onboard {
+  width: min(640px, 100%);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  box-sizing: border-box;
+}
 .onboard-brand { text-align: center; }
 .onboard-brand .wordmark { font-size: clamp(2rem, 5vw, 2.6rem); }
 .onboard-brand p { margin: 4px 0 24px; color: var(--muted); }
@@ -2227,7 +2261,22 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .onboard-dots i { width: 8px; height: 8px; border-radius: 999px; background: #3a3e58; }
 .onboard-dots i[data-state="now"] { background: var(--lime); }
 .onboard-dots i[data-state="done"] { background: #6e7588; }
+.onboard > .onboard-card {
+  display: block;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
 .onboard-card { padding: 24px; border-radius: 24px; background: var(--card); }
+.avatar-choice-preview {
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+  margin: 4px auto 16px;
+}
+.avatar-choice-preview .avatar-mark { width: 120px; height: 120px; overflow: visible; }
 .onboard-card h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 4vw, 2.4rem); }
 .onboard-card h2 { margin: 0; font-size: 1.35rem; }
 .onboard-kicker, .onboard-note, .secret-note { color: var(--muted); }
@@ -2263,8 +2312,16 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .secret-row input, .invite-card input, .onboard-card input:not([type="checkbox"]):not([type="radio"]) {
   width: 100%; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: #12131c; color: #fff;
 }
-.shape-grid { display: grid; grid-template-columns: repeat(6, 48px); gap: 8px; }
-.shape-grid label, .color-row label { display: grid; place-items: center; width: 40px; height: 40px; }
+.shape-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  justify-items: center;
+}
+.shape-grid label, .color-row label { display: grid; place-items: center; width: 44px; height: 44px; }
+.shape-grid input:checked + .avatar-mark { outline: 2px solid var(--lime); outline-offset: 2px; border-radius: 12px; }
 .shape-grid input, .color-row input { position: absolute; opacity: 0; }
 .shape-grid .avatar-mark { width: 32px; height: 32px; color: var(--lime); }
 .color-row label { border-radius: 999px; }

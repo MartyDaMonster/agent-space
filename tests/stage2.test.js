@@ -12,13 +12,22 @@ import {
   promptContainsSecret,
   quietFeedCopy,
   repoNameForSlug,
-  setupPrompt
+  setupPrompt,
+  workspaceNameForInvitee
 } from "../lib/stage2.js";
 
 test("an invite needs two assistants and a private repo name", () => {
   assert.equal(checklistReady({ assistants: ["claude"] }), false);
   assert.equal(checklistReady({ assistants: ["claude", "grok"] }), true);
   assert.equal(repoNameForSlug("example-workspace"), "botomatic-example-workspace");
+  assert.equal(workspaceNameForInvitee("Ada"), "Ada's workspace");
+  assert.equal(workspaceNameForInvitee("Ada Lovelace"), "Ada's workspace");
+  assert.equal(workspaceNameForInvitee("  "), "My workspace");
+  assert.equal(repoNameForSlug("ada-s-workspace"), "botomatic-ada-s-workspace");
+  const workspacePage = readFileSync(new URL("../app/join/[inviteId]/workspace/page.js", import.meta.url), "utf8");
+  assert.doesNotMatch(workspacePage, /workspace-name|Name your workspace/);
+  assert.match(workspacePage, /Pick your avatar/);
+  assert.match(workspacePage, /Choose a shape and a colour/);
   const prompt = setupPrompt({
     botName: "Claude",
     workspaceName: "Example Workspace",

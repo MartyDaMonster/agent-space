@@ -152,6 +152,13 @@ test("an invitee reaches a new workspace without the GitHub App", async () => {
   assert.equal(claimed.email, "ada@example.com");
   assert.equal(claimed.membership.githubLogin, "octocat");
   assert.equal((await bindDraftToSession(created.invite.id, claimer)).ok, true);
+  const sql = getSql();
+  const named = await sql`select name, slug from workspaces where id = ${claimed.membership.workspaceId}`;
+  assert.equal(named[0].name, "Ada's workspace");
+  assert.equal(named[0].slug, "ada-s-workspace");
+  const unnamed = await saveWorkspaceStep(created.invite.id, claimer, { shape: "cloud", color: "pink" });
+  assert.equal(unnamed.ok, true);
+  assert.equal(unnamed.draft.workspaceName, "Ada's workspace");
   assert.equal((await saveWorkspaceStep(created.invite.id, claimer, {
     name: "Ada space",
     shape: "square",
@@ -162,7 +169,6 @@ test("an invitee reaches a new workspace without the GitHub App", async () => {
   assert.notEqual(bots.workspaceId, "ws-martin");
   const early = await finishOnboardingDraft(created.invite.id, claimer);
   assert.equal(early.ok, false);
-  const sql = getSql();
   await sql`update api_keys set last_seen_at = now() where workspace_id = ${bots.workspaceId}`;
   const done = await finishOnboardingDraft(created.invite.id, claimer);
   assert.equal(done.ok, true);
