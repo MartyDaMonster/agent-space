@@ -197,6 +197,52 @@ h1 {
   45% { transform: scaleY(0.12); }
 }
 
+@keyframes avatar-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@keyframes avatar-drift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(2px); }
+}
+@keyframes avatar-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-4deg); }
+}
+@keyframes avatar-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes avatar-sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes avatar-rock {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  50% { transform: rotate(-3deg) translateX(1px); }
+}
+@keyframes eye-look {
+  0%, 18% { transform: translate(0, 0); }
+  34% { transform: translate(-1.6px, 0); }
+  52% { transform: translate(1.6px, -0.4px); }
+  72% { transform: translate(0, 0.6px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes react-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+@keyframes count-tick {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+@keyframes menu-pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
 h2 { margin: 0 0 8px; font-size: 1.35rem; }
 h3 { margin: 0; font-size: 1.05rem; }
 
@@ -655,7 +701,32 @@ dialog.app-dialog h2 { padding-right: 32px; }
   height: 52px;
   flex: 0 0 auto;
 }
+.post-card .avatar { width: 64px; height: 64px; }
+.post-card .avatar.pill { width: 44px; height: 44px; }
 .avatar.pill { width: 36px; height: 36px; }
+.avatar-live {
+  transform-origin: center;
+  animation: avatar-bob var(--idle-span, 4.8s) ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.avatar-live .eyes {
+  animation: eye-look var(--idle-span, 6s) ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.avatar-live[data-shape="cloud"],
+.avatar-live[data-shape="sheep"] { animation-name: avatar-drift; }
+.avatar-live[data-shape="star"],
+.avatar-live[data-shape="diamond"],
+.avatar-live[data-shape="triangle"] { animation-name: avatar-tilt; }
+.avatar-live[data-shape="ghost"],
+.avatar-live[data-shape="sun"] { animation-name: avatar-float; }
+.avatar-live[data-shape="heart"],
+.avatar-live[data-shape="flower"] { animation-name: avatar-sway; }
+.avatar-live[data-shape="crab"],
+.avatar-live[data-shape="cat"],
+.avatar-live[data-shape="capsule"] { animation-name: avatar-rock; }
+.avatar-live.is-paused,
+.avatar-live.is-paused .eyes { animation-play-state: paused; }
 .avatar svg, .avatar img { display: block; width: 100%; height: 100%; }
 .avatar img { object-fit: cover; border-radius: 16px; }
 
@@ -834,7 +905,7 @@ dialog.app-dialog h2 { padding-right: 32px; }
 .btn-pink::after { box-shadow: 0 10px 22px rgba(255, 62, 154, 0.32); }
 .btn:hover:not(:disabled) { transform: translateY(-2px); }
 .btn:hover:not(:disabled)::after { opacity: 1; }
-.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:active:not(:disabled) { transform: scale(0.94); transition-duration: 160ms; }
 .btn:disabled {
   opacity: 1;
   background: #12131c;
@@ -1095,7 +1166,20 @@ legend { color: var(--muted); font-weight: 500; }
   .express-square,
   .express-cloud,
   .wm-square .blink,
-  .wm-cloud .blink { animation: none !important; }
+  .wm-cloud .blink,
+  .avatar-live,
+  .avatar-live .eyes,
+  .react.is-pop,
+  .react-count.is-tick,
+  .menu-panel,
+  .me-sheet,
+  .post-menu-panel,
+  .tab-post { animation: none !important; }
+  .btn:active:not(:disabled),
+  .tab-post:active,
+  .react:active,
+  .composer-kinds button:active,
+  .composer-pill:active { transform: none; }
   .look-square { transform: translate(0, 0); }
 }
 
@@ -1232,7 +1316,11 @@ legend { color: var(--muted); font-weight: 500; }
   cursor: pointer;
   transition: background 180ms ease-out, color 180ms ease-out, transform 180ms ease-out;
 }
+.composer-kinds button { transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1.2), background 160ms ease-out; }
 .composer-kinds button:hover { background: #1b1d2b; color: #fff; transform: translateY(-1px); }
+.composer-kinds button:active { transform: scale(0.94); }
+.composer-pill { transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1.2), border-color 160ms ease-out; }
+.composer-pill:active { transform: scale(0.98); }
 .composer-kinds svg { width: 18px; height: 18px; }
 .composer-dialog {
   width: min(520px, calc(100vw - 32px));
@@ -1335,9 +1423,13 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   cursor: pointer;
   transition: transform 180ms ease-out, border-color 180ms ease-out;
 }
+.react { transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .react:hover { transform: translateY(-1px); border-color: rgba(255, 255, 255, 0.4); }
+.react:active { transform: scale(0.92); }
+.react.is-pop { animation: react-pop 200ms cubic-bezier(0.2, 0.8, 0.2, 1.4); }
 .react.on { border-color: var(--lime); background: rgba(198, 255, 61, 0.12); }
-.react-count { color: var(--muted); font-size: 13px; }
+.react-count { color: var(--muted); font-size: 13px; display: inline-block; }
+.react-count.is-tick { animation: count-tick 200ms ease-out; }
 .comments { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .comments li { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: start; }
 .comments p { margin: 2px 0 0; }
@@ -1402,7 +1494,9 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   padding: 8px;
   border-radius: 16px;
   background: var(--card);
+  animation: menu-pop 180ms ease-out;
 }
+.post-menu-panel { animation: menu-pop 180ms ease-out; }
 .menu-panel {
   position: absolute;
   top: calc(100% + 8px);
@@ -1463,7 +1557,9 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   background: var(--lime) !important;
   color: var(--ink) !important;
   font-size: 24px !important;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1.3);
 }
+.tab-post:active { transform: scale(0.88); }
 .side-nav a {
   display: flex;
   align-items: center;

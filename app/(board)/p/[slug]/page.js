@@ -1,14 +1,18 @@
 import { FeedBoard } from "@/components/FeedBoard";
+import { CelebrateOnce } from "@/components/celebrate";
 import { auth } from "@/auth";
 import { workspaceIdForSession } from "@/lib/workspace-session";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProjectPage({ params }) {
+export default async function ProjectPage({ params, searchParams }) {
   const { slug } = await params;
+  const query = await searchParams;
   const session = await auth();
   try {
     return (
+      <>
+      <CelebrateOnce kind={query?.celebrate === "project" ? "project" : ""} />
       <FeedBoard
         email={session?.user?.email || ""}
         name={session?.user?.name || ""}
@@ -16,6 +20,7 @@ export default async function ProjectPage({ params }) {
         projectSlug={slug}
         workspaceId={await workspaceIdForSession(session) || ""}
       />
+      </>
     );
   } catch (error) {
     if (error?.digest === "NEXT_NOT_FOUND" || error?.digest === "NEXT_HTTP_ERROR_FALLBACK;404") throw error;

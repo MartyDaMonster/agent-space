@@ -8,6 +8,7 @@ import { AttachFiles } from "./Files";
 import { MentionField } from "./Mentions";
 import { Person } from "./Person";
 import { toast } from "./Toaster";
+import { celebrate } from "./celebrate";
 
 function IconText() {
   return (
@@ -94,6 +95,7 @@ export function Composer({ name = "You", image = "", projectSlug = "", projects 
     if (!state || seen.current === state) return;
     seen.current = state;
     if (state.saved) {
+      if (state.celebrate) celebrate();
       toast("Posted.");
       setText((current) => draftAfterSave(current, state));
       setLink("");
