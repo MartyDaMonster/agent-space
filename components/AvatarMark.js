@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { motionTiming, shapeById } from "@/lib/avatar-presets";
 
 function Eyes({ spec }) {
@@ -58,10 +59,24 @@ function Body({ spec }) {
   return spec.paths.map((d) => <path key={d} d={d} />);
 }
 
-const GROUND = new Set(["square", "ghost", "circle", "cone", "rugby"]);
+function Shade({ clipId }) {
+  return (
+    <g className="bot-shade" clipPath={`url(#${clipId})`}>
+      <g className="shade-dark">
+        <rect x="-8" y="-6" width="24" height="76" />
+        <rect x="16" y="-6" width="14" height="76" opacity="0.42" />
+      </g>
+      <g className="shade-light">
+        <rect x="48" y="-6" width="24" height="76" />
+        <rect x="34" y="-6" width="14" height="76" opacity="0.42" />
+      </g>
+    </g>
+  );
+}
 
 export function AvatarMark({ shape, motion = "full", seed = "" }) {
   const spec = shapeById(shape);
+  const clipId = `botclip${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   if (!spec) return null;
   const motionClass = spec.id === "circle" ? "bot--circle bot--ball" : `bot--${spec.id}`;
   const timing = motionTiming(seed || spec.id);
@@ -73,10 +88,16 @@ export function AvatarMark({ shape, motion = "full", seed = "" }) {
       focusable="false"
       aria-hidden="true"
     >
-      {GROUND.has(spec.id) ? <ellipse className="bot-shadow" cx="32" cy="61" rx="16" ry="2.8" /> : null}
+      <defs>
+        <clipPath id={clipId}>
+          <Body spec={spec} />
+        </clipPath>
+      </defs>
+      <ellipse className="bot-shadow" cx="32" cy="61" rx="16" ry="2.8" />
       <g className="bot-turn">
         <g className="bot-body" fill="currentColor">
           <Body spec={spec} />
+          <Shade clipId={clipId} />
           <Eyes spec={spec} />
         </g>
       </g>

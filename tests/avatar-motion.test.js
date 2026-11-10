@@ -17,6 +17,9 @@ test("avatars at 48px and above play the full loop, smaller ones stay calm", () 
   assert.match(css, /@keyframes jelly/);
   assert.match(css, /@keyframes ball-bounce/);
   assert.match(css, /@keyframes gentle-turn/);
+  assert.match(css, /@keyframes shade-away/);
+  assert.match(css, /color-mix\(in srgb, currentColor 87%, #000\)/);
+  assert.match(css, /\.bot--calm \.shade-dark/);
   assert.match(css, /@keyframes triangle-rock/);
   assert.match(css, /@keyframes cone-spin/);
   assert.match(css, /@keyframes rugby-tumble/);

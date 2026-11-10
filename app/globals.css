@@ -732,7 +732,7 @@ dialog.app-dialog h2 { padding-right: 32px; }
 .avatar-live.is-paused .eyes,
 .avatar-live.is-paused * { animation-play-state: paused; }
 
-.bot { display: block; width: 100%; height: 100%; overflow: visible; }
+.bot { --turn-time: 7.6s; display: block; width: 100%; height: 100%; overflow: visible; }
 .bot .bot-turn,
 .bot .bot-body,
 .bot .crab-arm,
@@ -755,6 +755,52 @@ dialog.app-dialog h2 { padding-right: 32px; }
   animation: bot-blink var(--blink-span, 5.2s) linear infinite;
   animation-delay: var(--blink-delay, 0s);
 }
+.shade-dark,
+.shade-light {
+  opacity: 0;
+  transform-box: view-box;
+  transform-origin: 32px 32px;
+  animation-duration: var(--turn-time);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.shade-dark { animation-name: shade-away; }
+.shade-light { animation-name: shade-toward; }
+.shade-dark rect { fill: color-mix(in srgb, currentColor 87%, #000); }
+.shade-light rect { fill: color-mix(in srgb, currentColor 78%, #fff); }
+.bot .bot-shadow {
+  animation: shadow-foot var(--turn-time) ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+@keyframes shade-away {
+  0%, 10%, 90%, 100% { transform: translateX(8px); opacity: 0; }
+  42% { transform: translateX(0); opacity: 1; }
+  70% { transform: translateX(36px); opacity: 1; }
+}
+@keyframes shade-toward {
+  0%, 10%, 90%, 100% { transform: translateX(-8px); opacity: 0; }
+  42% { transform: translateX(0); opacity: 1; }
+  70% { transform: translateX(-36px); opacity: 1; }
+}
+@keyframes shade-away-calm {
+  0%, 100% { transform: translateX(4px); opacity: 0; }
+  46% { transform: translateX(0); opacity: 0.4; }
+  76% { transform: translateX(14px); opacity: 0.4; }
+}
+@keyframes shade-toward-calm {
+  0%, 100% { transform: translateX(-4px); opacity: 0; }
+  46% { transform: translateX(0); opacity: 0.4; }
+  76% { transform: translateX(-14px); opacity: 0.4; }
+}
+@keyframes shadow-foot {
+  0%, 100% { transform: scale(1, 1); opacity: 0.42; }
+  42%, 70% { transform: scale(0.74, 0.86); opacity: 0.24; }
+}
+@keyframes shadow-calm {
+  0%, 100% { transform: scale(1, 1); opacity: 0.34; }
+  50% { transform: scale(0.9, 0.94); opacity: 0.26; }
+}
 @keyframes bot-blink {
   0%, 36%, 38.6%, 74%, 76.6%, 78.4%, 81%, 100% { transform: scaleY(1); }
   37%, 37.8%, 75%, 75.8%, 79.4%, 80.2% { transform: scaleY(0.1); }
@@ -766,9 +812,9 @@ dialog.app-dialog h2 { padding-right: 32px; }
   70% { transform: rotate(7deg) scaleX(0.88) skewY(4deg); }
 }
 @keyframes eye-shift {
-  0%, 100% { transform: translate(0, 0) scaleX(1); }
-  42% { transform: translate(-3.4px, 0.4px) scaleX(0.86); }
-  70% { transform: translate(3.4px, -0.3px) scaleX(0.86); }
+  0%, 100% { transform: translate(0, 0); }
+  42% { transform: translate(-7px, 0.6px); }
+  70% { transform: translate(7px, -0.4px); }
 }
 @keyframes turn-calm {
   0%, 100% { transform: rotate(0deg) scaleX(1); }
@@ -779,7 +825,7 @@ dialog.app-dialog h2 { padding-right: 32px; }
   0%, 100% { transform: rotate(-8deg) scaleX(1); }
   50% { transform: rotate(-11deg) scaleX(0.96) skewY(-1.5deg); }
 }
-.bot--square { --blink-span: 4.7s; }
+.bot--square { --blink-span: 4.7s; --turn-time: 7.4s; }
 .bot--square .bot-turn {
   transform: rotate(-8deg);
   animation: jelly-turn 7.4s ease-in-out infinite;
@@ -801,18 +847,26 @@ dialog.app-dialog h2 { padding-right: 32px; }
 }
 @keyframes jelly {
   0%, 100% { transform: scale(1, 1); }
-  10% { transform: scale(0.94, 1.08) translateY(-1px); }
-  22% { transform: scale(1.14, 0.8); }
-  40% { transform: scale(0.88, 1.14) translateY(-3px); }
+  10% { transform: scale(0.94, 1.06) translateY(-1px); }
+  22% { transform: scale(1.12, 0.89); }
+  40% { transform: scale(0.9, 1.11) translateY(-3px); }
   58% { transform: scale(1.06, 0.94); }
   74% { transform: scale(0.97, 1.04) translateY(-1px); }
 }
 @keyframes rise-shadow {
-  0%, 100% { transform: scaleX(1); opacity: 0.55; }
-  10%, 40% { transform: scaleX(0.58); opacity: 0.16; }
-  22%, 58% { transform: scaleX(1.3); opacity: 0.72; }
+  0%, 100% { transform: scale(1, 1); opacity: 0.5; }
+  10% { transform: scale(0.82, 0.9); opacity: 0.3; }
+  22% { transform: scale(1.28, 1.12); opacity: 0.7; }
+  40% { transform: scale(0.58, 0.72); opacity: 0.14; }
+  58% { transform: scale(1.16, 1.05); opacity: 0.58; }
 }
-.bot--crab { --blink-span: 5.6s; }
+.bot--crab { --blink-span: 5.6s; --turn-time: 6.8s; }
+.bot--crab .bot-shadow { animation: crab-shadow 2.4s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
+@keyframes crab-shadow {
+  0%, 55%, 100% { transform: scale(1, 1); opacity: 0.42; }
+  12% { transform: scale(1.16, 1.08); opacity: 0.58; }
+  30% { transform: scale(0.78, 0.86); opacity: 0.24; }
+}
 .bot--crab .bot-turn { animation: crab-turn 6.8s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
 .bot--crab .bot-body { animation: crab-bob 2.4s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
 .bot--crab .crab-arm-l { transform-origin: 19px 40px; animation: crab-arm-l 2.4s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
@@ -845,7 +899,7 @@ dialog.app-dialog h2 { padding-right: 32px; }
   32%, 36% { transform: rotate(-14deg) scale(1.24); }
   46%, 50% { transform: rotate(-18deg) scale(1.18); }
 }
-.bot--ghost { --blink-span: 6.1s; }
+.bot--ghost { --blink-span: 6.1s; --turn-time: 6.8s; }
 .bot--ghost .bot-turn { animation: ghost-turn 6.8s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
 .bot--ghost .bot-body {
   transform-origin: 32px 36px;
@@ -854,8 +908,14 @@ dialog.app-dialog h2 { padding-right: 32px; }
 }
 .bot--ghost .bot-eyes { animation: ghost-look 6.8s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
 .bot--ghost .bot-shadow {
-  animation: rise-shadow 3.4s ease-in-out infinite;
+  animation: ghost-shadow 3.4s ease-in-out infinite;
   animation-delay: var(--idle-delay, 0s);
+}
+@keyframes ghost-shadow {
+  0%, 100% { transform: scale(1.02, 1); opacity: 0.48; }
+  16% { transform: scale(1.22, 1.1); opacity: 0.62; }
+  50% { transform: scale(0.52, 0.68); opacity: 0.12; }
+  72% { transform: scale(0.82, 0.9); opacity: 0.3; }
 }
 @keyframes ghost-turn {
   0%, 100% { transform: rotate(-2deg) scaleX(1); }
@@ -870,11 +930,18 @@ dialog.app-dialog h2 { padding-right: 32px; }
 }
 @keyframes ghost-look {
   0%, 12% { transform: translate(0, 0) scaleX(1); }
-  24%, 42% { transform: translate(-5px, 0.6px) scaleX(0.84); }
-  56%, 74% { transform: translate(5px, -0.4px) scaleX(0.84); }
+  24%, 42% { transform: translate(-8px, 0.8px); }
+  56%, 74% { transform: translate(8px, -0.5px); }
   86%, 100% { transform: translate(0, 0) scaleX(1); }
 }
-.bot--cloud { --blink-span: 4.3s; }
+.bot--cloud { --blink-span: 4.3s; --turn-time: 7.2s; }
+.bot--cloud .bot-shadow { animation: cloud-shadow 2.8s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
+@keyframes cloud-shadow {
+  0%, 100% { transform: scale(1, 1); opacity: 0.4; }
+  12% { transform: scale(0.9, 0.92); opacity: 0.3; }
+  34% { transform: scale(1.2, 1.08); opacity: 0.58; }
+  52% { transform: scale(0.72, 0.82); opacity: 0.2; }
+}
 .bot--cloud .bot-turn { animation: cloud-turn 7.2s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
 .bot--cloud .bot-body {
   transform-origin: 32px 46px;
@@ -895,7 +962,7 @@ dialog.app-dialog h2 { padding-right: 32px; }
   74% { transform: scale(1.06, 0.96) skewX(1deg); }
 }
 .bot--ball,
-.bot--circle { --blink-span: 5.9s; }
+.bot--circle { --blink-span: 5.9s; --turn-time: 5.2s; }
 .bot--ball .bot-turn,
 .bot--circle .bot-turn { animation: ball-turn 5.2s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
 .bot--ball .bot-body,
@@ -910,20 +977,33 @@ dialog.app-dialog h2 { padding-right: 32px; }
   75% { transform: rotate(8deg) scaleX(0.9) skewY(2deg); }
 }
 @keyframes ball-bounce {
-  0% { transform: translateY(0) rotate(5deg) scale(1.18, 0.8); animation-timing-function: cubic-bezier(.3, 0, .7, 1); }
+  0% { transform: translateY(0) rotate(5deg) scale(1.16, 0.86); animation-timing-function: cubic-bezier(.3, 0, .7, 1); }
   8% { transform: translateY(-1px) rotate(-2deg) scale(0.9, 1.12); animation-timing-function: cubic-bezier(.2, .6, .4, 1); }
   48% { transform: translateY(-14px) rotate(-7deg) scale(0.96, 1.05); animation-timing-function: linear; }
   56% { transform: translateY(-14px) rotate(-5deg) scale(1, 1); animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
   90% { transform: translateY(-1px) rotate(3deg) scale(0.92, 1.1); animation-timing-function: cubic-bezier(.3, 0, .7, 1); }
-  100% { transform: translateY(0) rotate(5deg) scale(1.18, 0.8); }
+  100% { transform: translateY(0) rotate(5deg) scale(1.16, 0.86); }
 }
 @keyframes ball-eyes {
-  0%, 100% { transform: translate(2px, 0.6px) scaleX(0.86); }
-  48%, 56% { transform: translate(-3px, -1px) scaleX(1); }
+  0%, 100% { transform: translate(5px, 0.8px); }
+  48%, 56% { transform: translate(-7px, -1.2px); }
 }
 @keyframes ball-shadow {
   0%, 100% { transform: scaleX(1.25); opacity: 0.4; }
   48%, 56% { transform: scaleX(0.5); opacity: 0.08; }
+}
+.bot--triangle { --turn-time: 2.8s; }
+.bot--triangle .shade-dark { animation-name: shade-away-triangle; }
+.bot--triangle .shade-light { animation-name: shade-toward-triangle; }
+@keyframes shade-away-triangle {
+  0%, 100% { transform: translateX(8px); opacity: 0; }
+  36% { transform: translateX(0); opacity: 1; }
+  84% { transform: translateX(36px); opacity: 1; }
+}
+@keyframes shade-toward-triangle {
+  0%, 100% { transform: translateX(-8px); opacity: 0; }
+  36% { transform: translateX(0); opacity: 1; }
+  84% { transform: translateX(-36px); opacity: 1; }
 }
 .bot--triangle .bot-turn {
   animation: triangle-turn 2.8s ease-in-out infinite;
@@ -955,9 +1035,10 @@ dialog.app-dialog h2 { padding-right: 32px; }
 @keyframes triangle-eyes {
   0%, 100% { transform: translate(0, 0) scaleX(1); }
   10% { transform: translate(1.4px, 0) scaleX(0.96); }
-  36% { transform: translate(-3.6px, 0.5px) scaleX(0.84); }
-  84% { transform: translate(3.6px, 0.5px) scaleX(0.84); }
+  36% { transform: translate(-7px, 0.6px); }
+  84% { transform: translate(7px, 0.6px); }
 }
+.bot--cone { --turn-time: 3.2s; }
 .bot--cone .bot-turn {
   transform-origin: 32px 40px;
   animation: cone-spin 3.2s ease-in-out infinite;
@@ -992,14 +1073,15 @@ dialog.app-dialog h2 { padding-right: 32px; }
 }
 @keyframes cone-eyes {
   0%, 46%, 100% { transform: translate(0, 0); }
-  22% { transform: translate(5px, 0); }
-  70% { transform: translate(-5px, 0); }
+  22% { transform: translate(8px, 0); }
+  70% { transform: translate(-8px, 0); }
 }
 @keyframes cone-shadow {
   0%, 62%, 100% { transform: scaleX(1); opacity: 0.55; }
   10% { transform: scaleX(1.18); opacity: 0.7; }
   40% { transform: scaleX(0.5); opacity: 0.14; }
 }
+.bot--rugby { --turn-time: 6.4s; }
 .bot--rugby .bot-turn {
   animation: rugby-turn 6.4s ease-in-out infinite;
   animation-delay: var(--idle-delay, 0s);
@@ -1032,8 +1114,8 @@ dialog.app-dialog h2 { padding-right: 32px; }
 @keyframes rugby-eyes {
   0%, 78%, 100% { transform: translate(0, 0) scaleX(1); }
   8% { transform: translate(-1.5px, 0.4px) scaleX(1.04); }
-  30% { transform: translate(3.2px, -1px) scaleX(0.86); }
-  62% { transform: translate(-2.4px, 0.4px) scaleX(0.92); }
+  30% { transform: translate(7px, -1.2px); }
+  62% { transform: translate(-6px, 0.5px); }
 }
 @keyframes rugby-shadow {
   0%, 62%, 100% { transform: scaleX(1.15); opacity: 0.55; }
@@ -1041,15 +1123,19 @@ dialog.app-dialog h2 { padding-right: 32px; }
   30% { transform: scaleX(0.55); opacity: 0.14; }
 }
 @keyframes glance {
-  0%, 28% { transform: translate(0, 0) scaleX(1); }
-  40%, 56% { transform: translate(2px, -0.4px) scaleX(0.94); }
-  66%, 82% { transform: translate(-2px, 0.3px) scaleX(0.94); }
-  92%, 100% { transform: translate(0, 0) scaleX(1); }
+  0%, 28%, 92%, 100% { transform: translate(0, 0); }
+  40%, 56% { transform: translate(3.4px, -0.3px); }
+  66%, 82% { transform: translate(-3.4px, 0.2px); }
 }
 .bot--calm .bot-body,
 .bot--calm .crab-arm,
-.bot--calm .pincer,
-.bot--calm .bot-shadow { animation: none; }
+.bot--calm .pincer { animation: none; }
+.bot--calm .shade-dark { animation-name: shade-away-calm; animation-duration: 9.6s; }
+.bot--calm .shade-light { animation-name: shade-toward-calm; animation-duration: 9.6s; }
+.bot--calm .bot-shadow {
+  animation: shadow-calm 9.6s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
 .bot--calm .bot-turn {
   animation: turn-calm 9.6s ease-in-out infinite;
   animation-delay: var(--idle-delay, 0s);
