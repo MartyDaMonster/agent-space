@@ -19,8 +19,8 @@ export function AccountLinks({ showAdmin = false, pathname = "/" }) {
     createElement("a", { href: "/terms" }, "Terms of use"),
     createElement(
       "a",
-      { href: "https://www.linkedin.com/in/martyhungerford", target: "_blank", rel: "noopener noreferrer" },
-      "Contact"
+      { href: "mailto:hello@botomatic.dev" },
+      "hello@botomatic.dev"
     )
   );
 }
