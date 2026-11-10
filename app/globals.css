@@ -2370,17 +2370,39 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   text-align: right;
   white-space: nowrap;
 }
-.onboard-illu[data-illu="avatar"] .onboard-illu-stage { display: grid; place-items: center; }
+.onboard-illu[data-illu="avatar"] .onboard-illu-stage,
+.onboard-illu[data-illu="setup"] .onboard-illu-stage,
+.onboard-illu[data-illu="done"] .onboard-illu-stage { display: grid; place-items: center; }
+.illu-morph { position: relative; width: 120px; height: 120px; }
+.illu-morph-in, .illu-morph-out { position: absolute; inset: 0; }
+.illu-morph-in { animation: illu-in 0.55s ease forwards; }
+.illu-morph-out { animation: illu-out 0.55s ease forwards; }
+.illu-catch {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 132px;
+  height: 132px;
+  margin: -66px 0 0 -66px;
+  color: #ff3b4e;
+  animation: illu-dance 8.4s ease-in-out 1 forwards;
+}
+.illu-catch .pincer { transform-box: fill-box; transform-origin: center; animation: illu-snap 8.4s ease-in-out 1 forwards; }
+.illu-catch .bot-blink { animation: illu-smile 8.4s linear 1 forwards; }
+.illu-fly { position: absolute; z-index: 2; width: 40px; height: 32px; }
+.illu-fly svg { display: block; width: 100%; height: 100%; }
+.illu-fly-key { left: 30%; top: 16%; animation: illu-key-arc 8.4s ease-in-out 1 forwards; }
+.illu-fly-doc { left: 58%; top: 16%; width: 32px; height: 38px; animation: illu-doc-arc 8.4s ease-in-out 1 forwards; }
+.illu-confetti { position: absolute; inset: 0; width: 100%; height: 100%; }
+@media (min-width: 840px) {
+  .illu-morph { width: 148px; height: 148px; }
+}
 .onboard-illu[data-illu="avatar"] .bot .bot-turn,
 .onboard-illu[data-illu="avatar"] .bot .bot-body,
 .onboard-illu[data-illu="avatar"] .bot .bot-eyes,
 .onboard-illu[data-illu="avatar"] .bot .shade-dark,
 .onboard-illu[data-illu="avatar"] .bot .shade-light,
 .onboard-illu[data-illu="avatar"] .bot .bot-shadow { animation: none; transform: none; }
-.illu-morph { display: block; width: 112px; height: 112px; animation: illu-fade 0.45s ease; }
-@media (min-width: 840px) {
-  .illu-morph { width: 140px; height: 140px; }
-}
 .illu-setup-bot { position: absolute; width: 64px; height: 64px; }
 .illu-setup-bot-1 { left: 56%; top: 14%; }
 .illu-setup-bot-2 { left: 78%; top: 36%; width: 52px; height: 52px; }
@@ -2449,6 +2471,43 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 @keyframes illu-ack {
   0%, 34%, 44%, 100% { transform: scaleY(1); }
   37%, 40% { transform: scaleY(0.12); }
+}
+@keyframes illu-in {
+  from { opacity: 0; transform: scale(1.14, 0.68); }
+  to { opacity: 1; transform: scale(1, 1); }
+}
+@keyframes illu-out {
+  from { opacity: 1; transform: scale(1, 1); }
+  to { opacity: 0; transform: scale(0.7, 1.16); }
+}
+@keyframes illu-key-arc {
+  0%, 4% { left: -12%; top: 68%; transform: rotate(-28deg); opacity: 0; }
+  8% { opacity: 1; }
+  14% { left: 12%; top: 6%; transform: rotate(16deg); }
+  22%, 100% { left: 30%; top: 16%; transform: rotate(-8deg); opacity: 1; }
+}
+@keyframes illu-doc-arc {
+  0%, 22% { left: 108%; top: 72%; transform: rotate(18deg); opacity: 0; }
+  28% { opacity: 1; }
+  36% { left: 74%; top: 4%; transform: rotate(-10deg); }
+  44%, 100% { left: 58%; top: 16%; transform: rotate(8deg); opacity: 1; }
+}
+@keyframes illu-dance {
+  0%, 32%, 84%, 100% { transform: translate(0, 0) rotate(0deg); }
+  40% { transform: translate(-16px, 0) rotate(-6deg); }
+  48% { transform: translate(16px, 0) rotate(6deg); }
+  56% { transform: translate(-6px, -14px) rotate(-2deg); }
+  64% { transform: translate(0, 0); }
+  72% { transform: translate(0, -16px); }
+  80% { transform: translate(0, 0); }
+}
+@keyframes illu-snap {
+  0%, 60%, 82%, 100% { transform: scale(1); }
+  68%, 74% { transform: scale(1.22); }
+}
+@keyframes illu-smile {
+  0%, 64%, 80%, 100% { transform: scaleY(1) scaleX(1); }
+  70%, 76% { transform: scaleY(0.28) scaleX(1.2); }
 }
 .onboard-card h1 {
   margin: 6px auto 18px;

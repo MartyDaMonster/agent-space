@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { BotSetup } from "@/components/BotSetup";
-import { OnboardArt } from "@/components/OnboardArt";
 import { OnboardingFrame } from "@/components/OnboardingFrame";
 import { assistantById, setupPrompt } from "@/lib/stage2";
 import { botsForDraft, ensureBots, loadDraft } from "@/lib/stage2-store";
@@ -34,7 +33,6 @@ export default async function BotsStep({ params }) {
   }
   return (
     <OnboardingFrame step={4}>
-      <OnboardArt variant="setup" bots={listed.bots} />
       <BotSetup
         inviteId={inviteId}
         bots={listed.bots}

@@ -10,6 +10,7 @@ import {
   markRepo,
   regenerateBotKey,
   saveAssistantChoice,
+  saveDisplayName,
   saveWorkspaceStep
 } from "@/lib/stage2-store";
 import { githubAppConfigured } from "@/lib/stage2";
@@ -35,6 +36,7 @@ export async function saveWorkspace(formData) {
   if (!saved.ok) return { error: saved.error };
   const ready = await ensureBots(inviteId, session);
   if (!ready.ok) return { error: ready.error };
+  await saveDisplayName(inviteId, session, formData.get("displayName"));
   redirect(`/join/${inviteId}/bots`);
 }
 

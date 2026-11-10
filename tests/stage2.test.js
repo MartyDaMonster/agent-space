@@ -78,6 +78,7 @@ test("preview deploys do not apply schema changes", () => {
   assert.match(bots, /Go to the board/);
   assert.match(bots, /Connected/);
   assert.match(bots, /You’re all set\. Let’s make great things together\./);
+  assert.match(bots, /Give your LLM a secret key and Botomatic instructions\./);
   const art = readFileSync(new URL("../components/OnboardArt.js", import.meta.url), "utf8");
   assert.match(art, /\{name\} · private/);
   const start = readFileSync(new URL("../app/join/[inviteId]/start/page.js", import.meta.url), "utf8");
@@ -89,5 +90,7 @@ test("preview deploys do not apply schema changes", () => {
   assert.match(github, /Connect GitHub and we’ll make a private home for your bots\./);
   assert.match(github, /Connect GitHub/);
   assert.doesNotMatch(github, /Private repo for/);
-  assert.match(workspace, /Pick a shape and a colour you love\./);
+  assert.match(workspace, /Give your bot a name, body and colour\./);
+  assert.match(workspace, /displayName/);
+  assert.match(workspace, /maxLength=\{24\}/);
 });
