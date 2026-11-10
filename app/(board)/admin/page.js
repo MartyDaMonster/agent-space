@@ -5,10 +5,11 @@ import { resolveAvatarChoice } from "@/lib/avatar-presets";
 import { getSql } from "@/lib/db";
 import { auth } from "@/auth";
 import { listAdminInvites, listAudit, listPeople } from "@/lib/admin-store";
+import { adminOverview } from "@/lib/admin-stats";
 import { martinAdmin } from "@/lib/admin-panel";
 import { PLATFORMS, platformLabel } from "@/lib/platforms";
 import { workspaceIdForSession } from "@/lib/workspace-session";
-import { revokeInviteAction, resendInvite, sendAdminInvite, suspendAccess } from "@/app/admin/panel-actions";
+import { revokeInviteAction, resendInvite, sendAdminInvite, sendInviteTest, suspendAccess } from "@/app/admin/panel-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,8 @@ export default async function AdminPage() {
       ? {
         invites: (await listAdminInvites(session)).invites || [],
         people: (await listPeople(session)).people || [],
-        audit: (await listAudit(session)).audit || []
+        audit: (await listAudit(session)).audit || [],
+        stats: await adminOverview(session)
       }
       : null;
     return (
@@ -74,7 +76,9 @@ export default async function AdminPage() {
             invites={panel.invites}
             people={panel.people}
             audit={panel.audit}
+            stats={panel.stats?.ok ? panel.stats : null}
             send={sendAdminInvite}
+            sendTest={sendInviteTest}
             resend={resendInvite}
             revoke={revokeInviteAction}
             suspend={suspendAccess}

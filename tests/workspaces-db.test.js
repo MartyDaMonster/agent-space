@@ -6,6 +6,7 @@ import pg from "pg";
 import { encode } from "next-auth/jwt";
 import { tokenHash } from "../lib/keys.js";
 import { acceptStoredInvite, revokeStoredInvite } from "../lib/invites.js";
+import { INVITE_COOKIE, signInviteCookie } from "../lib/invite-cookie.js";
 import { acceptInvite } from "../lib/workspace.js";
 import { createSql, getSql, resetSqlCache } from "../lib/db.js";
 
@@ -180,11 +181,11 @@ test("a second accept does not duplicate membership, and the wrong person learns
     values ('inv-ada', 'ws-ada', 'ada@example.com', 'ada', 'pending', 'owner')
   `;
   const [first, second] = await Promise.all([
-    acceptStoredInvite("ws-ada", "inv-ada", { email: "ada@example.com" }),
-    acceptStoredInvite("ws-ada", "inv-ada", { email: "ada@example.com" })
+    acceptStoredInvite("ws-ada", "inv-ada", { email: "ada@example.com", githubId: "1", githubLogin: "ada" }),
+    acceptStoredInvite("ws-ada", "inv-ada", { email: "ada@example.com", githubId: "1", githubLogin: "ada" })
   ]);
-  assert.equal(first.ok, true);
-  assert.equal(second.ok, true);
+  const wins = [first, second].filter((result) => result.ok);
+  assert.equal(wins.length, 1);
   const members = await sql`
     select workspace_id, role from workspace_members
     where lower(email) = 'ada@example.com'
@@ -193,9 +194,9 @@ test("a second accept does not duplicate membership, and the wrong person learns
   assert.equal(members[0].role, "owner");
   assert.notEqual(members[0].workspace_id, "ws-ada");
   assert.notEqual(members[0].workspace_id, "ws-martin");
-  const eve = await acceptStoredInvite("ws-ada", "inv-ada", { email: "eve@example.com", githubLogin: "eve" });
+  const eve = await acceptStoredInvite("ws-ada", "inv-ada", { email: "eve@example.com", githubLogin: "eve", githubId: "2" });
   assert.equal(eve.ok, false);
-  assert.equal(eve.status, 403);
+  assert.equal(eve.status, 409);
   assert.equal(JSON.stringify(eve).includes("ada@example.com"), false);
   const replay = acceptInvite({
     id: "inv-ada",
@@ -369,12 +370,13 @@ test("routes cannot read, rename, comment, or notify across workspaces", async (
       headers: { cookie: eveCookie }
     });
     const eveText = await eveAccept.text();
-    assert.equal(eveAccept.status, 403);
+    assert.equal(eveAccept.status, 404);
     assert.equal(eveText.includes("ada@example.com"), false);
     const adaCookie = await sessionCookie("ada@example.com", "Ada");
+    const joinCookie = `${INVITE_COOKIE}=${signInviteCookie(ownerBody.invite.id, AUTH_SECRET)}`;
     const adaAccept = await fetch(`http://127.0.0.1:3111/api/workspaces/ws-martin/invites/${ownerBody.invite.id}/accept`, {
       method: "POST",
-      headers: { cookie: adaCookie }
+      headers: { cookie: `${adaCookie}; ${joinCookie}` }
     });
     const adaBody = await adaAccept.json();
     assert.equal(adaAccept.status, 200, JSON.stringify(adaBody));
@@ -392,10 +394,10 @@ test("routes cannot read, rename, comment, or notify across workspaces", async (
     assert.equal(adaHome[0].role, "owner");
     const eveReplay = await fetch(`http://127.0.0.1:3111/api/workspaces/ws-martin/invites/${ownerBody.invite.id}/accept`, {
       method: "POST",
-      headers: { cookie: eveCookie }
+      headers: { cookie: `${eveCookie}; ${joinCookie}` }
     });
     const replayText = await eveReplay.text();
-    assert.equal(eveReplay.status, 403);
+    assert.equal(eveReplay.status, 409);
     assert.equal(replayText.includes("ada@example.com"), false);
   } finally {
     server.kill("SIGTERM");

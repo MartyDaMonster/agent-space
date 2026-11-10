@@ -66,16 +66,18 @@ test("only a workspace owner can create or revoke an invite", () => {
   const created = createInviteRecord({
     id: "inv-1",
     workspaceId: MARTIN,
+    email: "ada@example.com",
     githubLogin: "octocat",
     createdBy: "marty.hungerford3181@gmail.com"
   });
   assert.equal(created.ok, true);
   assert.equal(revokeInvite(created.invite, OTHER).status, 404);
   assert.equal(revokeInvite(created.invite, MARTIN).invite.status, "revoked");
-  const accepted = acceptInvite(created.invite, { githubLogin: "octocat" });
+  const accepted = acceptInvite(created.invite, { githubLogin: "someone" });
   assert.equal(accepted.ok, true);
   assert.equal(accepted.membership.workspaceId, MARTIN);
-  assert.equal(acceptInvite(created.invite, { githubLogin: "someone" }).status, 403);
+  assert.equal(accepted.membership.email, "ada@example.com");
+  assert.equal(accepted.membership.githubLogin, "someone");
   const acceptedAda = {
     id: "inv-ada",
     workspaceId: "ws-ada",
@@ -86,10 +88,10 @@ test("only a workspace owner can create or revoke an invite", () => {
   };
   const leaked = acceptInvite(acceptedAda, { email: "eve@example.com", githubLogin: "eve" });
   assert.equal(leaked.ok, false);
-  assert.equal(leaked.status, 403);
+  assert.equal(leaked.status, 409);
   assert.equal(leaked.invite, undefined);
   assert.equal(JSON.stringify(leaked).includes("ada@example.com"), false);
-  const replay = acceptInvite(acceptedAda, { email: "ada@example.com" });
+  const replay = acceptInvite(acceptedAda, { githubLogin: "ada" });
   assert.equal(replay.ok, true);
   assert.equal(replay.invite.email, "ada@example.com");
 });

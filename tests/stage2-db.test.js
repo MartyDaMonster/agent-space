@@ -71,12 +71,17 @@ test("invite, onboarding, and bot routes stay inside one workspace", async () =>
   assert.equal(card.workspaceId, "ws-ada");
   const saved = await saveAssistantChoice("inv-ada", ["claude", "grok"]);
   assert.equal(saved.ok, true);
+  const { claimInviteLink } = await import("../lib/invite-claim.js");
+  const claimer = { user: { email: "ada@example.com", name: "Ada", githubLogin: "octocat", githubId: "42" } };
+  const claimed = await claimInviteLink("inv-ada", { githubId: "42", githubLogin: "octocat" });
+  assert.equal(claimed.ok, true);
+  assert.equal(claimed.email, "ada@example.com");
   const wrong = await bindDraftToSession("inv-ada", eve);
   assert.equal(wrong.status, 404);
-  const bound = await bindDraftToSession("inv-ada", ada);
+  const bound = await bindDraftToSession("inv-ada", claimer);
   assert.equal(bound.ok, true);
 
-  const created = await ensureBots("inv-ada", ada);
+  const created = await ensureBots("inv-ada", claimer);
   assert.equal(created.ok, true);
   assert.notEqual(created.workspaceId, "ws-martin");
   assert.equal(created.revealed.length, 2);
@@ -104,7 +109,7 @@ test("invite, onboarding, and bot routes stay inside one workspace", async () =>
     update api_keys set last_seen_at = now()
     where workspace_id = ${created.workspaceId}
   `;
-  const done = await finishOnboardingDraft("inv-ada", ada);
+  const done = await finishOnboardingDraft("inv-ada", claimer);
   assert.equal(done.ok, true);
   assert.equal(done.workspaceId, created.workspaceId);
   assert.equal(done.sourceWorkspaceId, "ws-ada");
@@ -125,36 +130,41 @@ test("an invitee reaches a new workspace without the GitHub App", async () => {
   const { createAdminInvite } = await import("../lib/admin-store.js");
   const { getSql } = await import("../lib/db.js");
   const {
-    pendingInviteForIdentity,
     saveAssistantChoice,
     bindDraftToSession,
     saveWorkspaceStep,
     ensureBots,
     finishOnboardingDraft
   } = await import("../lib/stage2-store.js");
+  const { claimInviteLink } = await import("../lib/invite-claim.js");
   const created = await createAdminInvite(martin, {
-    workspaceId: "ws-martin",
-    email: "ada@example.com",
-    githubLogin: "ada"
+    name: "Ada",
+    email: "ada@example.com"
   });
   assert.equal(created.ok, true);
-  const found = await pendingInviteForIdentity({ email: "other@example.com", githubLogin: "ada" });
-  assert.equal(found?.id, created.invite.id);
+  const claimer = { user: { email: "ada@example.com", name: "Ada", githubLogin: "octocat", githubId: "99" } };
   assert.equal((await saveAssistantChoice(created.invite.id, ["claude", "grok"])).ok, true);
-  assert.equal((await bindDraftToSession(created.invite.id, ada)).ok, true);
-  assert.equal((await saveWorkspaceStep(created.invite.id, ada, {
+  const claimed = await claimInviteLink(created.invite.id, {
+    githubId: "99",
+    githubLogin: "octocat"
+  });
+  assert.equal(claimed.ok, true);
+  assert.equal(claimed.email, "ada@example.com");
+  assert.equal(claimed.membership.githubLogin, "octocat");
+  assert.equal((await bindDraftToSession(created.invite.id, claimer)).ok, true);
+  assert.equal((await saveWorkspaceStep(created.invite.id, claimer, {
     name: "Ada space",
     shape: "square",
     color: "lime"
   })).ok, true);
-  const bots = await ensureBots(created.invite.id, ada);
+  const bots = await ensureBots(created.invite.id, claimer);
   assert.equal(bots.ok, true);
   assert.notEqual(bots.workspaceId, "ws-martin");
-  const early = await finishOnboardingDraft(created.invite.id, ada);
+  const early = await finishOnboardingDraft(created.invite.id, claimer);
   assert.equal(early.ok, false);
   const sql = getSql();
   await sql`update api_keys set last_seen_at = now() where workspace_id = ${bots.workspaceId}`;
-  const done = await finishOnboardingDraft(created.invite.id, ada);
+  const done = await finishOnboardingDraft(created.invite.id, claimer);
   assert.equal(done.ok, true);
   assert.equal(done.workspaceId, bots.workspaceId);
   const members = await sql`select workspace_id from workspace_members where lower(email) = 'ada@example.com'`;

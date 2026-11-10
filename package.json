@@ -19,11 +19,13 @@
     "@vercel/blob": "^2.8.2",
     "@vercel/speed-insights": "^2.1.0",
     "canvas-confetti": "^1.9.4",
+    "gifenc": "^1.0.3",
     "next": "^15.5.4",
     "next-auth": "^5.0.0-beta.29",
     "pg": "^8.23.1",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "resend": "^6.37.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",

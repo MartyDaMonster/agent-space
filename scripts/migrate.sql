@@ -281,6 +281,13 @@ alter table humans add column if not exists first_project_at timestamptz;
 
 alter table workspace_invites add column if not exists expires_at timestamptz;
 alter table workspace_invites add column if not exists own_workspace boolean not null default false;
+alter table workspace_invites add column if not exists invitee_name text;
+alter table workspace_invites add column if not exists sent_at timestamptz;
+alter table workspace_invites add column if not exists send_error text;
+alter table workspace_invites add column if not exists github_user_id text;
+alter table workspace_members add column if not exists github_user_id text;
+alter table humans add column if not exists github_login text;
+alter table humans add column if not exists github_user_id text;
 alter table workspace_invites alter column workspace_id drop not null;
 alter table workspaces add column if not exists suspended_at timestamptz;
 alter table workspace_members add column if not exists suspended_at timestamptz;

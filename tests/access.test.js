@@ -42,6 +42,9 @@ test("only login and the auth callback stay reachable when signed out", () => {
     true
   );
   assert.equal(decideAccess({ pathname: "/privacy", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/api/invite/inv-1/countdown.gif", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/email/avatars/square.png", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/dev/invite-email", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/terms", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/contribute", hasSession: false }).redirect, "/login");
 });

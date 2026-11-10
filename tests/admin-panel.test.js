@@ -142,6 +142,7 @@ test("an admin invite opens a new workspace and never joins ws-martin", async ()
   `;
   const created = await createAdminInvite(martin, {
     workspaceId: "ws-martin",
+    name: "New",
     email: "new@example.com",
     githubLogin: "newuser"
   });
