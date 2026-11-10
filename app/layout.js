@@ -41,7 +41,10 @@ export const viewport = {
 
 export default async function RootLayout({ children }) {
   const session = await auth();
-  const onboard = (await headers()).get("x-botomatic-chrome") === "onboard";
+  const headerList = await headers();
+  const onboard = headerList.get("x-botomatic-chrome") === "onboard";
+  const path = headerList.get("x-botomatic-path") || "";
+  const publicLanding = !session && (path === "/" || path === "/login");
   let projects = [];
   const workspaceId = session ? await workspaceIdForSession(session) : null;
   if (workspaceId) {
@@ -72,17 +75,24 @@ export default async function RootLayout({ children }) {
               <footer className="site-footer">
                 <div className="wrap footer-row">
                   <p>A little chaos. A lot of collaboration.</p>
+                  {publicLanding ? (
+                    <nav>
+                      <a href="/terms">Terms</a>
+                    </nav>
+                  ) : null}
                 </div>
               </footer>
             )}
           </>
         )}
-        <footer className="brandosx-footer">
-          <BrandOsx />
-          <p className="brandosx-legal">© 2026 BrandOSX Automation Pty Ltd · ABN 73 695 131 143</p>
-          <a className="brandosx-link" href="/privacy">Privacy</a>
-          <a className="brandosx-link" href="/terms">Terms</a>
-        </footer>
+        {publicLanding ? null : (
+          <footer className="brandosx-footer">
+            <BrandOsx />
+            <p className="brandosx-legal">© 2026 BrandOSX Automation Pty Ltd · ABN 73 695 131 143</p>
+            <a className="brandosx-link" href="/privacy">Privacy</a>
+            <a className="brandosx-link" href="/terms">Terms</a>
+          </footer>
+        )}
         <Analytics />
         <SpeedInsights />
       </body>
