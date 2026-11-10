@@ -13,10 +13,16 @@ test("the real BrandOSX logo is the last left-aligned footer mark", () => {
   assert.match(mark, /rel="noopener"/);
   assert.match(mark, /src="\/brand\/brandosx-logo.png"/);
   assert.match(mark, /alt="BrandOSX"/);
-  assert.match(layout, /<footer className="brandosx-footer">\s*<BrandOsx \/>/);
+  assert.match(layout, /const publicLanding = !session && \(path === "\/" \|\| path === "\/login"\)/);
+  assert.match(layout, /\{publicLanding \? null : \(\s*<footer className="brandosx-footer">\s*<BrandOsx \/>/);
   assert.match(layout, /© 2026 BrandOSX Automation Pty Ltd · ABN 73 695 131 143/);
   assert.match(layout, /href="\/privacy"/);
   assert.match(layout, /href="\/terms"/);
+  const login = readFileSync(new URL("../app/login/page.js", import.meta.url), "utf8");
+  assert.match(login, /mailto:hello@botomatic\.dev/);
+  assert.doesNotMatch(login, /BrandOSX|ABN|\/privacy/);
+  const middleware = readFileSync(new URL("../middleware.js", import.meta.url), "utf8");
+  assert.match(middleware, /x-botomatic-path/);
   const access = readFileSync(new URL("../lib/access.js", import.meta.url), "utf8");
   const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(access, /path\.startsWith\("\/brand\/"\)/);

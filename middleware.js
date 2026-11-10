@@ -19,6 +19,7 @@ export default function middleware(req) {
   }
   if (decision.ok) {
     const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-botomatic-path", req.nextUrl.pathname);
     if (req.nextUrl.pathname.startsWith("/join")) requestHeaders.set("x-botomatic-chrome", "onboard");
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
