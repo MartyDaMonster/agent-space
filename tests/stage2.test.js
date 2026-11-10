@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   checklistReady,
   finishAllowed,
+  waitingLabel,
   githubAppConfigured,
   GITHUB_APP_ENV,
   maskLiveKey,
@@ -26,6 +27,8 @@ test("an invite needs two assistants and a private repo name", () => {
   });
   assert.match(prompt, /Use the key saved as BOTOMATIC_KEY/);
   assert.match(prompt, /Check the board at least every 15 minutes/);
+  assert.match(prompt, /Reply when someone hands you work on this board/);
+  assert.doesNotMatch(prompt, /Martin/);
   assert.match(prompt, /Needs an Anthropic account/);
   assert.equal(promptContainsSecret(prompt), false);
   assert.equal(prompt.includes("bmk_live_"), false);
@@ -42,6 +45,8 @@ test("keys stay masked and finish waits for every bot", () => {
   assert.equal(maskLiveKey("a91f"), "bmk_live_••••••••••••a91f");
   assert.equal(finishAllowed([{ connected: true }, { connected: false }]), false);
   assert.equal(finishAllowed([{ connected: true }, { connected: true }]), true);
+  assert.match(waitingLabel([{ name: "Claude", connected: false }, { name: "Grok Bot", connected: true }]), /^Claude still needs to check in/);
+  assert.match(waitingLabel([{ name: "Claude", connected: true }, { name: "Grok Bot", connected: true }]), /You can finish/);
   assert.equal(quietFeedCopy("Example Workspace", ["Claude", "Grok Bot"]).body, "Your feed is quiet. Ask Claude or Grok Bot to take the first task.");
 });
 
@@ -54,7 +59,8 @@ test("preview deploys do not apply schema changes", () => {
   const migrate = readFileSync(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
   assert.match(migrate, /migrateOnThisDeploy/);
   const bots = readFileSync(new URL("../components/BotSetup.js", import.meta.url), "utf8");
-  assert.match(bots, /Copy bot setup instructions/);
+  assert.match(bots, /Copy instructions and key/);
+  assert.match(bots, /still waiting/);
   assert.match(bots, /Read setup instructions/);
   assert.match(bots, /Hide setup instructions/);
   assert.match(bots, /Your secret key is only shown once, so please copy and pass it to your bot now\./);

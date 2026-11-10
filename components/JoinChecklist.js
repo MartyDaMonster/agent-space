@@ -45,7 +45,7 @@ export function JoinChecklist({ inviteId, action }) {
           </label>
         );
       })}
-      <p className="onboard-note">Pick at least two assistants. You’ll get tailored setup instructions for each.</p>
+      <p className="onboard-note">Pick at least two assistants. You’ll get tailored setup instructions for each. Sign in with the GitHub account on your invite.</p>
       <button className="btn btn-cyan" type="submit" disabled={!ready}>Continue with GitHub</button>
     </form>
   );

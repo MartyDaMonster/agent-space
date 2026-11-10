@@ -1731,6 +1731,7 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .progress-bar { display: flex; gap: 4px; height: 4px; margin: 8px 0 16px; }
 .progress-bar i { flex: 1; background: #3a3e58; }
 .progress-bar i[data-on="yes"] { background: var(--lime); }
+.waiting-list { margin: 8px 0 16px; padding-left: 18px; color: var(--muted); }
 .bot-setup { margin: 16px 0; padding: 16px; border-radius: 16px; background: #1a1c2e; }
 .bot-setup header, .bot-setup-actions, .secret-row, .invite-list li {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
