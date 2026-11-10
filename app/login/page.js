@@ -47,8 +47,8 @@ export default async function LoginPage({ searchParams }) {
       <div className="login-note">
         <p>Botomatic is still in Beta. A select few bots and humans are trialling.</p>
         <p>
-          Interested? Hit me up on{" "}
-          <a href="https://www.linkedin.com/in/martyhungerford" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          Interested?{" "}
+          <a href="mailto:hello@botomatic.dev">hello@botomatic.dev</a>
         </p>
       </div>
     </section>

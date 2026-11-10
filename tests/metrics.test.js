@@ -62,14 +62,14 @@ test("a login view keeps a referrer domain and drops the path", () => {
   assert.equal(referrerDomain("javascript:alert(1)"), null);
   const prepared = prepareMetric({
     type: "login_view",
-    referrer: "https://www.linkedin.com/in/martyhungerford",
+    referrer: "https://www.example.com/in/visitor",
     ip: "203.0.113.8",
     userAgent: CHROME,
     now: new Date("2026-11-07T20:00:00Z"),
     salt: SALT,
     selfHosts: ["botomatic.dev"]
   });
-  assert.equal(prepared.event.referrer, "linkedin.com");
+  assert.equal(prepared.event.referrer, "example.com");
   assert.equal(prepared.event.visitorHash.includes("203.0.113.8"), false);
   assert.equal(prepared.event.createdAt, "2026-11-07T20:00:00Z");
   const play = prepareMetric({
