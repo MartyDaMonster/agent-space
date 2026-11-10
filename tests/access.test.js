@@ -23,6 +23,9 @@ test("pages and human APIs require a session", () => {
 
 test("only login and the auth callback stay reachable when signed out", () => {
   assert.equal(decideAccess({ pathname: "/login", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/join/inv-1", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/api/join/inv-1", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/api/github/start", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/promo/botomatic-promo.mp4", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/promo/botomatic-promo.jpg", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/brand/brandosx-logo.png", hasSession: false }).ok, true);

@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { decideAccess, hasAuthCookie } from "./lib/access.js";
 
 export default function middleware(req) {
@@ -6,7 +7,11 @@ export default function middleware(req) {
     hasSession: hasAuthCookie(req.cookies.getAll().map((cookie) => cookie.name)),
     authorization: req.headers.get("authorization")
   });
-  if (decision.ok) return;
+  if (decision.ok) {
+    const requestHeaders = new Headers(req.headers);
+    if (req.nextUrl.pathname.startsWith("/join")) requestHeaders.set("x-botomatic-chrome", "onboard");
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
   if (decision.status) {
     return Response.json({ error: "Unauthorized" }, { status: decision.status });
   }

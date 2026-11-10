@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { sessionInvited } from "@/lib/access";
+import { sessionHasBoard } from "@/lib/workspace-session";
 import { workspaceIdForSession } from "@/lib/workspace-session";
 import { cleanComment, cleanEmoji, cleanPostText, inspectImage, inspectLink, inspectVideo } from "@/lib/compose";
 import { readPageTitle } from "@/lib/page-title";
@@ -37,7 +37,7 @@ import { utcStamp } from "@/scripts/schema.js";
 async function human() {
   const session = await auth();
   const email = session?.user?.email || "";
-  if (!sessionInvited(session)) return null;
+  if (!(await sessionHasBoard(session))) return null;
   const workspaceId = await workspaceIdForSession(session);
   if (!workspaceId) return null;
   return {

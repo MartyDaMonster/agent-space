@@ -1683,6 +1683,65 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   .project-switch { display: grid; position: sticky; top: 12px; overflow: visible; }
   .project-switch a { justify-content: space-between; }
 }
+.onboard-root { min-height: 100vh; }
+.onboard { width: min(640px, calc(100% - 32px)); margin: 24px auto 48px; }
+.onboard-brand { text-align: center; }
+.onboard-brand .wordmark { font-size: clamp(2rem, 5vw, 2.6rem); }
+.onboard-brand p { margin: 4px 0 24px; color: var(--muted); }
+.onboard-steps { display: flex; align-items: center; justify-content: space-between; margin: 0 0 16px; }
+.onboard-steps p { margin: 0; display: flex; gap: 16px; align-items: center; color: var(--muted); }
+.onboard-dots { display: flex; gap: 8px; }
+.onboard-dots i { width: 8px; height: 8px; border-radius: 999px; background: #3a3e58; }
+.onboard-dots i[data-state="now"] { background: var(--lime); }
+.onboard-dots i[data-state="done"] { background: #6e7588; }
+.onboard-card { padding: 24px; border-radius: 24px; background: var(--card); }
+.onboard-card h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 4vw, 2.4rem); }
+.onboard-card h2 { margin: 0; font-size: 1.35rem; }
+.onboard-kicker, .onboard-note, .secret-note { color: var(--muted); }
+.onboard-label { margin: 16px 0 8px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.need-row, .repo-row {
+  display: grid; grid-template-columns: 20px 28px 1fr; gap: 12px; align-items: center;
+  margin: 8px 0; padding: 12px 16px; border-radius: 16px; background: #1a1c2e;
+}
+.need-row.is-on { outline: 1px solid color-mix(in srgb, var(--lime) 70%, transparent); }
+.need-row svg, .repo-row svg, .repo-chip svg { width: 24px; height: 24px; }
+.need-row span, .repo-row span { display: grid; }
+.need-row small, .repo-row small, .invite-list small { color: var(--muted); }
+.onboard-card .btn { margin-top: 16px; }
+.repo-check { margin: 0; text-align: center; color: var(--lime); font-size: 28px; }
+.repo-chip { display: flex; gap: 8px; align-items: center; }
+.progress-bar { display: flex; gap: 4px; height: 4px; margin: 8px 0 16px; }
+.progress-bar i { flex: 1; background: #3a3e58; }
+.progress-bar i[data-on="yes"] { background: var(--lime); }
+.bot-setup { margin: 16px 0; padding: 16px; border-radius: 16px; background: #1a1c2e; }
+.bot-setup header, .bot-setup-actions, .secret-row, .invite-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.bot-setup-actions { justify-content: flex-start; margin: 16px 0; }
+.text-link { border: 0; background: none; color: var(--muted); padding: 0; cursor: pointer; }
+.pill { border-radius: 999px; padding: 4px 8px; font-family: var(--sans); font-size: 12px; font-weight: 700; }
+.pill.connected { background: color-mix(in srgb, var(--lime) 20%, #12131c); color: var(--lime); }
+.pill.waiting { background: color-mix(in srgb, #ffb020 20%, #12131c); color: #ffb020; }
+.setup-prompt {
+  margin: 0 0 16px; padding: 16px; overflow: auto; border-radius: 12px; background: #12131c;
+  color: var(--muted); font-family: ui-monospace, monospace; font-size: 13px; white-space: pre-wrap;
+}
+.secret-row input, .invite-card input, .onboard-card input:not([type="checkbox"]):not([type="radio"]) {
+  width: 100%; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: #12131c; color: #fff;
+}
+.shape-grid { display: grid; grid-template-columns: repeat(6, 48px); gap: 8px; }
+.shape-grid label, .color-row label { display: grid; place-items: center; width: 40px; height: 40px; }
+.shape-grid input, .color-row input { position: absolute; opacity: 0; }
+.shape-grid .avatar-mark { width: 32px; height: 32px; color: var(--lime); }
+.color-row label { border-radius: 999px; }
+.invite-card, .first-task {
+  width: min(640px, 100%); margin: 24px auto; padding: 24px; border-radius: 24px; background: var(--card);
+}
+.first-task { display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--lime); background: #1c2412; }
+.invite-list { list-style: none; padding: 0; margin: 0; }
+.invite-list li { margin: 8px 0; padding: 12px 16px; border-radius: 16px; background: #1a1c2e; }
+.btn-pink { background: var(--pink); color: #12131c; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (prefers-reduced-motion: reduce) {
   .brandosx,
   .brandosx:hover,
