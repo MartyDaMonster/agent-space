@@ -8,7 +8,7 @@ import { listAdminInvites, listAudit, listPeople } from "@/lib/admin-store";
 import { martinAdmin } from "@/lib/admin-panel";
 import { PLATFORMS, platformLabel } from "@/lib/platforms";
 import { workspaceIdForSession } from "@/lib/workspace-session";
-import { revokeInviteAction, resendInvite, revokeKeyAction, sendAdminInvite, suspendAccess } from "@/app/admin/panel-actions";
+import { revokeInviteAction, resendInvite, sendAdminInvite, suspendAccess } from "@/app/admin/panel-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +78,6 @@ export default async function AdminPage() {
             resend={resendInvite}
             revoke={revokeInviteAction}
             suspend={suspendAccess}
-            revokeKey={revokeKeyAction}
           />
         ) : null}
         keys={(

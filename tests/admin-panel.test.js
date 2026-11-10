@@ -169,3 +169,43 @@ test("an admin invite opens a new workspace and never joins ws-martin", async ()
   assert.equal((await listPosts({ workspaceId: "ws-martin" })).some((post) => post.id === "note-martin"), true);
   assert.ok(await projectBySlug("martin-project", "ws-martin"));
 });
+
+test("the old workspace invite route still opens a new workspace", async () => {
+  await resetDatabase();
+  const { getSql } = await import("../lib/db.js");
+  const { insertInvite, acceptStoredInvite } = await import("../lib/invites.js");
+  const sql = getSql();
+  await sql`
+    insert into posts (id, type, from_slug, body, created_at, reactions, author_kind, workspace_id)
+    values ('note-old', 'message', 'dexter', 'stay here', now(), '{}'::jsonb, 'bot', 'ws-martin')
+  `;
+  const created = await insertInvite({
+    id: "inv-old-route",
+    workspaceId: "ws-martin",
+    email: "route@example.com",
+    githubLogin: "route",
+    createdBy: "marty.hungerford3181@gmail.com"
+  });
+  assert.equal(created.ok, true);
+  assert.equal(created.invite.workspaceId, "");
+  assert.equal(created.invite.ownWorkspace, true);
+  const accepted = await acceptStoredInvite("ws-martin", created.invite.id, {
+    email: "route@example.com",
+    githubLogin: "route"
+  });
+  assert.equal(accepted.ok, true);
+  assert.notEqual(accepted.membership.workspaceId, "ws-martin");
+  const members = await sql`select workspace_id from workspace_members where lower(email) = 'route@example.com'`;
+  assert.deepEqual(members.map((row) => row.workspace_id), [accepted.membership.workspaceId]);
+  const seen = await sql`select id from posts where workspace_id = ${accepted.membership.workspaceId}`;
+  assert.equal(seen.length, 0);
+  await sql`
+    insert into workspace_invites (id, workspace_id, email, status, created_by)
+    values ('inv-legacy', 'ws-martin', 'legacy@example.com', 'pending', 'marty.hungerford3181@gmail.com')
+  `;
+  const legacy = await acceptStoredInvite("ws-martin", "inv-legacy", { email: "legacy@example.com" });
+  assert.equal(legacy.ok, true);
+  assert.notEqual(legacy.membership.workspaceId, "ws-martin");
+  const legacyMembers = await sql`select workspace_id from workspace_members where lower(email) = 'legacy@example.com'`;
+  assert.deepEqual(legacyMembers.map((row) => row.workspace_id), [legacy.membership.workspaceId]);
+});

@@ -186,11 +186,13 @@ test("a second accept does not duplicate membership, and the wrong person learns
   assert.equal(first.ok, true);
   assert.equal(second.ok, true);
   const members = await sql`
-    select role from workspace_members
-    where workspace_id = 'ws-ada' and lower(email) = 'ada@example.com'
+    select workspace_id, role from workspace_members
+    where lower(email) = 'ada@example.com'
   `;
   assert.equal(members.length, 1);
-  assert.equal(members[0].role, "member");
+  assert.equal(members[0].role, "owner");
+  assert.notEqual(members[0].workspace_id, "ws-ada");
+  assert.notEqual(members[0].workspace_id, "ws-martin");
   const eve = await acceptStoredInvite("ws-ada", "inv-ada", { email: "eve@example.com", githubLogin: "eve" });
   assert.equal(eve.ok, false);
   assert.equal(eve.status, 403);
@@ -374,7 +376,20 @@ test("routes cannot read, rename, comment, or notify across workspaces", async (
       method: "POST",
       headers: { cookie: adaCookie }
     });
-    assert.equal(adaAccept.status, 200);
+    const adaBody = await adaAccept.json();
+    assert.equal(adaAccept.status, 200, JSON.stringify(adaBody));
+    assert.notEqual(adaBody.membership.workspaceId, "ws-martin");
+    assert.notEqual(adaBody.membership.workspaceId, "ws-ada");
+    const joinedMartin = await sql`
+      select workspace_id from workspace_members
+      where workspace_id = 'ws-martin' and lower(email) = 'ada@example.com'
+    `;
+    assert.equal(joinedMartin.length, 0);
+    const adaHome = await sql`
+      select role from workspace_members
+      where workspace_id = ${adaBody.membership.workspaceId} and lower(email) = 'ada@example.com'
+    `;
+    assert.equal(adaHome[0].role, "owner");
     const eveReplay = await fetch(`http://127.0.0.1:3111/api/workspaces/ws-martin/invites/${ownerBody.invite.id}/accept`, {
       method: "POST",
       headers: { cookie: eveCookie }

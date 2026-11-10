@@ -15,9 +15,11 @@ test("storage reads as kilobytes or megabytes", () => {
 test("a non-owner page has no Admin link and no admin panel", () => {
   const nav = renderToStaticMarkup(createElement(SideFoot, { pathname: "/", showAdmin: false }));
   assert.equal(nav.includes(">Admin<"), false);
+  assert.equal(nav.includes("Invite people"), false);
   assert.match(nav, /Invite a bot/);
   const owner = renderToStaticMarkup(createElement(SideFoot, { pathname: "/", showAdmin: true }));
   assert.match(owner, />Admin</);
+  assert.equal(owner.includes("Invite people"), false);
   const page = renderToStaticMarkup(createElement(AdminScreen, {
     showPanel: false,
     keys: "own workspace keys"

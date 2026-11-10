@@ -16,7 +16,7 @@ function Pill({ state }) {
   return <span className={`admin-pill is-${state}`}>{state}</span>;
 }
 
-export function AdminPanel({ invites = [], people = [], audit = [], send, resend, revoke, suspend, revokeKey }) {
+export function AdminPanel({ invites = [], people = [], audit = [], send, resend, revoke, suspend }) {
   const [notice, setNotice] = useState("");
   const [confirm, setConfirm] = useState(null);
   const [activity, setActivity] = useState("");
@@ -47,7 +47,7 @@ export function AdminPanel({ invites = [], people = [], audit = [], send, resend
             GitHub username
             <input name="githubLogin" placeholder="optional" />
           </label>
-          <button className="admin-btn" type="submit">Invite</button>
+          <button className="admin-btn admin-btn-primary" type="submit">Invite</button>
         </form>
         {invites.length ? invites.map((invite) => (
           <div className="admin-row" key={invite.id}>
@@ -86,7 +86,7 @@ export function AdminPanel({ invites = [], people = [], audit = [], send, resend
           <div className="admin-row" key={`${person.workspaceId}-${person.email}`}>
             <div>
               <strong>{person.workspaceName}</strong>
-              <Pill state={person.paused ? "suspended" : "active"} />
+              <Pill state={person.owner ? "owner" : person.paused ? "suspended" : "active"} />
               <p className="admin-meta">{person.email}{person.githubLogin ? ` · @${person.githubLogin}` : ""}</p>
               <p className="admin-meta">
                 Joined {when(person.joinedAt)} · {person.bots} bots · {person.posts} posts · {person.comments} comments · {formatStorage(person.storageBytes)}
@@ -102,30 +102,20 @@ export function AdminPanel({ invites = [], people = [], audit = [], send, resend
                 </ul>
               ) : null}
             </div>
-            <div className="admin-actions">
-              <button
-                className={person.paused ? "admin-btn" : "admin-btn admin-btn-danger"}
-                type="button"
-                onClick={() => setConfirm({
-                  title: person.paused ? `Resume ${person.email}?` : `Suspend ${person.email}?`,
-                  action: suspend,
-                  resume: person.paused,
-                  fields: { workspaceId: person.workspaceId, email: person.email, scope: "person", resume: person.paused ? "1" : "" }
-                })}
-              >{person.paused ? "Resume" : "Suspend"}</button>
-              {person.keys?.map((key) => (
+            {person.owner ? null : (
+              <div className="admin-actions">
                 <button
-                  className="admin-btn admin-btn-danger"
+                  className={person.paused ? "admin-btn" : "admin-btn admin-btn-danger"}
                   type="button"
-                  key={key.id}
                   onClick={() => setConfirm({
-                    title: `Revoke ${key.slug}?`,
-                    action: revokeKey,
-                    fields: { workspaceId: person.workspaceId, keyId: key.id }
+                    title: person.paused ? `Resume ${person.email}?` : `Suspend ${person.email}?`,
+                    action: suspend,
+                    resume: person.paused,
+                    fields: { workspaceId: person.workspaceId, email: person.email, scope: "person", resume: person.paused ? "1" : "" }
                   })}
-                >Revoke</button>
-              ))}
-            </div>
+                >{person.paused ? "Resume" : "Suspend"}</button>
+              </div>
+            )}
           </div>
         )) : <p className="admin-empty">No people yet.</p>}
       </section>
