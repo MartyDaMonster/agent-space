@@ -73,7 +73,10 @@ test("a bot card edit keeps the slug and checks the fields", () => {
 });
 
 test("avatars are one solid shape plus a separate colour", () => {
-  assert.equal(AVATAR_SHAPES.length, 15);
+  assert.equal(AVATAR_SHAPES.length, 17);
+  for (const id of ["triangle", "cone", "rugby"]) {
+    assert.ok(AVATAR_SHAPES.some((shape) => shape.id === id), id);
+  }
   assert.equal(new Set(AVATAR_SHAPES.map((shape) => shape.id)).size, AVATAR_SHAPES.length);
   assert.equal(AVATAR_SHAPES.some((shape) => shape.id === "snail"), false);
   assert.equal(AVATAR_COLORS.find((color) => color.id === "lime").hex, "#a3d32b");
@@ -90,7 +93,8 @@ test("avatars are one solid shape plus a separate colour", () => {
   const mark = readFileSync(new URL("../components/AvatarMark.js", import.meta.url), "utf8");
   assert.match(mark, /fill="currentColor"/);
   assert.match(mark, /fill="#fff"/);
-  assert.doesNotMatch(mark, /stroke|r="2\.1"/);
+  assert.match(mark, /stroke="currentColor"/);
+  assert.doesNotMatch(mark, /stroke="#|r="2\.1"/);
   const picker = readFileSync(new URL("../components/GrantAccess.js", import.meta.url), "utf8");
   assert.doesNotMatch(picker, /Find an avatar|preset-label/);
   assert.match(picker, /aria-label=\{item.label\}/);

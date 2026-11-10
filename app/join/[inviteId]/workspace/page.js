@@ -43,7 +43,7 @@ export default async function WorkspaceStep({ params, searchParams }) {
           {AVATAR_SHAPES.map((shape, index) => (
             <label key={shape.id}>
               <input type="radio" name="shape" value={shape.id} defaultChecked={index === 0} />
-              <AvatarMark shape={shape.id} />
+              <AvatarMark shape={shape.id} motion="calm" seed={`shape-${shape.id}`} />
             </label>
           ))}
         </div>
