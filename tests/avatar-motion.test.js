@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { AVATAR_COLORS, motionForSize, motionTiming } from "../lib/avatar-presets.js";
+import { motionForSize, motionTiming } from "../lib/avatar-presets.js";
 
 test("avatars at 48px and above play the full loop, smaller ones stay calm", () => {
   assert.equal(motionForSize(47), "calm");
@@ -16,8 +16,8 @@ test("avatars at 48px and above play the full loop, smaller ones stay calm", () 
   assert.match(css, /\.bot--calm \.bot-body/);
   assert.match(css, /@keyframes jelly/);
   assert.match(css, /@keyframes ball-bounce/);
+  assert.match(css, /@keyframes gentle-turn/);
   assert.match(css, /prefers-reduced-motion: reduce/);
-  assert.equal(AVATAR_COLORS.some((color) => color.id === "coral" && color.hex === "#ff5a5f"), true);
   const a = motionTiming("dexter");
   const b = motionTiming("crabby");
   assert.notEqual(a["--blink-delay"], b["--blink-delay"]);

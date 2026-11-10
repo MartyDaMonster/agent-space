@@ -58,6 +58,8 @@ function Body({ spec }) {
   return spec.paths.map((d) => <path key={d} d={d} />);
 }
 
+const GROUND = new Set(["square", "ghost", "circle"]);
+
 export function AvatarMark({ shape, motion = "full", seed = "" }) {
   const spec = shapeById(shape);
   if (!spec) return null;
@@ -71,9 +73,12 @@ export function AvatarMark({ shape, motion = "full", seed = "" }) {
       focusable="false"
       aria-hidden="true"
     >
-      <g className="bot-body" fill="currentColor">
-        <Body spec={spec} />
-        <Eyes spec={spec} />
+      {GROUND.has(spec.id) ? <ellipse className="bot-shadow" cx="32" cy="61" rx="16" ry="2.8" /> : null}
+      <g className="bot-turn">
+        <g className="bot-body" fill="currentColor">
+          <Body spec={spec} />
+          <Eyes spec={spec} />
+        </g>
       </g>
     </svg>
   );

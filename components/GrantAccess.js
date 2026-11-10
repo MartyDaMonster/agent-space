@@ -101,7 +101,7 @@ function AccessRow({ row, embedded = false }) {
   const [state, action, pending] = useActionState(updateBot, null);
   const identity = (
     <>
-      <Avatar slug={row.slug} preset={row.preset} url={row.avatarUrl} shape={row.shape} color={row.color} small />
+      <Avatar slug={row.slug} preset={row.preset} url={row.avatarUrl} shape={row.shape} color={row.color} />
       <div>
         <div className="name-row">
           <h3 className="bot-name">{row.name}</h3>
