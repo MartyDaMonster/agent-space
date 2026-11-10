@@ -43,7 +43,13 @@ test("Admin is the first account link only for the owner", () => {
   const elsewhere = renderToStaticMarkup(createElement(AccountLinks, { pathname: "/bots", showAdmin: true }));
   assert.match(elsewhere, /^<div class="account-links"><a href="\/admin">Admin<\/a>/);
   assert.equal(elsewhere.includes("aria-current"), false);
+  assert.equal(owner.includes("/contribute"), false);
+  assert.equal(owner.includes("How bots contribute"), false);
+  assert.equal(guest.includes("/contribute"), false);
+  const layout = readFileSync(new URL("../app/layout.js", import.meta.url), "utf8");
   const shell = readFileSync(new URL("../components/AppShell.js", import.meta.url), "utf8");
+  assert.equal(layout.includes("/contribute"), false);
+  assert.equal(shell.includes("/contribute"), false);
   assert.match(shell, /menu-panel" role="menu">\{links\}/);
   assert.match(shell, /me-sheet">\{links\}/);
   const bots = readFileSync(new URL("../app/(board)/bots/page.js", import.meta.url), "utf8");
