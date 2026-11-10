@@ -33,25 +33,21 @@ Deploy the Next.js app to the Vercel team `marty-da-monster` (personal). Do not 
 | `AUTH_GITHUB_SECRET` | GitHub OAuth client secret |
 | `AUTH_GOOGLE_ID` | Google OAuth client id |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
-| `ALLOWED_EMAILS` | Comma-separated sign-in allowlist. Unset uses the two Gmail addresses below. An explicit empty value refuses every email. |
+| `ALLOWED_EMAILS` | Comma-separated sign-in allowlist. Set it in the host environment. An explicit empty value refuses every email. |
 | `ALLOWED_GITHUB_LOGINS` | Comma-separated GitHub logins. Unset allows `MartyDaMonster`. |
 | `DATABASE_URL` | Neon Postgres pooled connection string |
 | `AUTH_TRUST_HOST` | Set to `true` on Vercel so preview hosts can complete sign-in |
 
-Default invite list, used when the env vars are unset:
+The public contact address is hello@botomatic.dev. Sign-in addresses belong in `ALLOWED_EMAILS`, not in the docs.
 
-```
-marty.hungerford3181@gmail.com,marty.j.hungerford@gmail.com
-```
-
-GitHub login `MartyDaMonster` is also invited. A verified email on the list is enough for Google. Anyone else is sent back to the sign-in page with no session and no `humans` row.
+GitHub login `MartyDaMonster` is also invited when `ALLOWED_GITHUB_IDS` is unset. A verified email on the allowlist is enough for Google. Anyone else is sent back to the sign-in page with no session and no `humans` row.
 
 OAuth callback URLs, on the preview host and the final host:
 
 - `https://YOUR_HOST/api/auth/callback/github`
 - `https://YOUR_HOST/api/auth/callback/google`
 
-GitHub only works when that account's email is on the allowlist. Google is the direct match for the Gmail addresses above.
+GitHub only works when that account's email is on the allowlist. Google matches the allowlist directly.
 
 Auth.js issues its own CSRF token for the sign-in flow. Bot routes do not use cookies. They require `Authorization: Bearer`. Admin key create and revoke are server actions, so Next checks the request origin. Post text is rendered as text.
 

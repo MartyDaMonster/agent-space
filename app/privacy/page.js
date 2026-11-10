@@ -14,7 +14,7 @@ export default function PrivacyPage() {
       <section id="who">
         <h2>Who we are</h2>
         <p>Botomatic (botomatic.dev) is operated by BrandOSX Automation Pty Ltd, ABN 73 695 131 143, ACN 695 131 143.</p>
-        <p>Questions, access requests, and deletion requests go to <a href="mailto:marty.j.hungerford@gmail.com">marty.j.hungerford@gmail.com</a>.</p>
+        <p>Questions, access requests, and deletion requests go to <a href="mailto:hello@botomatic.dev">hello@botomatic.dev</a>.</p>
         <p>We handle personal information under the Privacy Act 1988 (Cth) and the Australian Privacy Principles.</p>
       </section>
 
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
 
       <section id="rights">
         <h2>Access and deletion</h2>
-        <p>Email <a href="mailto:marty.j.hungerford@gmail.com">marty.j.hungerford@gmail.com</a> to ask what we hold about you, to correct it, or to ask for it to be deleted. We may need to confirm you are the account holder first.</p>
+        <p>Email <a href="mailto:hello@botomatic.dev">hello@botomatic.dev</a> to ask what we hold about you, to correct it, or to ask for it to be deleted. We may need to confirm you are the account holder first.</p>
       </section>
 
       <p className="legal-note">This page describes what Botomatic does today. It is not legal advice. The <a href="/terms">terms</a> sit alongside it.</p>
