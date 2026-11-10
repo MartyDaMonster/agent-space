@@ -21,7 +21,6 @@ html { font-size: 100%; color-scheme: dark; }
 body {
   margin: 0;
   min-height: 100vh;
-  overflow-x: clip;
   font-family: var(--sans);
   font-size: 16px;
   font-weight: 400;
@@ -74,13 +73,14 @@ h1 {
   font-weight: 900;
   font-size: clamp(2.7rem, 8vw, 4.5rem);
   font-variation-settings: "SOFT" 100, "opsz" 144, "wght" 900;
-  line-height: 0.72;
+  line-height: 1;
   letter-spacing: -0.045em;
 }
 
 .wordmark-row {
   display: inline-flex;
-  align-items: flex-end;
+  align-items: baseline;
+  max-width: 100%;
 }
 
 .wm-b,
@@ -93,19 +93,20 @@ h1 {
   position: relative;
   flex: 0 0 auto;
   z-index: 1;
-  align-self: flex-end;
-  margin-inline: 0.05em;
-  margin-bottom: -0.13em;
+  align-self: baseline;
+  margin-inline: 0.04em;
+  margin-bottom: 0;
+  height: 1ex;
   line-height: 0;
 }
 
 .wm-square {
-  width: calc(1ex * 44 / 36);
-  height: calc(1ex * 38 / 36);
+  width: auto;
+  aspect-ratio: 46 / 40.6;
 }
 .wm-cloud {
-  width: calc(1ex * 87.33 / 48.01);
-  height: 1ex;
+  width: auto;
+  aspect-ratio: 57.64 / 31.69;
 }
 
 .wm-square svg,
@@ -1702,11 +1703,15 @@ legend { color: var(--muted); font-weight: 500; }
   outline: 2px solid var(--lime);
   outline-offset: 3px;
 }
-.composer-trigger { display: grid; gap: 8px; padding: 14px 16px; }
-.composer-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.composer-trigger { display: grid; gap: 8px; padding: 14px 16px; min-width: 0; max-width: 100%; }
+.composer-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; min-width: 0; max-width: 100%; }
 .composer-pill {
+  min-width: 0;
+  max-width: 100%;
   min-height: 44px;
   padding: 0 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   background: #12131c;
@@ -1718,7 +1723,8 @@ legend { color: var(--muted); font-weight: 500; }
   transition: border-color 180ms ease-out, transform 180ms ease-out;
 }
 .composer-pill:hover { border-color: rgba(255, 255, 255, 0.4); }
-.composer-kinds { display: flex; gap: 4px; }
+.composer-kinds { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; max-width: 100%; }
+.composer-kinds button { min-width: 0; }
 .attach-block { display: grid; gap: 8px; }
 .attach-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .attach-label input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -1912,12 +1918,14 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   justify-content: space-between;
   gap: 12px;
   min-height: 56px;
+  min-width: 0;
+  max-width: 100%;
   padding: 8px 16px;
   background: var(--bg);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-.app-bar .wordmark { font-size: 1.85rem; line-height: 1; }
-.app-bar .brand { text-decoration: none; color: inherit; }
+.app-bar .wordmark { font-size: 1.85rem; line-height: 1; max-width: 100%; }
+.app-bar .brand { min-width: 0; max-width: 100%; text-decoration: none; color: inherit; }
 .account-trigger {
   display: inline-flex;
   align-items: center;
@@ -2026,8 +2034,8 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .side-rename { margin: 0 12px 8px; text-align: left; }
 .project-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .side-empty { text-transform: none; letter-spacing: 0; font-weight: 500; }
-.page-header { display: grid; gap: 8px; }
-.page-header h1, .page-header p { margin: 0; }
+.page-header { display: grid; gap: 8px; min-width: 0; max-width: 100%; }
+.page-header h1, .page-header p { margin: 0; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .page-header p { color: var(--muted); }
 .page-fade { animation: page-fade 180ms ease-out; min-width: 0; max-width: 100%; }
 @keyframes page-fade { from { opacity: 0; } to { opacity: 1; } }
