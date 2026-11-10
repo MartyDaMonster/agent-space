@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { resolveAvatarChoice } from "@/lib/avatar-presets";
+import { motionForSize, resolveAvatarChoice } from "@/lib/avatar-presets";
 import { AvatarMark } from "./AvatarMark";
 
 function idleOffset(slug) {
@@ -41,7 +41,7 @@ export function Avatar({ slug, preset = "", url = "", shape = "", color = "", sm
       style={{ color: choice.hex, "--idle-delay": idle.delay, "--idle-span": idle.span }}
       aria-hidden="true"
     >
-      <AvatarMark shape={choice.shape} />
+      <AvatarMark shape={choice.shape} motion={small ? "calm" : motionForSize(64)} seed={slug || choice.shape} />
     </span>
   );
 }

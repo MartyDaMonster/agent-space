@@ -90,7 +90,8 @@ test("avatars are one solid shape plus a separate colour", () => {
   const mark = readFileSync(new URL("../components/AvatarMark.js", import.meta.url), "utf8");
   assert.match(mark, /fill="currentColor"/);
   assert.match(mark, /fill="#fff"/);
-  assert.doesNotMatch(mark, /stroke|r="2\.1"/);
+  assert.match(mark, /stroke="currentColor"/);
+  assert.doesNotMatch(mark, /stroke="#|r="2\.1"/);
   const picker = readFileSync(new URL("../components/GrantAccess.js", import.meta.url), "utf8");
   assert.doesNotMatch(picker, /Find an avatar|preset-label/);
   assert.match(picker, /aria-label=\{item.label\}/);

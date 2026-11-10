@@ -79,7 +79,7 @@ h1 {
 
 .wordmark-row {
   display: inline-flex;
-  align-items: flex-end;
+  align-items: baseline;
 }
 
 .wm-b,
@@ -92,19 +92,21 @@ h1 {
   position: relative;
   flex: 0 0 auto;
   z-index: 1;
-  align-self: flex-end;
-  /* About 7% of the font size, so the avatars only nick the neighbouring letters. */
-  margin-inline: -0.07em;
+  align-self: baseline;
   margin-bottom: 0;
 }
 
 .wm-square {
-  width: 0.52em;
-  height: 0.52em;
+  width: 0.6em;
+  height: 0.6em;
+  margin: 0 -0.015em 0 -0.06em;
+  color: #a3d32b;
 }
 .wm-cloud {
-  width: 0.946em;
-  height: 0.52em;
+  width: 0.66em;
+  height: 0.66em;
+  margin: 0 -0.03em 0 0.035em;
+  color: #ff3e9a;
 }
 
 .wm-square svg,
@@ -725,8 +727,135 @@ dialog.app-dialog h2 { padding-right: 32px; }
 .avatar-live[data-shape="crab"],
 .avatar-live[data-shape="cat"],
 .avatar-live[data-shape="capsule"] { animation-name: avatar-rock; }
+.avatar-live[data-shape="square"],
+.avatar-live[data-shape="cloud"],
+.avatar-live[data-shape="ghost"],
+.avatar-live[data-shape="crab"],
+.avatar-live[data-shape="circle"] { animation: none; }
+.avatar-live[data-shape="square"] .eyes,
+.avatar-live[data-shape="cloud"] .eyes,
+.avatar-live[data-shape="ghost"] .eyes,
+.avatar-live[data-shape="crab"] .eyes,
+.avatar-live[data-shape="circle"] .eyes { animation: none; }
 .avatar-live.is-paused,
-.avatar-live.is-paused .eyes { animation-play-state: paused; }
+.avatar-live.is-paused .eyes,
+.avatar-live.is-paused * { animation-play-state: paused; }
+
+.bot { display: block; width: 100%; height: 100%; overflow: visible; }
+.bot .bot-body,
+.bot .crab-arm,
+.bot .pincer { transform-box: view-box; }
+.bot .bot-body { transform-origin: 32px 58px; }
+.bot .bot-eyes,
+.bot .bot-blink { transform-box: fill-box; transform-origin: center; }
+.bot .bot-blink {
+  animation: bot-blink var(--blink-span, 5.2s) linear infinite;
+  animation-delay: var(--blink-delay, 0s);
+}
+@keyframes bot-blink {
+  0%, 36%, 38.6%, 74%, 76.6%, 78.4%, 81%, 100% { transform: scaleY(1); }
+  37%, 37.8%, 75%, 75.8%, 79.4%, 80.2% { transform: scaleY(0.1); }
+}
+.bot--square { --blink-span: 4.7s; }
+.bot--square .bot-body {
+  transform: rotate(-8deg);
+  animation: jelly 2.6s cubic-bezier(.45, 0, .55, 1) infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+@keyframes jelly {
+  0% { transform: rotate(-8deg) scale(1, 1) skewX(0deg); }
+  12% { transform: rotate(-8deg) scale(1.1, 0.88) skewX(0deg); }
+  25% { transform: rotate(-6deg) scale(0.93, 1.08) skewX(-4deg); }
+  38% { transform: rotate(-9.5deg) scale(1.05, 0.95) skewX(3deg); }
+  50% { transform: rotate(-7deg) scale(0.98, 1.02) skewX(-1.5deg); }
+  62%, 100% { transform: rotate(-8deg) scale(1, 1) skewX(0deg); }
+}
+.bot--square .bot-eyes { animation: glance 7.3s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
+.bot--crab { --blink-span: 5.6s; }
+.bot--crab .bot-body { animation: crab-bob 2.4s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
+.bot--crab .crab-arm-l { transform-origin: 19px 40px; animation: crab-arm-l 2.4s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
+.bot--crab .crab-arm-r { transform-origin: 45px 40px; animation: crab-arm-r 2.4s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
+.bot--crab .pincer { animation: 2.4s cubic-bezier(.2, .8, .3, 1) infinite; animation-delay: var(--idle-delay, 0s); }
+.bot--crab .pincer-l-a { transform-origin: 10px 21px; animation-name: snap-a; }
+.bot--crab .pincer-l-b { transform-origin: 10px 21px; animation-name: snap-b; }
+.bot--crab .pincer-r-a { transform-origin: 54px 21px; animation-name: snap-a; animation-delay: calc(var(--idle-delay, 0s) - 0.18s); }
+.bot--crab .pincer-r-b { transform-origin: 54px 21px; animation-name: snap-b; animation-delay: calc(var(--idle-delay, 0s) - 0.18s); }
+@keyframes crab-bob {
+  0%, 50%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-1.8px) rotate(-2deg); }
+  75% { transform: translateY(-1.2px) rotate(2deg); }
+}
+@keyframes crab-arm-l { 0%, 100% { transform: rotate(0deg); } 30% { transform: rotate(-9deg); } 60% { transform: rotate(5deg); } }
+@keyframes crab-arm-r { 0%, 100% { transform: rotate(0deg); } 30% { transform: rotate(9deg); } 60% { transform: rotate(-5deg); } }
+@keyframes snap-a {
+  0%, 28%, 40%, 52%, 100% { transform: rotate(-6deg); }
+  32%, 35%, 44%, 47% { transform: rotate(20deg); }
+}
+@keyframes snap-b {
+  0%, 28%, 40%, 52%, 100% { transform: rotate(6deg); }
+  32%, 35%, 44%, 47% { transform: rotate(-20deg); }
+}
+.bot--ghost { --blink-span: 6.1s; }
+.bot--ghost .bot-body {
+  transform-origin: 32px 34px;
+  animation: ghost-float 3.4s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--ghost .bot-eyes { animation: ghost-look 6.8s ease-in-out infinite; animation-delay: var(--idle-delay, 0s); }
+@keyframes ghost-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-4.5px) rotate(3deg); }
+}
+@keyframes ghost-look {
+  0%, 12% { transform: translate(0, 0); }
+  20%, 40% { transform: translate(-5px, 0.5px); }
+  50%, 70% { transform: translate(5px, -0.5px); }
+  80%, 100% { transform: translate(0, 0); }
+}
+.bot--cloud { --blink-span: 4.3s; }
+.bot--cloud .bot-body {
+  transform-origin: 32px 46px;
+  animation: cloud-pulse 2.8s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--cloud .bot-eyes { animation: glance 8.1s ease-in-out infinite; animation-delay: calc(var(--idle-delay, 0s) - 3s); }
+@keyframes cloud-pulse {
+  0%, 100% { transform: scale(1, 1); }
+  22% { transform: scale(1.08, 1.06); }
+  40% { transform: scale(0.97, 0.98); }
+  56% { transform: scale(1.04, 1.03); }
+  72% { transform: scale(1, 1); }
+}
+.bot--ball,
+.bot--circle { --blink-span: 5.9s; }
+.bot--ball .bot-body,
+.bot--circle .bot-body { animation: ball-bounce 1.3s infinite; animation-delay: var(--idle-delay, 0s); }
+@keyframes ball-bounce {
+  0% { transform: translateY(0) scale(1.17, 0.83); animation-timing-function: cubic-bezier(.3, 0, .7, 1); }
+  9% { transform: translateY(calc(var(--bounce, 14) * -0.14px)) scale(0.93, 1.08); animation-timing-function: cubic-bezier(.2, .6, .4, 1); }
+  48% { transform: translateY(calc(var(--bounce, 14) * -1px)) scale(1, 1); animation-timing-function: linear; }
+  54% { transform: translateY(calc(var(--bounce, 14) * -1px)) scale(1, 1); animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
+  91% { transform: translateY(-1px) scale(0.94, 1.07); animation-timing-function: cubic-bezier(.3, 0, .7, 1); }
+  100% { transform: translateY(0) scale(1.17, 0.83); }
+}
+@keyframes glance {
+  0%, 30% { transform: translate(0, 0); }
+  36%, 52% { transform: translate(1.8px, -0.6px); }
+  60%, 76% { transform: translate(-1.6px, 0.4px); }
+  84%, 100% { transform: translate(0, 0); }
+}
+.bot--calm .bot-body,
+.bot--calm .crab-arm,
+.bot--calm .pincer,
+.bot--calm .crab-legs { animation: none; }
+.bot--calm .bot-eyes {
+  animation: glance 8.4s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.wordmark .wm-square { --bounce: 7; }
+.wordmark .bot { width: 100%; height: 100%; }
+.wordmark-row.is-paused,
+.wordmark-row.is-paused * { animation-play-state: paused; }
 .avatar svg, .avatar img { display: block; width: 100%; height: 100%; }
 .avatar img { object-fit: cover; border-radius: 16px; }
 
@@ -1135,7 +1264,7 @@ legend { color: var(--muted); font-weight: 500; }
 
 .access-row {
   display: grid;
-  grid-template-columns: 52px 1fr;
+  grid-template-columns: 36px 1fr;
   gap: 12px;
   align-items: center;
   padding-top: 12px;
@@ -1994,4 +2123,8 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   .page-fade,
   .skeleton,
   .onboard-art .eyes { transform: none; transition: none; animation: none; }
+  .bot,
+  .bot *,
+  .avatar-live,
+  .avatar-live * { animation: none !important; }
 }
