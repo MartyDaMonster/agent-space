@@ -5,14 +5,14 @@ export function Wordmark({ heading = true }) {
       <span className="wordmark-row" aria-hidden="true">
         <span className="wm-b">B</span>
         <span className="wm-bot wm-square">
-          <svg viewBox="8 8 48 48" focusable="false">
+          <svg viewBox="0 0 44 38" focusable="false">
             <g className="wm-tilt">
-              <rect x="8" y="8" width="48" height="48" rx="14" fill="#a3d32b" />
+              <rect x="4" y="2" width="36" height="36" rx="11" fill="#a3d32b" />
               <g className="look-square">
                 <g className="express express-square">
                   <g className="blink">
-                    <circle cx="33" cy="32" r="4.8" fill="#fff" />
-                    <circle cx="45" cy="32" r="4.8" fill="#fff" />
+                    <circle cx="18" cy="20" r="3.4" fill="#fff" />
+                    <circle cx="27" cy="20" r="3.4" fill="#fff" />
                   </g>
                 </g>
               </g>

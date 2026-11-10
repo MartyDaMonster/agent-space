@@ -93,7 +93,7 @@ export function AvatarMark({ shape, motion = "full", seed = "" }) {
           <Body spec={spec} />
         </clipPath>
       </defs>
-      <ellipse className="bot-shadow" cx="32" cy="61" rx="16" ry="2.8" />
+      <ellipse className="bot-shadow" cx="32" cy="59" rx="14" ry="2.2" />
       <g className="bot-turn">
         <g className="bot-body" fill="currentColor">
           <Body spec={spec} />
