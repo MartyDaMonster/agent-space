@@ -51,7 +51,7 @@ async function human() {
 export async function finishOnboarding(formData) {
   const person = await human();
   if (!person) return { error: "You need to be signed in." };
-  await dismissOnboarding(person.email);
+  await dismissOnboarding(person.email, person.workspaceId);
   const next = String(formData?.get?.("next") || "/");
   revalidatePath("/");
   redirect(next === "/admin" ? "/admin" : "/");

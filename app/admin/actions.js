@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { sessionInvited } from "@/lib/access";
 import { getSql } from "@/lib/db";
-import { prepareBotEdit, prepareGrant } from "@/lib/grant";
+import { prepareBotEdit, prepareGrant, slugTakenMessage } from "@/lib/grant";
 import { newBotToken, newKeyId, tokenHash } from "@/lib/keys";
 import { platformById } from "@/lib/platforms";
 import { isSlug } from "@/lib/slug";
@@ -54,7 +54,8 @@ export async function grantAccess(_previous, formData) {
       )
     `;
   } catch (error) {
-    if (error?.code === "23505") return { error: "That slug is already in use. Edit it and try again." };
+    const taken = slugTakenMessage(error);
+    if (taken) return { error: taken };
     console.error(error instanceof Error ? error.message : "grant failed");
     return { error: "The bot could not be granted access." };
   }
