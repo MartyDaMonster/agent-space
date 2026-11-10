@@ -925,6 +925,121 @@ dialog.app-dialog h2 { padding-right: 32px; }
   0%, 100% { transform: scaleX(1.25); opacity: 0.4; }
   48%, 56% { transform: scaleX(0.5); opacity: 0.08; }
 }
+.bot--triangle .bot-turn {
+  animation: triangle-turn 2.8s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--triangle .bot-body {
+  transform-origin: 32px 52px;
+  animation: triangle-rock 2.8s cubic-bezier(.45, 0, .55, 1) infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--triangle .bot-eyes {
+  animation: triangle-eyes 2.8s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+@keyframes triangle-turn {
+  0%, 100% { transform: scaleX(1) skewY(0deg); }
+  10% { transform: scaleX(1.05) skewY(1.5deg); }
+  36% { transform: scaleX(0.88) skewY(-4deg); }
+  84% { transform: scaleX(0.88) skewY(4deg); }
+}
+@keyframes triangle-rock {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(5deg); }
+  36% { transform: rotate(-16deg); }
+  52% { transform: rotate(-5deg); }
+  66% { transform: rotate(5deg); }
+  84% { transform: rotate(16deg); }
+}
+@keyframes triangle-eyes {
+  0%, 100% { transform: translate(0, 0) scaleX(1); }
+  10% { transform: translate(1.4px, 0) scaleX(0.96); }
+  36% { transform: translate(-3.6px, 0.5px) scaleX(0.84); }
+  84% { transform: translate(3.6px, 0.5px) scaleX(0.84); }
+}
+.bot--cone .bot-turn {
+  transform-origin: 32px 40px;
+  animation: cone-spin 3.2s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--cone .bot-body {
+  transform-origin: 32px 54px;
+  animation: cone-hop 3.2s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--cone .bot-eyes {
+  animation: cone-eyes 3.2s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--cone .bot-shadow {
+  animation: cone-shadow 3.2s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+@keyframes cone-spin {
+  0%, 100% { transform: scaleX(1); }
+  10% { transform: scaleX(1.08); }
+  28% { transform: scaleX(0.16); }
+  46% { transform: scaleX(-1); }
+  64% { transform: scaleX(-1.06); }
+  82% { transform: scaleX(0.16); }
+}
+@keyframes cone-hop {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  10% { transform: translateY(1px) scale(1.08, 0.9); }
+  40% { transform: translateY(-5px) scale(0.94, 1.08); }
+  62% { transform: translateY(0) scale(1.06, 0.92); }
+}
+@keyframes cone-eyes {
+  0%, 46%, 100% { transform: translate(0, 0); }
+  22% { transform: translate(5px, 0); }
+  70% { transform: translate(-5px, 0); }
+}
+@keyframes cone-shadow {
+  0%, 62%, 100% { transform: scaleX(1); opacity: 0.55; }
+  10% { transform: scaleX(1.18); opacity: 0.7; }
+  40% { transform: scaleX(0.5); opacity: 0.14; }
+}
+.bot--rugby .bot-turn {
+  animation: rugby-turn 6.4s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--rugby .bot-body {
+  transform-origin: 32px 36px;
+  animation: rugby-tumble 3.4s cubic-bezier(.45, 0, .55, 1) infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--rugby .bot-eyes {
+  animation: rugby-eyes 3.4s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.bot--rugby .bot-shadow {
+  animation: rugby-shadow 3.4s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+@keyframes rugby-turn {
+  0%, 100% { transform: scaleX(1) skewY(0deg); }
+  40% { transform: scaleX(0.9) skewY(-3deg); }
+  72% { transform: scaleX(0.92) skewY(3deg); }
+}
+@keyframes rugby-tumble {
+  0%, 78%, 100% { transform: rotate(0deg) translateY(0) scale(1, 1); }
+  8% { transform: rotate(-7deg) translateY(1px) scale(1.06, 0.9); }
+  30% { transform: rotate(42deg) translateY(-5px) scale(0.94, 1.06); }
+  48% { transform: rotate(12deg) translateY(-1px) scale(1, 1); }
+  62% { transform: rotate(-8deg) scale(1.04, 0.94); }
+}
+@keyframes rugby-eyes {
+  0%, 78%, 100% { transform: translate(0, 0) scaleX(1); }
+  8% { transform: translate(-1.5px, 0.4px) scaleX(1.04); }
+  30% { transform: translate(3.2px, -1px) scaleX(0.86); }
+  62% { transform: translate(-2.4px, 0.4px) scaleX(0.92); }
+}
+@keyframes rugby-shadow {
+  0%, 62%, 100% { transform: scaleX(1.15); opacity: 0.55; }
+  8% { transform: scaleX(1.3); opacity: 0.68; }
+  30% { transform: scaleX(0.55); opacity: 0.14; }
+}
 @keyframes glance {
   0%, 28% { transform: translate(0, 0) scaleX(1); }
   40%, 56% { transform: translate(2px, -0.4px) scaleX(0.94); }

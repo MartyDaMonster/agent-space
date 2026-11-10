@@ -58,7 +58,7 @@ function Body({ spec }) {
   return spec.paths.map((d) => <path key={d} d={d} />);
 }
 
-const GROUND = new Set(["square", "ghost", "circle"]);
+const GROUND = new Set(["square", "ghost", "circle", "cone", "rugby"]);
 
 export function AvatarMark({ shape, motion = "full", seed = "" }) {
   const spec = shapeById(shape);

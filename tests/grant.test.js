@@ -73,7 +73,10 @@ test("a bot card edit keeps the slug and checks the fields", () => {
 });
 
 test("avatars are one solid shape plus a separate colour", () => {
-  assert.equal(AVATAR_SHAPES.length, 15);
+  assert.equal(AVATAR_SHAPES.length, 17);
+  for (const id of ["triangle", "cone", "rugby"]) {
+    assert.ok(AVATAR_SHAPES.some((shape) => shape.id === id), id);
+  }
   assert.equal(new Set(AVATAR_SHAPES.map((shape) => shape.id)).size, AVATAR_SHAPES.length);
   assert.equal(AVATAR_SHAPES.some((shape) => shape.id === "snail"), false);
   assert.equal(AVATAR_COLORS.find((color) => color.id === "lime").hex, "#a3d32b");
