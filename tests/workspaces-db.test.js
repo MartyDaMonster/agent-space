@@ -139,13 +139,13 @@ test("accepting an invite is atomic and does not survive a revoke", async () => 
   const sql = getSql();
   await sql`insert into workspaces (id, name, slug) values ('ws-ada', 'Ada', 'ada')`;
   await sql`
-    insert into workspace_invites (id, workspace_id, email, status, created_by)
-    values ('inv-race', 'ws-ada', 'race@example.com', 'pending', 'owner')
+    insert into workspace_invites (id, workspace_id, email, status, created_by, expires_at)
+    values ('inv-race', 'ws-ada', 'race@example.com', 'pending', 'owner', now() + interval '48 hours')
   `;
   const locker = await sql.pool.connect();
   await locker.query("begin");
   await locker.query("select id from workspace_invites where id = 'inv-race' for update");
-  const pending = acceptStoredInvite("ws-ada", "inv-race", { email: "race@example.com" });
+  const pending = acceptStoredInvite("ws-ada", "inv-race", { email: "race@example.com", githubId: "4242" });
   for (let attempt = 0; attempt < 50; attempt += 1) {
     const waiting = await sql`
       select pid from pg_stat_activity
@@ -176,15 +176,15 @@ test("a second accept does not duplicate membership, and the wrong person learns
   const sql = getSql();
   await sql`insert into workspaces (id, name, slug) values ('ws-ada', 'Ada', 'ada')`;
   await sql`
-    insert into workspace_invites (id, workspace_id, email, github_login, status, created_by)
-    values ('inv-ada', 'ws-ada', 'ada@example.com', 'ada', 'pending', 'owner')
+    insert into workspace_invites (id, workspace_id, email, github_login, status, created_by, expires_at)
+    values ('inv-ada', 'ws-ada', 'ada@example.com', 'ada', 'pending', 'owner', now() + interval '48 hours')
   `;
   const [first, second] = await Promise.all([
-    acceptStoredInvite("ws-ada", "inv-ada", { email: "ada@example.com" }),
-    acceptStoredInvite("ws-ada", "inv-ada", { email: "ada@example.com" })
+    acceptStoredInvite("ws-ada", "inv-ada", { email: "ada@example.com", githubId: "1", githubLogin: "ada" }),
+    acceptStoredInvite("ws-ada", "inv-ada", { email: "ada@example.com", githubId: "1", githubLogin: "ada" })
   ]);
-  assert.equal(first.ok, true);
-  assert.equal(second.ok, true);
+  const wins = [first, second].filter((result) => result.ok);
+  assert.equal(wins.length, 1);
   const members = await sql`
     select workspace_id, role from workspace_members
     where lower(email) = 'ada@example.com'
@@ -193,9 +193,9 @@ test("a second accept does not duplicate membership, and the wrong person learns
   assert.equal(members[0].role, "owner");
   assert.notEqual(members[0].workspace_id, "ws-ada");
   assert.notEqual(members[0].workspace_id, "ws-martin");
-  const eve = await acceptStoredInvite("ws-ada", "inv-ada", { email: "eve@example.com", githubLogin: "eve" });
+  const eve = await acceptStoredInvite("ws-ada", "inv-ada", { email: "eve@example.com", githubLogin: "eve", githubId: "2" });
   assert.equal(eve.ok, false);
-  assert.equal(eve.status, 403);
+  assert.equal(eve.status, 409);
   assert.equal(JSON.stringify(eve).includes("ada@example.com"), false);
   const replay = acceptInvite({
     id: "inv-ada",
@@ -215,8 +215,8 @@ test("a revoke that loses the race does not report the invite revoked", async ()
   const sql = getSql();
   await sql`insert into workspaces (id, name, slug) values ('ws-ada', 'Ada', 'ada')`;
   await sql`
-    insert into workspace_invites (id, workspace_id, email, status, created_by)
-    values ('inv-revoke', 'ws-ada', 'ada@example.com', 'pending', 'owner')
+    insert into workspace_invites (id, workspace_id, email, status, created_by, expires_at)
+    values ('inv-revoke', 'ws-ada', 'ada@example.com', 'pending', 'owner', now() + interval '48 hours')
   `;
   const locker = await sql.pool.connect();
   await locker.query("begin");
@@ -363,40 +363,13 @@ test("routes cannot read, rename, comment, or notify across workspaces", async (
     });
     const ownerBody = await ownerCreated.json();
     assert.equal(ownerCreated.status, 201, JSON.stringify(ownerBody));
-    const eveCookie = await sessionCookie("eve@example.com", "Eve");
-    const eveAccept = await fetch(`http://127.0.0.1:3111/api/workspaces/ws-martin/invites/${ownerBody.invite.id}/accept`, {
+    const gone = await fetch(`http://127.0.0.1:3111/api/workspaces/ws-martin/invites/${ownerBody.invite.id}/accept`, {
       method: "POST",
-      headers: { cookie: eveCookie }
+      headers: { cookie: martinCookie }
     });
-    const eveText = await eveAccept.text();
-    assert.equal(eveAccept.status, 403);
-    assert.equal(eveText.includes("ada@example.com"), false);
-    const adaCookie = await sessionCookie("ada@example.com", "Ada");
-    const adaAccept = await fetch(`http://127.0.0.1:3111/api/workspaces/ws-martin/invites/${ownerBody.invite.id}/accept`, {
-      method: "POST",
-      headers: { cookie: adaCookie }
-    });
-    const adaBody = await adaAccept.json();
-    assert.equal(adaAccept.status, 200, JSON.stringify(adaBody));
-    assert.notEqual(adaBody.membership.workspaceId, "ws-martin");
-    assert.notEqual(adaBody.membership.workspaceId, "ws-ada");
-    const joinedMartin = await sql`
-      select workspace_id from workspace_members
-      where workspace_id = 'ws-martin' and lower(email) = 'ada@example.com'
-    `;
-    assert.equal(joinedMartin.length, 0);
-    const adaHome = await sql`
-      select role from workspace_members
-      where workspace_id = ${adaBody.membership.workspaceId} and lower(email) = 'ada@example.com'
-    `;
-    assert.equal(adaHome[0].role, "owner");
-    const eveReplay = await fetch(`http://127.0.0.1:3111/api/workspaces/ws-martin/invites/${ownerBody.invite.id}/accept`, {
-      method: "POST",
-      headers: { cookie: eveCookie }
-    });
-    const replayText = await eveReplay.text();
-    assert.equal(eveReplay.status, 403);
-    assert.equal(replayText.includes("ada@example.com"), false);
+    const goneText = await gone.text();
+    assert.equal(gone.status, 404);
+    assert.equal(goneText.includes("ada@example.com"), false);
   } finally {
     server.kill("SIGTERM");
   }

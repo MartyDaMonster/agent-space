@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { formatStorage, joinLink } from "@/lib/admin-panel";
 
 function when(value) {
@@ -16,12 +16,61 @@ function Pill({ state }) {
   return <span className={`admin-pill is-${state}`}>{state}</span>;
 }
 
-export function AdminPanel({ invites = [], people = [], audit = [], send, resend, revoke, suspend }) {
+function sentLabel(invite) {
+  if (invite.state !== "pending" && invite.state !== "expired") return "";
+  return invite.sentAt ? `Sent ${when(invite.sentAt)}` : "Not sent";
+}
+
+export function AdminStats({ stats }) {
+  if (!stats) return null;
+  const peak = Math.max(1, ...stats.traffic.bars);
+  const blocks = [
+    ["Today", stats.traffic.today],
+    ["7 days", stats.traffic.week],
+    ["30 days", stats.traffic.month]
+  ];
+  return (
+    <section className="admin-card">
+      <h2>Stats</h2>
+      <div className="admin-stats">
+        {blocks.map(([label, item]) => (
+          <article className="stat-card" key={label}>
+            <h3>{label}</h3>
+            <strong>{item.views}</strong>
+            <p>{item.visitors} visitors · {item.plays} video plays</p>
+          </article>
+        ))}
+        <article className="stat-card stat-wide">
+          <h3>Daily views</h3>
+          <div className="spark" aria-hidden="true">
+            {stats.traffic.bars.map((value, index) => (
+              <i key={index} style={{ height: `${Math.max(8, Math.round((value / peak) * 100))}%` }} />
+            ))}
+          </div>
+        </article>
+        <article className="stat-card"><h3>Users</h3><strong>{stats.users}</strong><p>{stats.active} active in 7 days</p></article>
+        <article className="stat-card"><h3>Invites</h3><strong>{stats.invites.rate}%</strong><p>{stats.invites.sent} sent · {stats.invites.accepted} accepted · {stats.invites.pending} pending · {stats.invites.expired} expired</p></article>
+        <article className="stat-card"><h3>Workspaces</h3><strong>{stats.workspaces}</strong><p>{stats.bots} bots connected</p></article>
+        <article className="stat-card"><h3>Last 7 days</h3><strong>{stats.posts}</strong><p>{stats.posts} posts · {stats.comments} comments · {stats.storage}</p></article>
+      </div>
+    </section>
+  );
+}
+
+export function AdminPanel({ invites = [], people = [], audit = [], stats = null, send, sendTest, resend, revoke, suspend }) {
   const [notice, setNotice] = useState("");
   const [confirm, setConfirm] = useState(null);
   const [activity, setActivity] = useState("");
   const [auditOpen, setAuditOpen] = useState(false);
+  const [sent, sendForm, sending] = useActionState(send, null);
+  const [tested, testForm, testing] = useActionState(sendTest, null);
   const shownAudit = auditOpen ? audit : audit.slice(0, 20);
+  useEffect(() => {
+    if (sent?.notice) setNotice(sent.notice);
+    else if (sent?.error) setNotice(sent.error);
+    else if (tested?.notice) setNotice(tested.notice);
+    else if (tested?.error) setNotice(tested.error);
+  }, [sent, tested]);
 
   async function copy(id) {
     await navigator.clipboard.writeText(joinLink(window.location.origin, id));
@@ -37,24 +86,29 @@ export function AdminPanel({ invites = [], people = [], audit = [], send, resend
       {notice ? <p className="admin-note">{notice}</p> : null}
 
       <section className="admin-card">
-        <h2>Invite people</h2>
-        <form action={send} className="admin-form">
+        <div className="admin-card-head">
+          <h2>Invite people</h2>
+          <form action={testForm}>
+            <button className="admin-btn" type="submit" disabled={testing}>{testing ? "Sending…" : "Send me a test"}</button>
+          </form>
+        </div>
+        <form action={sendForm} className="admin-form">
+          <label>
+            First name
+            <input name="name" required maxLength={40} placeholder="Ada" />
+          </label>
           <label>
             Email
             <input name="email" type="email" required placeholder="name@example.com" />
           </label>
-          <label>
-            GitHub username
-            <input name="githubLogin" placeholder="optional" />
-          </label>
-          <button className="admin-btn admin-btn-primary" type="submit">Invite</button>
+          <button className="admin-btn admin-btn-primary" type="submit" disabled={sending}>{sending ? "Sending…" : "Invite"}</button>
         </form>
         {invites.length ? invites.map((invite) => (
           <div className="admin-row" key={invite.id}>
             <div>
-              <strong>{invite.email || `@${invite.githubLogin}`}</strong>
+              <strong>{invite.name ? `${invite.name} · ` : ""}{invite.email || `@${invite.githubLogin}`}</strong>
               <Pill state={invite.state} />
-              <p className="admin-meta">{invite.githubLogin ? `@${invite.githubLogin} · ` : ""}{invite.workspaceName}</p>
+              <p className="admin-meta">{invite.githubLogin ? `@${invite.githubLogin} · ` : ""}{invite.workspaceName}{sentLabel(invite) ? ` · ${sentLabel(invite)}` : ""}</p>
             </div>
             <div className="admin-actions">
               <button className="admin-btn" type="button" onClick={() => copy(invite.id)}>Copy</button>
@@ -79,6 +133,8 @@ export function AdminPanel({ invites = [], people = [], audit = [], send, resend
           </div>
         )) : <p className="admin-empty">No invites yet.</p>}
       </section>
+
+      <AdminStats stats={stats} />
 
       <section className="admin-card">
         <h2>People</h2>

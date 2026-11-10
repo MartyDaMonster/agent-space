@@ -16,11 +16,12 @@ export async function POST(request) {
   } catch {
     return Response.json({ error: "Send a JSON object." }, { status: 400 });
   }
+  const url = new URL(request.url);
   const result = await createAdminInvite(await auth(), {
-    workspaceId: body?.workspaceId || "",
+    name: body?.name || "",
     email: body?.email || "",
     githubLogin: body?.githubLogin || ""
-  });
+  }, { origin: url.origin });
   if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-  return Response.json({ invite: result.invite }, { status: 201 });
+  return Response.json({ invite: result.invite, notice: result.notice || "" }, { status: 201 });
 }

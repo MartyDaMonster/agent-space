@@ -1,5 +1,5 @@
-import { randomBytes } from "node:crypto";
 import { auth } from "@/auth";
+import { newInviteId } from "@/lib/ids";
 import { sessionInvited } from "@/lib/access";
 import { insertInvite, listInvites } from "@/lib/invites";
 import { authorizeInviteCreate } from "@/lib/workspace";
@@ -35,7 +35,7 @@ export async function POST(request, { params }) {
     return Response.json({ error: "Send a JSON object." }, { status: 400 });
   }
   const created = await insertInvite({
-    id: `inv-${randomBytes(6).toString("hex")}`,
+    id: newInviteId(),
     workspaceId: id,
     email: body?.email || "",
     githubLogin: body?.githubLogin || "",

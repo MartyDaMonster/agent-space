@@ -2,28 +2,42 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { appOrigin } from "@/lib/app-origin";
 import {
   createAdminInvite,
   resendAdminInvite,
+  sendAdminTestEmail,
   revokeAdminInvite,
   revokeAdminKey,
   setSuspension
 } from "@/lib/admin-store";
 
-async function refresh(result) {
-  if (result?.ok) revalidatePath("/admin");
-  return result?.ok ? { ok: true } : { error: result?.error || "Not found." };
+function requestOrigin() {
+  return appOrigin();
 }
 
-export async function sendAdminInvite(formData) {
+async function refresh(result) {
+  if (result?.ok) revalidatePath("/admin");
+  if (!result?.ok) return { error: result?.error || "Not found." };
+  return { ok: true, notice: result.notice || "" };
+}
+
+export async function sendAdminInvite(_previous, formData) {
   return refresh(await createAdminInvite(await auth(), {
-    email: String(formData.get("email") || ""),
-    githubLogin: String(formData.get("githubLogin") || "")
-  }));
+    name: String(formData.get("name") || ""),
+    email: String(formData.get("email") || "")
+  }, { origin: await requestOrigin() }));
+}
+
+export async function sendInviteTest() {
+  const session = await auth();
+  return refresh(await sendAdminTestEmail(session, { origin: await requestOrigin() }));
 }
 
 export async function resendInvite(formData) {
-  return refresh(await resendAdminInvite(await auth(), String(formData.get("inviteId") || "")));
+  return refresh(await resendAdminInvite(await auth(), String(formData.get("inviteId") || ""), {
+    origin: await requestOrigin()
+  }));
 }
 
 export async function revokeInviteAction(formData) {

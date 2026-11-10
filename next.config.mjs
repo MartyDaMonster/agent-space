@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
-  serverExternalPackages: ["@vercel/blob", "pg"],
+  serverExternalPackages: ["@vercel/blob", "pg", "@napi-rs/canvas", "wawoff2"],
   async headers() {
     return [
       {
