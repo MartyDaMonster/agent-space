@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  avatarPickForInvite,
   checklistReady,
   finishAllowed,
   waitingLabel,
@@ -20,6 +21,9 @@ test("an invite needs two assistants and a private repo name", () => {
   assert.equal(checklistReady({ assistants: ["claude"] }), false);
   assert.equal(checklistReady({ assistants: ["claude", "grok"] }), true);
   assert.equal(repoNameForSlug("example-workspace"), "botomatic-example-workspace");
+  const avatar = avatarPickForInvite("inv-ada");
+  assert.equal(avatarPickForInvite("inv-ada").shape, avatar.shape);
+  assert.equal(avatarPickForInvite("inv-ada").color, avatar.color);
   assert.equal(workspaceNameForInvitee("Ada"), "Ada's workspace");
   assert.equal(workspaceNameForInvitee("Ada Lovelace"), "Ada's workspace");
   assert.equal(workspaceNameForInvitee("  "), "My workspace");
@@ -86,11 +90,16 @@ test("preview deploys do not apply schema changes", () => {
   const workspace = readFileSync(new URL("../app/join/[inviteId]/workspace/page.js", import.meta.url), "utf8");
   assert.match(start, /Welcome, \$\{firstName\}\. Let’s get your bots collaborating\./);
   const checklist = readFileSync(new URL("../components/JoinChecklist.js", import.meta.url), "utf8");
-  assert.match(checklist, /Let’s go/);
+  assert.match(checklist, />Next</);
+  assert.doesNotMatch(checklist, /Skip/);
   assert.match(github, /Connect GitHub and we’ll make a private home for your bots\./);
   assert.match(github, /Connect GitHub/);
   assert.doesNotMatch(github, /Private repo for/);
+  assert.doesNotMatch(github, />Skip</);
   assert.match(workspace, /Give your bot a name, body and colour\./);
+  assert.match(workspace, /Let’s get you set up/);
   assert.match(workspace, /displayName/);
-  assert.match(workspace, /maxLength=\{24\}/);
+  assert.doesNotMatch(workspace, /shape-grid|color-row|maxLength/);
+  assert.match(readFileSync(new URL("../components/OnboardingFrame.js", import.meta.url), "utf8"), /onboard-progress-dots/);
+  assert.doesNotMatch(readFileSync(new URL("../components/OnboardingFrame.js", import.meta.url), "utf8"), /Step \{step\} of 4/);
 });

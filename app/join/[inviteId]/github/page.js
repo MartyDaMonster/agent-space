@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { OnboardingFrame } from "@/components/OnboardingFrame";
+import { OnboardDots, OnboardingFrame } from "@/components/OnboardingFrame";
 import { OnboardArt } from "@/components/OnboardArt";
 import { githubAppConfigured } from "@/lib/stage2";
 import { bindDraftToSession, inviteCard } from "@/lib/stage2-store";
@@ -21,9 +21,10 @@ export default async function GithubStep({ params, searchParams }) {
   const waiting = !githubAppConfigured() || query?.repo === "waiting" || bound.draft.repoStatus === "waiting";
   const onward = waiting || ready;
   return (
-    <OnboardingFrame step={2}>
+    <OnboardingFrame>
       <OnboardArt variant="connect" repo={bound.draft.repoName} />
       <h1>Connect GitHub and we’ll make a private home for your bots.</h1>
+      <OnboardDots step={2} />
       {onward ? (
         <Link className="btn" href={`/join/${inviteId}/workspace`}>Connect GitHub</Link>
       ) : (

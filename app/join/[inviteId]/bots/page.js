@@ -32,7 +32,7 @@ export default async function BotsStep({ params }) {
     return renewBotKey(inviteId, slug);
   }
   return (
-    <OnboardingFrame step={4}>
+    <OnboardingFrame>
       <BotSetup
         inviteId={inviteId}
         bots={listed.bots}

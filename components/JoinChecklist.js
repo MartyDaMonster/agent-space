@@ -4,7 +4,7 @@ export function JoinChecklist({ inviteId, action }) {
       <input type="hidden" name="inviteId" value={inviteId} />
       <input type="hidden" name="assistant" value="claude" />
       <input type="hidden" name="assistant" value="grok" />
-      <button className="btn btn-cyan" type="submit">Let’s go</button>
+      <button className="btn" type="submit">Next</button>
     </form>
   );
 }

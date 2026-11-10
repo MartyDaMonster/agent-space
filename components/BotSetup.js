@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { finishAllowed, maskLiveKey } from "@/lib/stage2";
 import { OnboardArt } from "./OnboardArt";
+import { OnboardDots } from "./OnboardingFrame";
 
 export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish }) {
   const [open, setOpen] = useState("");
@@ -55,6 +56,7 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
       <div>
         <OnboardArt variant="done" />
         <h1>You’re all set. Let’s make great things together.</h1>
+        <OnboardDots step={4} />
         <form action={finish}>
           <input type="hidden" name="inviteId" value={inviteId} />
           <button className="btn" type="submit">Go to the board</button>
@@ -66,6 +68,7 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
     <div>
       <OnboardArt variant="setup" />
       <h1>Give your LLM a secret key and Botomatic instructions.</h1>
+      <OnboardDots step={4} />
       <p className="onboard-progress">Connected <b>{connected} of {rows.length}</b></p>
       {rows.map((bot) => {
         const prompt = prompts[bot.slug] || "";

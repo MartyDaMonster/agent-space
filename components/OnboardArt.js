@@ -106,7 +106,7 @@ function Connect({ repo = "" }) {
   );
 }
 
-function AvatarPick() {
+function AvatarPick({ shape = "square", color = "lime" }) {
   const [ref, paused] = useOffscreenPause();
   const [shown, setShown] = useState({ shape: "square", color: "lime" });
   const [previous, setPrevious] = useState(null);
@@ -116,11 +116,9 @@ function AvatarPick() {
     if (paused || liveRef.current) return undefined;
     const form = ref.current?.closest("form") || document.querySelector(".onboard-card form");
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const landing = { shape, color };
     function selection() {
-      return {
-        shape: form?.querySelector('input[name="shape"]:checked')?.value || "square",
-        color: form?.querySelector('input[name="color"]:checked')?.value || "lime"
-      };
+      return landing;
     }
     function show(next) {
       setShown((current) => {
@@ -155,7 +153,7 @@ function AvatarPick() {
       clearTimeout(done);
       form?.removeEventListener("change", follow);
     };
-  }, [paused, ref]);
+  }, [paused, ref, shape, color]);
   const hex = colorById(shown.color)?.hex || "#a3d32b";
   const prevHex = colorById(previous?.color)?.hex || hex;
   return (
@@ -268,9 +266,9 @@ function DoneBurst() {
   );
 }
 
-export function OnboardArt({ variant = "arrive", repo = "" }) {
+export function OnboardArt({ variant = "arrive", repo = "", shape = "square", color = "lime" }) {
   if (variant === "connect") return <Connect repo={repo} />;
-  if (variant === "avatar") return <AvatarPick />;
+  if (variant === "avatar") return <AvatarPick shape={shape} color={color} />;
   if (variant === "setup") return <Setup />;
   if (variant === "done") return <DoneBurst />;
   return <Arrive />;

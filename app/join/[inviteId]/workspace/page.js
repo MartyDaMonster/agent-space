@@ -2,10 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { OnboardArt } from "@/components/OnboardArt";
-import { AvatarMark } from "@/components/AvatarMark";
-import { OnboardingFrame } from "@/components/OnboardingFrame";
-import { AVATAR_COLORS, AVATAR_SHAPES } from "@/lib/avatar-presets";
-import { workspaceNameForInvitee } from "@/lib/stage2";
+import { OnboardDots, OnboardingFrame } from "@/components/OnboardingFrame";
+import { avatarPickForInvite, githubAppConfigured, workspaceNameForInvitee } from "@/lib/stage2";
 import { bindDraftToSession, ensureBots, saveDisplayName, saveWorkspaceStep } from "@/lib/stage2-store";
 import { saveWorkspace } from "../../actions";
 
@@ -20,11 +18,15 @@ export default async function WorkspaceStep({ params, searchParams }) {
   if (!bound.ok) notFound();
   const firstName = String(bound.invite?.name || "").trim().split(/\s+/)[0].slice(0, 24);
   const workspaceName = bound.draft.workspaceName || workspaceNameForInvitee(bound.invite?.name);
-  if (query?.skip === "1") {
+  const avatar = avatarPickForInvite(inviteId);
+  const ready = query?.repo === "created" || query?.repo === "exists" || bound.draft.repoStatus === "created";
+  const waiting = !githubAppConfigured() || query?.repo === "waiting" || bound.draft.repoStatus === "waiting";
+  const githubReady = ready || waiting;
+  if (query?.skip === "1" && githubReady) {
     const saved = await saveWorkspaceStep(inviteId, session, {
       name: workspaceName,
-      shape: "square",
-      color: "lime"
+      shape: avatar.shape,
+      color: avatar.color
     });
     if (saved.ok) {
       await ensureBots(inviteId, session);
@@ -33,35 +35,23 @@ export default async function WorkspaceStep({ params, searchParams }) {
     }
   }
   return (
-    <OnboardingFrame
-      step={3}
-      skip={<Link href={`/join/${inviteId}/workspace?skip=1`}>Skip avatar</Link>}
-    >
-      <OnboardArt variant="avatar" />
+    <OnboardingFrame>
+      <OnboardArt variant="avatar" shape={avatar.shape} color={avatar.color} />
       <h1>Give your bot a name, body and colour.</h1>
-      <form action={saveWorkspace}>
-        <input type="hidden" name="inviteId" value={inviteId} />
-        <input type="hidden" name="name" value={workspaceName} />
-        <label className="sr" htmlFor="display-name">Your name</label>
-        <input id="display-name" name="displayName" maxLength={24} defaultValue={firstName} required aria-label="Your name" placeholder="Your name" />
-        <div className="shape-grid">
-          {AVATAR_SHAPES.map((shape, index) => (
-            <label key={shape.id}>
-              <input type="radio" name="shape" value={shape.id} defaultChecked={index === 0} />
-              <AvatarMark shape={shape.id} motion="calm" seed={`shape-${shape.id}`} />
-            </label>
-          ))}
-        </div>
-        <div className="color-row">
-          {AVATAR_COLORS.map((color, index) => (
-            <label key={color.id} style={{ background: color.hex }}>
-              <input type="radio" name="color" value={color.id} defaultChecked={index === 0} />
-              <span className="sr">{color.label}</span>
-            </label>
-          ))}
-        </div>
-        <button className="btn" type="submit">Continue</button>
-      </form>
+      <OnboardDots step={3} />
+      {githubReady ? (
+        <form action={saveWorkspace} className="onboard-actions">
+          <input type="hidden" name="inviteId" value={inviteId} />
+          <input type="hidden" name="name" value={workspaceName} />
+          <input type="hidden" name="displayName" value={firstName} />
+          <input type="hidden" name="shape" value={avatar.shape} />
+          <input type="hidden" name="color" value={avatar.color} />
+          <button className="btn" type="submit">Let’s get you set up</button>
+          <Link className="text-link" href={`/join/${inviteId}/workspace?skip=1`}>Skip</Link>
+        </form>
+      ) : (
+        <a className="btn" href={`/api/github/start?invite=${inviteId}`}>Connect GitHub</a>
+      )}
     </OnboardingFrame>
   );
 }
