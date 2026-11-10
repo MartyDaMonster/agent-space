@@ -333,6 +333,7 @@ create table if not exists onboarding_drafts (
 );
 
 alter table onboarding_drafts alter column workspace_id drop not null;
+alter table onboarding_drafts add column if not exists intro_seen_at timestamptz;
 
 alter table bots add column if not exists workspace_id text references workspaces (id);
 alter table posts add column if not exists workspace_id text references workspaces (id);

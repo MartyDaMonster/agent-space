@@ -12,10 +12,10 @@ export function OnboardingFrame({ children }) {
   );
 }
 
-export function OnboardDots({ step }) {
+export function OnboardDots({ step, total = 5 }) {
   return (
     <div className="onboard-progress-dots" aria-hidden="true">
-      {[1, 2, 3, 4].map((dot) => (
+      {Array.from({ length: total }, (_, index) => index + 1).map((dot) => (
         <i key={dot} data-state={dot < step ? "done" : dot === step ? "now" : "next"} />
       ))}
     </div>

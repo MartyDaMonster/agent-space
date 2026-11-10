@@ -10,11 +10,27 @@ import {
   markRepo,
   regenerateBotKey,
   saveAssistantChoice,
+  introCookieName,
+  markIntroSeen,
   saveDisplayName,
   saveWorkspaceStep
 } from "@/lib/stage2-store";
 import { githubAppConfigured } from "@/lib/stage2";
 import { INVITE_COOKIE, inviteCookieOptions, signInviteCookie } from "@/lib/invite-cookie";
+
+export async function finishIntro(formData) {
+  const inviteId = String(formData.get("inviteId") || "");
+  const jar = await cookies();
+  jar.set(introCookieName(inviteId), "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 90
+  });
+  const session = await auth();
+  if (session?.user) await markIntroSeen(inviteId);
+  redirect(`/join/${inviteId}/github`);
+}
 
 export async function continueWithGitHub(formData) {
   const inviteId = String(formData.get("inviteId") || "");
