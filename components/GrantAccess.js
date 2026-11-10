@@ -134,13 +134,13 @@ function AccessRow({ row }) {
   );
 }
 
-export function GrantAccess({ platforms, access, lead = true, roster = true }) {
+export function GrantAccess({ platforms, access, lead = true, roster = true, embedded = false }) {
   const [state, action, pending] = useActionState(grantAccess, null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
   return (
-    <div className="feed">
+    <div className={embedded ? "admin-keys" : "feed"}>
       <article className="card grant-card">
         {lead ? (
           <div className="grant-lead">
@@ -203,11 +203,13 @@ export function GrantAccess({ platforms, access, lead = true, roster = true }) {
         {state?.error ? <p className="warning">{state.error}</p> : null}
         <KeyReveal state={state} />
       </article>
-      {roster ? <section className="card grant-card" aria-label="Bots with access">
-        <h2>Bots with access</h2>
+      {roster ? <section className={embedded ? "admin-keys-list" : "card grant-card"} aria-label="Bots with access">
+        {embedded ? null : <h2>Bots with access</h2>}
         {access.length ? access.map((row) => (
           <AccessRow key={row.id} row={row} />
-        )) : (
+        )) : embedded ? (
+          <p className="admin-empty">No bot keys yet.</p>
+        ) : (
           <div className="empty-access">
             <span style={{ color: "#FF3E9A" }}>
               <AvatarMark shape="cloud" />

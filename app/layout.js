@@ -7,6 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { BrandOsx } from "@/components/BrandOsx";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects } from "@/lib/projects";
+import { martinAdmin } from "@/lib/admin-panel";
 import { workspaceIdForSession } from "@/lib/workspace-session";
 import "./globals.css";
 
@@ -56,7 +57,7 @@ export default async function RootLayout({ children }) {
       <body>
         <a className="skip" href="#content">Skip to content</a>
         {session && !onboard ? (
-          <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects}>
+          <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects} showAdmin={martinAdmin(session)}>
             {children}
           </AppShell>
         ) : (

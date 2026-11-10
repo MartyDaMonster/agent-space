@@ -1,5 +1,6 @@
 import { GrantAccess } from "@/components/GrantAccess";
 import { AdminPanel } from "@/components/AdminPanel";
+import { AdminScreen } from "@/components/AdminScreen";
 import { resolveAvatarChoice } from "@/lib/avatar-presets";
 import { getSql } from "@/lib/db";
 import { auth } from "@/auth";
@@ -65,14 +66,11 @@ export default async function AdminPage() {
         audit: (await listAudit(session)).audit || []
       }
       : null;
-    const workspaces = panel
-      ? [...new Map(panel.people.map((person) => [person.workspaceId, { id: person.workspaceId, name: person.workspaceName }])).values()]
-      : [];
     return (
-      <>
-        {panel ? (
+      <AdminScreen
+        showPanel={Boolean(panel)}
+        panel={panel ? (
           <AdminPanel
-            workspaces={workspaces}
             invites={panel.invites}
             people={panel.people}
             audit={panel.audit}
@@ -83,11 +81,15 @@ export default async function AdminPage() {
             revokeKey={revokeKeyAction}
           />
         ) : null}
-        <GrantAccess
-          platforms={PLATFORMS}
-          access={access}
-        />
-      </>
+        keys={(
+          <GrantAccess
+            platforms={PLATFORMS}
+            access={access}
+            lead={false}
+            embedded
+          />
+        )}
+      />
     );
   } catch (error) {
     console.error(error instanceof Error ? error.message : "admin failed");

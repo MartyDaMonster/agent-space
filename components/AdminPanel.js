@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { joinLink } from "@/lib/admin-panel";
+import { formatStorage, joinLink } from "@/lib/admin-panel";
 
 function when(value) {
   if (!value) return "—";
@@ -12,148 +12,153 @@ function when(value) {
   }).format(date);
 }
 
-export function AdminPanel({ workspaces, invites, people, audit, send, resend, revoke, suspend, revokeKey }) {
+function Pill({ state }) {
+  return <span className={`admin-pill is-${state}`}>{state}</span>;
+}
+
+export function AdminPanel({ invites = [], people = [], audit = [], send, resend, revoke, suspend, revokeKey }) {
   const [notice, setNotice] = useState("");
   const [confirm, setConfirm] = useState(null);
+  const [activity, setActivity] = useState("");
+  const [auditOpen, setAuditOpen] = useState(false);
+  const shownAudit = auditOpen ? audit : audit.slice(0, 20);
+
   async function copy(id) {
     await navigator.clipboard.writeText(joinLink(window.location.origin, id));
     setNotice("Invite link copied.");
   }
+
   return (
-    <section className="admin-panel">
-      <h1>Admin</h1>
-      <p>Invite-only beta. This panel is only for the allowlisted owner.</p>
-      {notice ? <p className="onboard-note">{notice}</p> : null}
+    <>
+      <header className="admin-head">
+        <h1>Admin</h1>
+        <p>Invite-only beta</p>
+      </header>
+      {notice ? <p className="admin-note">{notice}</p> : null}
 
-      <article className="onboard-card">
+      <section className="admin-card">
         <h2>Invite people</h2>
-        <form action={send}>
-          <label className="onboard-label" htmlFor="admin-email">Email</label>
-          <input id="admin-email" name="email" type="email" required placeholder="name@example.com" />
-          <label className="onboard-label" htmlFor="admin-github">GitHub username</label>
-          <input id="admin-github" name="githubLogin" placeholder="optional" />
-          <label className="onboard-label" htmlFor="admin-workspace">Workspace</label>
-          <select id="admin-workspace" name="workspaceId" defaultValue={workspaces[0]?.id || ""}>
-            {workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
-            ))}
-          </select>
-          <button className="btn" type="submit">Create invite link</button>
+        <form action={send} className="admin-form">
+          <label>
+            Email
+            <input name="email" type="email" required placeholder="name@example.com" />
+          </label>
+          <label>
+            GitHub username
+            <input name="githubLogin" placeholder="optional" />
+          </label>
+          <button className="admin-btn" type="submit">Invite</button>
         </form>
-        <ul className="invite-list">
-          {invites.map((invite) => (
-            <li key={invite.id}>
-              <div>
-                <strong>{invite.email || "No email"}{invite.githubLogin ? ` · @${invite.githubLogin}` : ""}</strong>
-                <small>{invite.workspaceName} · {invite.state}</small>
-              </div>
-              <div className="bot-setup-actions">
-                <button className="text-link" type="button" onClick={() => copy(invite.id)}>Copy link</button>
-                {invite.state === "pending" || invite.state === "expired" ? (
-                  <form action={resend}>
-                    <input type="hidden" name="inviteId" value={invite.id} />
-                    <button className="text-link" type="submit">Resend</button>
-                  </form>
-                ) : null}
-                {invite.state === "pending" ? (
-                  <form action={revoke}>
-                    <input type="hidden" name="inviteId" value={invite.id} />
-                    <button className="text-link" type="submit">Revoke</button>
-                  </form>
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </article>
-
-      <article className="onboard-card">
-        <h2>People</h2>
-        {people.map((person) => (
-          <section className="person-row" key={`${person.workspaceId}-${person.email}`}>
-            <h3>{person.workspaceName}</h3>
-            <p>{person.email}{person.githubLogin ? ` · @${person.githubLogin}` : ""}</p>
-            <p className="onboard-note">
-              Joined {when(person.joinedAt)} · Last active {when(person.lastActive)} · {person.bots} bots · {person.posts} posts · {person.comments} comments · {person.storageBytes} bytes stored
-            </p>
-            <ul className="activity-feed">
-              {person.activity.map((event, index) => (
-                <li key={`${event.kind}-${index}`}>{event.kind}{event.botSlug ? ` · ${event.botSlug}` : ""} · {when(event.at)}</li>
-              ))}
-            </ul>
-            <div className="bot-setup-actions">
-              {(person.keys || []).map((key) => (
+        {invites.length ? invites.map((invite) => (
+          <div className="admin-row" key={invite.id}>
+            <div>
+              <strong>{invite.email || `@${invite.githubLogin}`}</strong>
+              <Pill state={invite.state} />
+              <p className="admin-meta">{invite.githubLogin ? `@${invite.githubLogin} · ` : ""}{invite.workspaceName}</p>
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" onClick={() => copy(invite.id)}>Copy</button>
+              {invite.state === "pending" || invite.state === "expired" ? (
+                <form action={resend}>
+                  <input type="hidden" name="inviteId" value={invite.id} />
+                  <button className="admin-btn" type="submit">Resend</button>
+                </form>
+              ) : null}
+              {invite.state === "pending" || invite.state === "expired" ? (
                 <button
-                  key={key.id}
-                  className="text-link"
+                  className="admin-btn admin-btn-danger"
                   type="button"
                   onClick={() => setConfirm({
-                    scope: "key",
-                    workspaceId: person.workspaceId,
-                    keyId: key.id,
-                    label: `Revoke ${key.slug}`
+                    title: "Revoke this invite?",
+                    action: revoke,
+                    fields: { inviteId: invite.id }
                   })}
-                >
-                  Revoke {key.slug}
-                </button>
-              ))}
-              <button
-                className="btn btn-quiet"
-                type="button"
-                onClick={() => setConfirm({
-                  scope: "person",
-                  workspaceId: person.workspaceId,
-                  email: person.email,
-                  resume: person.paused,
-                  label: person.paused ? `Resume ${person.email}` : `Suspend ${person.email}`
-                })}
-              >
-                {person.paused ? "Resume person" : "Suspend person"}
-              </button>
-              <button
-                className="btn btn-quiet"
-                type="button"
-                onClick={() => setConfirm({
-                  scope: "workspace",
-                  workspaceId: person.workspaceId,
-                  email: "",
-                  resume: person.paused,
-                  label: person.paused ? `Resume ${person.workspaceName}` : `Suspend ${person.workspaceName}`
-                })}
-              >
-                {person.paused ? "Resume workspace" : "Suspend workspace"}
-              </button>
+                >Revoke</button>
+              ) : null}
             </div>
-          </section>
-        ))}
-      </article>
+          </div>
+        )) : <p className="admin-empty">No invites yet.</p>}
+      </section>
 
-      <article className="onboard-card">
+      <section className="admin-card">
+        <h2>People</h2>
+        {people.length ? people.map((person) => (
+          <div className="admin-row" key={`${person.workspaceId}-${person.email}`}>
+            <div>
+              <strong>{person.workspaceName}</strong>
+              <Pill state={person.paused ? "suspended" : "active"} />
+              <p className="admin-meta">{person.email}{person.githubLogin ? ` · @${person.githubLogin}` : ""}</p>
+              <p className="admin-meta">
+                Joined {when(person.joinedAt)} · {person.bots} bots · {person.posts} posts · {person.comments} comments · {formatStorage(person.storageBytes)}
+              </p>
+              <button className="text-link" type="button" onClick={() => setActivity((open) => open === person.email ? "" : person.email)}>
+                Show activity
+              </button>
+              {activity === person.email ? (
+                <ul className="activity-feed">
+                  {person.activity?.length ? person.activity.map((event, index) => (
+                    <li key={`${event.at}-${index}`}>{event.kind}{event.botSlug ? ` · ${event.botSlug}` : ""} · {when(event.at)}</li>
+                  )) : <li>No activity yet.</li>}
+                </ul>
+              ) : null}
+            </div>
+            <div className="admin-actions">
+              <button
+                className={person.paused ? "admin-btn" : "admin-btn admin-btn-danger"}
+                type="button"
+                onClick={() => setConfirm({
+                  title: person.paused ? `Resume ${person.email}?` : `Suspend ${person.email}?`,
+                  action: suspend,
+                  resume: person.paused,
+                  fields: { workspaceId: person.workspaceId, email: person.email, scope: "person", resume: person.paused ? "1" : "" }
+                })}
+              >{person.paused ? "Resume" : "Suspend"}</button>
+              {person.keys?.map((key) => (
+                <button
+                  className="admin-btn admin-btn-danger"
+                  type="button"
+                  key={key.id}
+                  onClick={() => setConfirm({
+                    title: `Revoke ${key.slug}?`,
+                    action: revokeKey,
+                    fields: { workspaceId: person.workspaceId, keyId: key.id }
+                  })}
+                >Revoke</button>
+              ))}
+            </div>
+          </div>
+        )) : <p className="admin-empty">No people yet.</p>}
+      </section>
+
+      <section className="admin-card">
         <h2>Audit log</h2>
-        <ul className="activity-feed">
-          {audit.map((entry, index) => (
-            <li key={`${entry.action}-${index}`}>{entry.action} · {entry.target_email || entry.workspace_id || "—"} · {when(entry.created_at)}</li>
-          ))}
-        </ul>
-      </article>
+        {shownAudit.length ? (
+          <ul className="admin-audit">
+            {shownAudit.map((entry) => (
+              <li key={entry.id}>{when(entry.at)} · {entry.action}{entry.targetEmail ? ` · ${entry.targetEmail}` : ""}</li>
+            ))}
+          </ul>
+        ) : <p className="admin-empty">No audit events yet.</p>}
+        {audit.length > 20 && !auditOpen ? (
+          <button className="text-link" type="button" onClick={() => setAuditOpen(true)}>Show all</button>
+        ) : null}
+      </section>
 
       {confirm ? (
-        <dialog className="onboard-card confirm-dialog" open>
-          <h2>{confirm.label}</h2>
-          <p>This takes effect immediately.</p>
-          <form action={confirm.scope === "key" ? revokeKey : suspend}>
-            <input type="hidden" name="workspaceId" value={confirm.workspaceId} />
-            <input type="hidden" name="email" value={confirm.email || ""} />
-            <input type="hidden" name="scope" value={confirm.scope} />
-            <input type="hidden" name="resume" value={confirm.resume ? "1" : ""} />
-            <input type="hidden" name="keyId" value={confirm.keyId || ""} />
-            <div className="bot-setup-actions">
-              <button className="btn" type="submit">{confirm.resume ? "Resume" : "Confirm"}</button>
-              <button className="text-link" type="button" onClick={() => setConfirm(null)}>Cancel</button>
+        <dialog className="admin-card confirm-dialog" open>
+          <form action={confirm.action}>
+            <h2>{confirm.title}</h2>
+            <p>This takes effect immediately.</p>
+            {Object.entries(confirm.fields).map(([name, value]) => (
+              <input key={name} type="hidden" name={name} value={value} />
+            ))}
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" onClick={() => setConfirm(null)}>Cancel</button>
+              <button className={confirm.resume ? "admin-btn" : "admin-btn admin-btn-danger"} type="submit">Confirm</button>
             </div>
           </form>
         </dialog>
       ) : null}
-    </section>
+    </>
   );
 }

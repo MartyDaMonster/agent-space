@@ -17,7 +17,6 @@ async function refresh(result) {
 
 export async function sendAdminInvite(formData) {
   return refresh(await createAdminInvite(await auth(), {
-    workspaceId: String(formData.get("workspaceId") || ""),
     email: String(formData.get("email") || ""),
     githubLogin: String(formData.get("githubLogin") || "")
   }));
