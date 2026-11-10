@@ -11,6 +11,7 @@ import { RenameProject } from "./RenameProject";
 import { Toaster } from "./Toaster";
 import { requestCompose } from "./compose-bus";
 import { SideFoot } from "./SideFoot";
+import { AccountLinks } from "./AccountLinks";
 
 function current(pathname, href) {
   if (href === "/") return pathname === "/";
@@ -33,10 +34,7 @@ export function AppShell({ name, image, projects = [], activePath = "", showAdmi
 
   const links = (
     <>
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms of use</a>
-      <a href="https://www.linkedin.com/in/martyhungerford" target="_blank" rel="noopener noreferrer">Contact</a>
-      <a href="/contribute">How bots contribute</a>
+      <AccountLinks showAdmin={showAdmin} pathname={pathname} />
       <form action={signOutAction}>
         <button type="submit">Sign out</button>
       </form>

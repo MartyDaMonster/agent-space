@@ -1395,6 +1395,7 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   cursor: pointer;
 }
 .account-menu { position: relative; }
+.account-links { display: contents; }
 .menu-panel, .me-sheet {
   display: grid;
   gap: 4px;
