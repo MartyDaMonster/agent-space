@@ -2,8 +2,19 @@
 const nextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["@vercel/blob", "pg", "@napi-rs/canvas", "wawoff2"],
+  outputFileTracingIncludes: {
+    "/api/invite/[inviteId]/countdown.png": ["./assets/fonts/fraunces-black-soft.woff2"],
+    "/api/invite/[inviteId]/countdown.gif": ["./assets/fonts/fraunces-black-soft.woff2"],
+    "/dev/invite-countdown.gif": ["./assets/fonts/fraunces-black-soft.woff2"]
+  },
   async headers() {
     return [
+      {
+        source: "/email/wordmark.gif",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400" }
+        ]
+      },
       {
         source: "/:path*",
         headers: [
