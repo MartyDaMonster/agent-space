@@ -107,3 +107,105 @@ test("suspension blocks the session and the bot key without touching another wor
   const outsider = await revokeAdminKey(ada, { workspaceId: "ws-martin", keyId });
   assert.equal(outsider.status, 404);
 });
+
+test("an admin invite opens a new workspace and never joins ws-martin", async () => {
+  await resetDatabase();
+  const { getSql } = await import("../lib/db.js");
+  const { createAdminInvite } = await import("../lib/admin-store.js");
+  const { acceptStoredInvite } = await import("../lib/invites.js");
+  const { listPosts, listBots } = await import("../lib/posts.js");
+  const { projectBySlug } = await import("../lib/projects.js");
+  const { readFile } = await import("../lib/files.js");
+  const sql = getSql();
+  await sql`
+    insert into projects (id, name, slug, description, created_by, workspace_id)
+    values ('prj-martin', 'Martin Project', 'martin-project', '', 'marty.hungerford3181@gmail.com', 'ws-martin')
+  `;
+  await sql`
+    insert into posts (id, type, from_slug, body, created_at, reactions, author_kind, workspace_id)
+    values ('note-martin', 'message', 'dexter', 'martin only', now(), '{}'::jsonb, 'bot', 'ws-martin')
+  `;
+  await sql`
+    insert into comments (id, post_id, workspace_id, author_kind, author_slug, author_name, body, created_at)
+    values ('cmt-martin', 'note-martin', 'ws-martin', 'bot', 'dexter', 'Dexter', 'martin comment', now())
+  `;
+  await sql`
+    insert into bots (slug, name, color, avatar, description, workspace_id)
+    values ('dexter', 'Dexter', '#111', 'square-lime', 'Martin', 'ws-martin')
+  `;
+  await sql`
+    insert into board_files (
+      id, workspace_id, name, extension, content_type, byte_size, storage, body, uploader_kind, uploader_id
+    ) values (
+      'file_martin', 'ws-martin', 'note.txt', 'txt', 'text/plain', 4, 'neon', convert_to('note', 'utf8'), 'human', 'marty.hungerford3181@gmail.com'
+    )
+  `;
+  const created = await createAdminInvite(martin, {
+    workspaceId: "ws-martin",
+    email: "new@example.com",
+    githubLogin: "newuser"
+  });
+  assert.equal(created.ok, true);
+  assert.equal(created.invite.workspaceId, "");
+  assert.equal(created.invite.ownWorkspace, true);
+  const accepted = await acceptStoredInvite("ws-martin", created.invite.id, {
+    email: "new@example.com",
+    githubLogin: "newuser"
+  });
+  assert.equal(accepted.ok, true);
+  const workspaceId = accepted.membership.workspaceId;
+  assert.notEqual(workspaceId, "ws-martin");
+  const memberships = await sql`select workspace_id from workspace_members where lower(email) = 'new@example.com'`;
+  assert.deepEqual(memberships.map((row) => row.workspace_id), [workspaceId]);
+  assert.equal((await listPosts({ workspaceId })).length, 0);
+  assert.equal(await projectBySlug("martin-project", workspaceId), null);
+  const comments = await sql`select id from comments where workspace_id = ${workspaceId}`;
+  assert.equal(comments.length, 0);
+  assert.equal((await listBots(workspaceId)).length, 0);
+  const files = await sql`select id from board_files where workspace_id = ${workspaceId}`;
+  assert.equal(files.length, 0);
+  const hidden = await readFile({ id: "file_martin", workspaceId });
+  assert.equal(hidden.status, 404);
+  assert.equal((await listPosts({ workspaceId: "ws-martin" })).some((post) => post.id === "note-martin"), true);
+  assert.ok(await projectBySlug("martin-project", "ws-martin"));
+});
+
+test("the old workspace invite route still opens a new workspace", async () => {
+  await resetDatabase();
+  const { getSql } = await import("../lib/db.js");
+  const { insertInvite, acceptStoredInvite } = await import("../lib/invites.js");
+  const sql = getSql();
+  await sql`
+    insert into posts (id, type, from_slug, body, created_at, reactions, author_kind, workspace_id)
+    values ('note-old', 'message', 'dexter', 'stay here', now(), '{}'::jsonb, 'bot', 'ws-martin')
+  `;
+  const created = await insertInvite({
+    id: "inv-old-route",
+    workspaceId: "ws-martin",
+    email: "route@example.com",
+    githubLogin: "route",
+    createdBy: "marty.hungerford3181@gmail.com"
+  });
+  assert.equal(created.ok, true);
+  assert.equal(created.invite.workspaceId, "");
+  assert.equal(created.invite.ownWorkspace, true);
+  const accepted = await acceptStoredInvite("ws-martin", created.invite.id, {
+    email: "route@example.com",
+    githubLogin: "route"
+  });
+  assert.equal(accepted.ok, true);
+  assert.notEqual(accepted.membership.workspaceId, "ws-martin");
+  const members = await sql`select workspace_id from workspace_members where lower(email) = 'route@example.com'`;
+  assert.deepEqual(members.map((row) => row.workspace_id), [accepted.membership.workspaceId]);
+  const seen = await sql`select id from posts where workspace_id = ${accepted.membership.workspaceId}`;
+  assert.equal(seen.length, 0);
+  await sql`
+    insert into workspace_invites (id, workspace_id, email, status, created_by)
+    values ('inv-legacy', 'ws-martin', 'legacy@example.com', 'pending', 'marty.hungerford3181@gmail.com')
+  `;
+  const legacy = await acceptStoredInvite("ws-martin", "inv-legacy", { email: "legacy@example.com" });
+  assert.equal(legacy.ok, true);
+  assert.notEqual(legacy.membership.workspaceId, "ws-martin");
+  const legacyMembers = await sql`select workspace_id from workspace_members where lower(email) = 'legacy@example.com'`;
+  assert.deepEqual(legacyMembers.map((row) => row.workspace_id), [legacy.membership.workspaceId]);
+});

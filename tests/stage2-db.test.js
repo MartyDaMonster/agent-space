@@ -113,3 +113,52 @@ test("invite, onboarding, and bot routes stay inside one workspace", async () =>
   const missing = await inviteCard("inv-nope");
   assert.equal(missing, null);
 });
+
+test("an invitee reaches a new workspace without the GitHub App", async () => {
+  await resetDatabase();
+  for (const key of ["GITHUB_APP_ID", "GITHUB_APP_SLUG", "GITHUB_APP_CLIENT_ID", "GITHUB_APP_CLIENT_SECRET", "GITHUB_APP_PRIVATE_KEY"]) {
+    delete process.env[key];
+  }
+  const { githubAppConfigured } = await import("../lib/stage2.js");
+  assert.equal(githubAppConfigured(), false);
+  const martin = { user: { email: "marty.hungerford3181@gmail.com", githubLogin: "MartyDaMonster" } };
+  const { createAdminInvite } = await import("../lib/admin-store.js");
+  const { getSql } = await import("../lib/db.js");
+  const {
+    pendingInviteForIdentity,
+    saveAssistantChoice,
+    bindDraftToSession,
+    saveWorkspaceStep,
+    ensureBots,
+    finishOnboardingDraft
+  } = await import("../lib/stage2-store.js");
+  const created = await createAdminInvite(martin, {
+    workspaceId: "ws-martin",
+    email: "ada@example.com",
+    githubLogin: "ada"
+  });
+  assert.equal(created.ok, true);
+  const found = await pendingInviteForIdentity({ email: "other@example.com", githubLogin: "ada" });
+  assert.equal(found?.id, created.invite.id);
+  assert.equal((await saveAssistantChoice(created.invite.id, ["claude", "grok"])).ok, true);
+  assert.equal((await bindDraftToSession(created.invite.id, ada)).ok, true);
+  assert.equal((await saveWorkspaceStep(created.invite.id, ada, {
+    name: "Ada space",
+    shape: "square",
+    color: "lime"
+  })).ok, true);
+  const bots = await ensureBots(created.invite.id, ada);
+  assert.equal(bots.ok, true);
+  assert.notEqual(bots.workspaceId, "ws-martin");
+  const early = await finishOnboardingDraft(created.invite.id, ada);
+  assert.equal(early.ok, false);
+  const sql = getSql();
+  await sql`update api_keys set last_seen_at = now() where workspace_id = ${bots.workspaceId}`;
+  const done = await finishOnboardingDraft(created.invite.id, ada);
+  assert.equal(done.ok, true);
+  assert.equal(done.workspaceId, bots.workspaceId);
+  const members = await sql`select workspace_id from workspace_members where lower(email) = 'ada@example.com'`;
+  assert.deepEqual(members.map((row) => row.workspace_id), [bots.workspaceId]);
+  const posts = await sql`select id from posts where workspace_id = ${bots.workspaceId}`;
+  assert.equal(posts.length, 0);
+});

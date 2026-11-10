@@ -278,6 +278,8 @@ alter table humans add column if not exists avatar_shape text;
 alter table humans add column if not exists avatar_color text;
 
 alter table workspace_invites add column if not exists expires_at timestamptz;
+alter table workspace_invites add column if not exists own_workspace boolean not null default false;
+alter table workspace_invites alter column workspace_id drop not null;
 alter table workspaces add column if not exists suspended_at timestamptz;
 alter table workspace_members add column if not exists suspended_at timestamptz;
 
@@ -316,6 +318,8 @@ create table if not exists onboarding_drafts (
   finished_at timestamptz,
   updated_at timestamptz not null default now()
 );
+
+alter table onboarding_drafts alter column workspace_id drop not null;
 
 alter table bots add column if not exists workspace_id text references workspaces (id);
 alter table posts add column if not exists workspace_id text references workspaces (id);

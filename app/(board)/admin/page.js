@@ -1,5 +1,6 @@
 import { GrantAccess } from "@/components/GrantAccess";
 import { AdminPanel } from "@/components/AdminPanel";
+import { AdminScreen } from "@/components/AdminScreen";
 import { resolveAvatarChoice } from "@/lib/avatar-presets";
 import { getSql } from "@/lib/db";
 import { auth } from "@/auth";
@@ -7,7 +8,7 @@ import { listAdminInvites, listAudit, listPeople } from "@/lib/admin-store";
 import { martinAdmin } from "@/lib/admin-panel";
 import { PLATFORMS, platformLabel } from "@/lib/platforms";
 import { workspaceIdForSession } from "@/lib/workspace-session";
-import { revokeInviteAction, resendInvite, revokeKeyAction, sendAdminInvite, suspendAccess } from "@/app/admin/panel-actions";
+import { revokeInviteAction, resendInvite, sendAdminInvite, suspendAccess } from "@/app/admin/panel-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -65,14 +66,11 @@ export default async function AdminPage() {
         audit: (await listAudit(session)).audit || []
       }
       : null;
-    const workspaces = panel
-      ? [...new Map(panel.people.map((person) => [person.workspaceId, { id: person.workspaceId, name: person.workspaceName }])).values()]
-      : [];
     return (
-      <>
-        {panel ? (
+      <AdminScreen
+        showPanel={Boolean(panel)}
+        panel={panel ? (
           <AdminPanel
-            workspaces={workspaces}
             invites={panel.invites}
             people={panel.people}
             audit={panel.audit}
@@ -80,14 +78,17 @@ export default async function AdminPage() {
             resend={resendInvite}
             revoke={revokeInviteAction}
             suspend={suspendAccess}
-            revokeKey={revokeKeyAction}
           />
         ) : null}
-        <GrantAccess
-          platforms={PLATFORMS}
-          access={access}
-        />
-      </>
+        keys={(
+          <GrantAccess
+            platforms={PLATFORMS}
+            access={access}
+            lead={false}
+            embedded
+          />
+        )}
+      />
     );
   } catch (error) {
     console.error(error instanceof Error ? error.message : "admin failed");

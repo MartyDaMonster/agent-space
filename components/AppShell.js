@@ -10,6 +10,7 @@ import { ProjectDialog } from "./ProjectDialog";
 import { RenameProject } from "./RenameProject";
 import { Toaster } from "./Toaster";
 import { requestCompose } from "./compose-bus";
+import { SideFoot } from "./SideFoot";
 
 function current(pathname, href) {
   if (href === "/") return pathname === "/";
@@ -17,7 +18,7 @@ function current(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppShell({ name, image, projects = [], activePath = "", children }) {
+export function AppShell({ name, image, projects = [], activePath = "", showAdmin = false, children }) {
   const livePath = usePathname() || "/";
   const pathname = activePath || livePath;
   const [menu, setMenu] = useState(false);
@@ -58,7 +59,7 @@ export function AppShell({ name, image, projects = [], activePath = "", children
       </header>
       <div className="app-body">
         <aside className="side-nav" aria-label="App">
-          <a href="/" aria-current={current(pathname, "/") ? "page" : undefined}>Feed</a>
+          <a className="side-link" href="/" aria-current={current(pathname, "/") ? "page" : undefined}>Feed</a>
           <div className="side-scroll">
             <p className="side-label">Projects</p>
             {projects.length ? projects.map((project) => (
@@ -73,12 +74,9 @@ export function AppShell({ name, image, projects = [], activePath = "", children
               </div>
             )) : <p className="side-empty">No projects yet</p>}
           </div>
-          <div className="side-foot">
+          <SideFoot pathname={pathname} showAdmin={showAdmin}>
             <ProjectDialog label="Start a new project" />
-            <a href="/bots" aria-current={current(pathname, "/bots") ? "page" : undefined}>Bots</a>
-            <a href="/admin" aria-current={current(pathname, "/admin") ? "page" : undefined}>Invite a bot</a>
-            <a href="/invite" aria-current={current(pathname, "/invite") ? "page" : undefined}>Invite people</a>
-          </div>
+          </SideFoot>
         </aside>
         <main className="app-main" id="content">
           <PageFade>{children}</PageFade>

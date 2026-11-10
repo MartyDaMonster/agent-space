@@ -97,10 +97,10 @@ function KeyReveal({ state }) {
   );
 }
 
-function AccessRow({ row }) {
+function AccessRow({ row, embedded = false }) {
   const [state, action, pending] = useActionState(updateBot, null);
-  return (
-    <article className="access-row">
+  const identity = (
+    <>
       <Avatar slug={row.slug} preset={row.preset} url={row.avatarUrl} shape={row.shape} color={row.color} />
       <div>
         <div className="name-row">
@@ -123,24 +123,40 @@ function AccessRow({ row }) {
             {state?.saved ? <p className="meta">Saved.</p> : null}
           </form>
         </details>
-        {row.revoked ? null : (
-          <form action={revokeBotKey} className="access-actions">
-            <input type="hidden" name="id" value={row.id} />
-            <button className="btn btn-pink" type="submit">Revoke key</button>
-          </form>
-        )}
+        {embedded ? null : revokeButton(row, false)}
       </div>
-    </article>
+    </>
+  );
+  if (embedded) {
+    return (
+      <article className="admin-row">
+        <div className="admin-key-id">{identity}</div>
+        {revokeButton(row, true)}
+      </article>
+    );
+  }
+  return <article className="access-row">{identity}</article>;
+}
+
+function revokeButton(row, embedded) {
+  if (row.revoked) return null;
+  return (
+    <form action={revokeBotKey} className={embedded ? "admin-actions" : "access-actions"}>
+      <input type="hidden" name="id" value={row.id} />
+      <button className={embedded ? "admin-btn admin-btn-danger" : "btn btn-pink"} type="submit">
+        {embedded ? "Revoke" : "Revoke key"}
+      </button>
+    </form>
   );
 }
 
-export function GrantAccess({ platforms, access, lead = true, roster = true }) {
+export function GrantAccess({ platforms, access, lead = true, roster = true, embedded = false }) {
   const [state, action, pending] = useActionState(grantAccess, null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
-  return (
-    <div className="feed">
+  const [creating, setCreating] = useState(false);
+  const form = (
       <article className="card grant-card">
         {lead ? (
           <div className="grant-lead">
@@ -203,11 +219,14 @@ export function GrantAccess({ platforms, access, lead = true, roster = true }) {
         {state?.error ? <p className="warning">{state.error}</p> : null}
         <KeyReveal state={state} />
       </article>
-      {roster ? <section className="card grant-card" aria-label="Bots with access">
-        <h2>Bots with access</h2>
+  );
+  const rosterList = roster ? <section className={embedded ? "admin-keys-list" : "card grant-card"} aria-label="Bots with access">
+        {embedded ? null : <h2>Bots with access</h2>}
         {access.length ? access.map((row) => (
-          <AccessRow key={row.id} row={row} />
-        )) : (
+          <AccessRow key={row.id} row={row} embedded={embedded} />
+        )) : embedded ? (
+          <p className="admin-empty">No bot keys yet.</p>
+        ) : (
           <div className="empty-access">
             <span style={{ color: "#FF3E9A" }}>
               <AvatarMark shape="cloud" />
@@ -216,7 +235,17 @@ export function GrantAccess({ platforms, access, lead = true, roster = true }) {
             <p>Invite a bot above and it will wait here. The secret key is shown only once.</p>
           </div>
         )}
-      </section> : null}
+      </section> : null;
+  return (
+    <div className={embedded ? "admin-keys" : "feed"}>
+      {embedded ? (
+        <button className="admin-btn admin-new" type="button" onClick={() => setCreating((open) => !open)}>
+          {creating ? "Close" : "New"}
+        </button>
+      ) : null}
+      {embedded ? rosterList : null}
+      {embedded ? (creating ? form : null) : form}
+      {embedded ? null : rosterList}
     </div>
   );
 }
