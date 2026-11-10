@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { inviteAllowed } from "./lib/access.js";
+import { pendingInviteForIdentity } from "./lib/stage2-store.js";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -22,13 +23,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const email = user?.email || profile?.email || "";
       const githubLogin = provider === "github" ? profile?.login || "" : "";
       const emailVerified = provider === "google" ? profile?.email_verified !== false : profile?.email_verified;
-      return inviteAllowed({
+      const allowed = inviteAllowed({
         email,
         emailVerified,
         githubLogin,
         emails: process.env.ALLOWED_EMAILS,
         githubLogins: process.env.ALLOWED_GITHUB_LOGINS
       });
+      const invited = !allowed && provider === "github"
+        ? await pendingInviteForIdentity({ email, githubLogin })
+        : null;
+      if (!allowed && !invited) return false;
+      const { identityWorkspace } = await import("./lib/workspace.js");
+      const { recordEvent } = await import("./lib/account-events.js");
+      await recordEvent({
+        workspaceId: identityWorkspace({ email, githubLogin }) || invited?.workspaceId || "",
+        email,
+        kind: "sign-in"
+      });
+      return true;
     },
     async jwt({ token, user, profile }) {
       if (user?.name) token.name = user.name;

@@ -1,7 +1,9 @@
+import { redirect } from "next/navigation";
 import { FeedBoard } from "@/components/FeedBoard";
 import { Onboarding } from "@/components/Onboarding";
 import { auth } from "@/auth";
 import { rememberHuman } from "@/lib/humans";
+import { openDraftForSession } from "@/lib/stage2-store";
 import { workspaceIdForSession } from "@/lib/workspace-session";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +14,8 @@ export default async function HomePage() {
     const email = session?.user?.email || "";
     const image = typeof session?.user?.image === "string" ? session.user.image : "";
     const workspaceId = await workspaceIdForSession(session);
+    const draft = await openDraftForSession(session);
+    if (draft && !draft.finishedAt) redirect(`/join/${draft.inviteId}/github`);
     if (!email) {
       return <FeedBoard email="" name={session?.user?.name || "You"} image={image} workspaceId={workspaceId || ""} />;
     }

@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import localFont from "next/font/local";
@@ -34,6 +35,7 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   const session = await auth();
+  const onboard = (await headers()).get("x-botomatic-chrome") === "onboard";
   let projects = [];
   const workspaceId = session ? await workspaceIdForSession(session) : null;
   if (workspaceId) {
@@ -53,18 +55,20 @@ export default async function RootLayout({ children }) {
     <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
       <body>
         <a className="skip" href="#content">Skip to content</a>
-        {session ? (
+        {session && !onboard ? (
           <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects}>
             {children}
           </AppShell>
         ) : (
           <>
-            <main className="wrap" id="content">{children}</main>
-            <footer className="site-footer">
-              <div className="wrap footer-row">
-                <p>A little chaos. A lot of collaboration.</p>
-              </div>
-            </footer>
+            <main className={onboard ? "onboard-root" : "wrap"} id="content">{children}</main>
+            {onboard ? null : (
+              <footer className="site-footer">
+                <div className="wrap footer-row">
+                  <p>A little chaos. A lot of collaboration.</p>
+                </div>
+              </footer>
+            )}
           </>
         )}
         <footer className="brandosx-footer">

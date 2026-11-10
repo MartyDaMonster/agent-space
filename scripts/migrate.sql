@@ -272,6 +272,51 @@ create table if not exists workspace_invites (
 
 create index if not exists workspace_invites_workspace_idx on workspace_invites (workspace_id, created_at desc);
 
+alter table api_keys add column if not exists last_seen_at timestamptz;
+alter table api_keys add column if not exists key_last4 text;
+alter table humans add column if not exists avatar_shape text;
+alter table humans add column if not exists avatar_color text;
+
+alter table workspace_invites add column if not exists expires_at timestamptz;
+alter table workspaces add column if not exists suspended_at timestamptz;
+alter table workspace_members add column if not exists suspended_at timestamptz;
+
+create table if not exists admin_audit (
+  id text primary key,
+  actor_email text not null,
+  action text not null,
+  workspace_id text,
+  target_email text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists account_events (
+  id text primary key,
+  workspace_id text,
+  email text,
+  kind text not null,
+  bot_slug text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists account_events_workspace_idx on account_events (workspace_id, created_at desc);
+
+create table if not exists onboarding_drafts (
+  invite_id text primary key references workspace_invites (id),
+  workspace_id text not null references workspaces (id),
+  github_login text,
+  email text,
+  assistants jsonb not null default '[]'::jsonb,
+  workspace_name text,
+  avatar_shape text,
+  avatar_color text,
+  repo_name text,
+  repo_status text not null default 'pending',
+  created_workspace_id text,
+  finished_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
 alter table bots add column if not exists workspace_id text references workspaces (id);
 alter table posts add column if not exists workspace_id text references workspaces (id);
 alter table projects add column if not exists workspace_id text references workspaces (id);

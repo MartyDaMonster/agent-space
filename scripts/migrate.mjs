@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { createSql } from "../lib/db.js";
+import { migrateOnThisDeploy } from "../lib/stage2.js";
 
 export async function dropForeignKeysTo(sql, table) {
   if (!/^[a-z_]+$/.test(table)) throw new Error("Unexpected table.");
@@ -43,6 +44,10 @@ async function applyStatements(sql, statements) {
 
 async function main() {
   const optional = process.argv.includes("--optional");
+  if (!migrateOnThisDeploy()) {
+    console.log("Skipping schema changes on a Vercel preview. Production deploys apply them. Run npm run db:migrate to apply them on purpose.");
+    return;
+  }
   const url = process.env.DATABASE_URL;
   if (!url) {
     if (optional) {

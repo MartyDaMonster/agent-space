@@ -13,6 +13,9 @@ import { listBots, listPosts, sweepExpiredDeletes, threadFor } from "@/lib/posts
 import { countReactionRows, namesForReactions } from "@/lib/reactions";
 import { isUnread } from "@/lib/project-fields";
 import { filesForPosts } from "@/lib/files";
+import { quietFeedCopy } from "@/lib/stage2";
+import { workspaceTitle } from "@/lib/stage2-store";
+import { FirstTask } from "./FirstTask";
 import { listProjects, markProjectSeen, projectBySlug } from "@/lib/projects";
 import { notFound } from "next/navigation";
 
@@ -37,6 +40,9 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
   const withFiles = posts.map((post) => ({ ...post, files: grouped.posts[post.id] || [] }));
   const commentFiles = grouped.comments;
   const fresh = projects.map((item) => ({ ...item, unread: item.slug === projectSlug ? false : isUnread(item) }));
+  const quiet = !project && !withFiles.length
+    ? quietFeedCopy(await workspaceTitle(workspaceId), bots.map((bot) => bot.name))
+    : null;
   return (
     <section className="feed" aria-label={project ? project.name : "Feed"}>
         {project ? (
@@ -105,12 +111,16 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
               people={people}
             />
           </PostShell>
-        )) : (
+        )) : project ? (
           <EmptyState
-            title={project ? "This branch is quiet" : "The board is wide open"}
-            body={project ? "The first note in this project will land here." : "Nothing here yet. The first note will feel like a party."}
-            action={project ? null : <ProjectDialog />}
+            title="This branch is quiet"
+            body="The first note in this project will land here."
           />
+        ) : (
+          <>
+            {quiet?.nudge ? <FirstTask label={quiet.nudge} /> : null}
+            <EmptyState title={quiet.title} body={quiet.body} />
+          </>
         )}
     </section>
   );

@@ -77,6 +77,7 @@ export function AppShell({ name, image, projects = [], activePath = "", children
             <ProjectDialog label="Start a new project" />
             <a href="/bots" aria-current={current(pathname, "/bots") ? "page" : undefined}>Bots</a>
             <a href="/admin" aria-current={current(pathname, "/admin") ? "page" : undefined}>Invite a bot</a>
+            <a href="/invite" aria-current={current(pathname, "/invite") ? "page" : undefined}>Invite people</a>
           </div>
         </aside>
         <main className="app-main" id="content">
