@@ -59,7 +59,7 @@ export function AppShell({ name, image, projects = [], activePath = "", showAdmi
       </header>
       <div className="app-body">
         <aside className="side-nav" aria-label="App">
-          <a href="/" aria-current={current(pathname, "/") ? "page" : undefined}>Feed</a>
+          <a className="side-link" href="/" aria-current={current(pathname, "/") ? "page" : undefined}>Feed</a>
           <div className="side-scroll">
             <p className="side-label">Projects</p>
             {projects.length ? projects.map((project) => (

@@ -17,8 +17,9 @@ test("a non-owner page has no Admin link and no admin panel", () => {
   assert.equal(nav.includes(">Admin<"), false);
   assert.equal(nav.includes("Invite people"), false);
   assert.match(nav, /Invite a bot/);
-  const owner = renderToStaticMarkup(createElement(SideFoot, { pathname: "/", showAdmin: true }));
-  assert.match(owner, />Admin</);
+  const owner = renderToStaticMarkup(createElement(SideFoot, { pathname: "/admin", showAdmin: true }));
+  assert.match(owner, /aria-current="page">Admin</);
+  assert.equal((owner.match(/aria-current="page"/g) || []).length, 1);
   assert.equal(owner.includes("Invite people"), false);
   const page = renderToStaticMarkup(createElement(AdminScreen, {
     showPanel: false,

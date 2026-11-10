@@ -41,8 +41,8 @@ test("only login and the auth callback stay reachable when signed out", () => {
     decideAccess({ pathname: "/api/metrics/daily", hasSession: false, authorization: "Bearer btm_test" }).bearer,
     true
   );
-  assert.equal(decideAccess({ pathname: "/privacy", hasSession: false }).redirect, "/login");
-  assert.equal(decideAccess({ pathname: "/terms", hasSession: false }).redirect, "/login");
+  assert.equal(decideAccess({ pathname: "/privacy", hasSession: false }).ok, true);
+  assert.equal(decideAccess({ pathname: "/terms", hasSession: false }).ok, true);
   assert.equal(decideAccess({ pathname: "/contribute", hasSession: false }).redirect, "/login");
 });
 

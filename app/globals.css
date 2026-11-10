@@ -732,12 +732,28 @@ dialog.app-dialog h2 { padding-right: 32px; }
 .site-footer a:hover { color: #fff; }
 .brandosx-footer {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-start;
+  gap: 8px 16px;
   width: 100%;
   margin-top: 4px;
   padding: 4px 16px 12px;
   background: var(--bg);
 }
+.brandosx-legal {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.brandosx-footer a.brandosx-link {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.brandosx-footer a.brandosx-link:hover { color: #fff; }
 .brandosx {
   display: inline-flex;
   align-items: center;
@@ -1450,15 +1466,17 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .side-nav a {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   min-height: 40px;
   padding: 0 12px;
   border-radius: 12px;
   color: var(--muted);
   font-weight: 500;
+  text-align: left;
   text-decoration: none;
 }
+.side-project a { justify-content: space-between; }
 .side-nav a[aria-current="page"] { background: #32364f; color: #fff; }
 .side-label, .side-empty { margin: 12px 12px 4px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 .side-project { display: grid; }

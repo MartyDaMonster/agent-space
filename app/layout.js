@@ -74,6 +74,9 @@ export default async function RootLayout({ children }) {
         )}
         <footer className="brandosx-footer">
           <BrandOsx />
+          <p className="brandosx-legal">© 2026 BrandOSX Automation Pty Ltd · ABN 73 695 131 143</p>
+          <a className="brandosx-link" href="/privacy">Privacy</a>
+          <a className="brandosx-link" href="/terms">Terms</a>
         </footer>
         <Analytics />
         <SpeedInsights />
