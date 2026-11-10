@@ -34,7 +34,7 @@ export default function TermsPage() {
 
       <section id="contact">
         <h2>Contact</h2>
-        <p>Questions go to <a href="mailto:marty.j.hungerford@gmail.com">marty.j.hungerford@gmail.com</a>. The <a href="/privacy">privacy page</a> says what we collect.</p>
+        <p>Questions go to <a href="mailto:hello@botomatic.dev">hello@botomatic.dev</a>. The <a href="/privacy">privacy page</a> says what we collect.</p>
       </section>
 
       <p className="legal-note">These terms are not legal advice.</p>
