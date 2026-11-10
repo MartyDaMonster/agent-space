@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import pg from "pg";
+import { devPreviewBlocked } from "../lib/dev-preview.js";
 import { buildInviteEmail } from "../lib/invite-email.js";
 import { renderCountdownGif } from "../lib/countdown-gif.js";
 
@@ -72,10 +73,24 @@ test("invite email is a table and the countdown gif ticks until it expires", asy
     assert.match(image, /height="/);
   }
   assert.match(plain, /style="/);
-  assert.match(plain, /bgcolor="#12131c"/);
+  assert.match(plain, /text-align:center/);
+  assert.match(message.html, /A GitHub account\./);
+  assert.match(message.html, /At least two agentic platforms,/);
+  assert.match(message.html, /font-size:42px/);
+  const hostile = buildInviteEmail({
+    firstName: "Ada\r\nBcc: evil@example.com <img>",
+    joinUrl: "https://botomatic.dev/join/inv-ada",
+    expiresAt: new Date("2026-11-12T09:00:00Z"),
+    countdownUrl: "https://botomatic.dev/api/invite/inv-ada/countdown.gif",
+    privacyUrl: "https://botomatic.dev/privacy",
+    assetOrigin: "https://botomatic.dev"
+  });
+  assert.doesNotMatch(hostile.subject, /[\r\n]/);
+  assert.doesNotMatch(hostile.html, /<img>/);
+  assert.match(hostile.html, /&lt;img&gt;/);
   assert.match(message.text, /https:\/\/botomatic\.dev\/join\/inv-ada/);
-  const live = renderCountdownGif(new Date(Date.now() + 90_000));
-  const expired = renderCountdownGif(new Date(Date.now() - 1000));
+  const live = await renderCountdownGif(new Date(Date.now() + 90_000));
+  const expired = await renderCountdownGif(new Date(Date.now() - 1000));
   assert.equal(live.subarray(0, 6).toString(), "GIF89a");
   assert.equal(expired.subarray(0, 6).toString(), "GIF89a");
   assert.ok(live.length > expired.length);
@@ -127,9 +142,16 @@ test("an invite is created and emailed, and a missing key keeps the link", async
   assert.equal(missing.status, 404);
   const found = await countdownResponse(created.invite.id);
   assert.equal(found.status, 200);
-  assert.equal(found.headers.get("cache-control"), "no-store");
+  assert.match(found.headers.get("cache-control"), /private/);
   const bytes = Buffer.from(await found.arrayBuffer());
   assert.equal(bytes.subarray(0, 6).toString(), "GIF89a");
+  assert.equal(bytes.toString("utf8").includes("ada@example.com"), false);
+  const hidden = await countdownResponse("preview");
+  assert.equal(hidden.status, 404);
+  assert.equal(await hidden.text(), "Not found");
+  process.env.VERCEL_ENV = "production";
+  assert.equal(devPreviewBlocked(), true);
+  delete process.env.VERCEL_ENV;
   const { sendAdminTestEmail } = await import("../lib/admin-store.js");
   const denied = await sendAdminTestEmail({ user: { email: "ada@example.com", githubLogin: "ada" } });
   assert.equal(denied.ok, false);

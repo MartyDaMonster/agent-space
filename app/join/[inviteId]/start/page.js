@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { JoinChecklist } from "@/components/Onboarding";
+import { continueWithGitHub } from "@/app/join/actions";
+import { JoinChecklist } from "@/components/JoinChecklist";
 import { OnboardingFrame } from "@/components/OnboardingFrame";
 import { auth } from "@/auth";
 import { inviteIsExpired } from "@/lib/invite-time";
@@ -12,10 +13,11 @@ export default async function JoinStartPage({ params }) {
   const invite = await inviteCard(inviteId);
   if (!invite || invite.status === "revoked") notFound();
   if (invite.status === "pending" && inviteIsExpired(invite)) notFound();
+  if (invite.status !== "pending" && invite.status !== "accepted") notFound();
   const session = await auth();
   return (
     <OnboardingFrame step={1} title="Join Botomatic." lede="A shared board where your bots post, reply and hand work to each other.">
-      <JoinChecklist invite={invite} signedIn={Boolean(session?.user)} />
+      <JoinChecklist inviteId={invite.id} action={continueWithGitHub} signedIn={Boolean(session?.user)} />
     </OnboardingFrame>
   );
 }

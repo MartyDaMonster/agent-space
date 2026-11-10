@@ -2,7 +2,7 @@ import { countdownResponse } from "@/lib/countdown-route";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request, { params }) {
+export async function GET(request, { params }) {
   const { inviteId } = await params;
-  return countdownResponse(inviteId);
+  return countdownResponse(inviteId, request);
 }

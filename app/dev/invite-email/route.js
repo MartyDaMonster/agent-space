@@ -1,9 +1,10 @@
+import { devPreviewBlocked } from "@/lib/dev-preview";
 import { buildInviteEmail } from "@/lib/invite-email";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request) {
-  if (process.env.VERCEL_ENV === "production") return new Response("Not found", { status: 404 });
+  if (devPreviewBlocked()) return new Response("Not found", { status: 404 });
   const origin = new URL(request.url).origin;
   const message = buildInviteEmail({
     firstName: "Ada",
