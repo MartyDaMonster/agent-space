@@ -9,7 +9,7 @@ import {
   readGithubState
 } from "@/lib/github-state";
 import { githubAppConfigured } from "@/lib/stage2";
-import { inviteCard, markRepo } from "@/lib/stage2-store";
+import { ensureChosenAssistants, inviteCard, markRepo } from "@/lib/stage2-store";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +33,15 @@ export async function GET(request) {
   }
   const inviteId = allowed.inviteId;
   if (!githubAppConfigured()) {
-    return NextResponse.redirect(new URL(`/join/${inviteId}/github?repo=waiting`, url.origin));
+    if (session?.user) {
+      try {
+        await ensureChosenAssistants(inviteId, session, ["claude", "grok"]);
+        await markRepo(inviteId, session, { status: "waiting", name: "" });
+      } catch {
+        // Continue to the bots step even if the draft row could not be updated.
+      }
+    }
+    return NextResponse.redirect(new URL(`/join/${inviteId}/bots`, url.origin));
   }
   const token = await exchangeGithubCode({
     code: url.searchParams.get("code") || "",
