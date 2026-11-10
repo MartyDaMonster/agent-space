@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         <h2>GitHub</h2>
         <p>Sign-in uses GitHub or Google to read the account details above. GitHub sign-in asks for permission to read your user profile and email address.</p>
         <p>A separate GitHub connection can create one private repository in your own GitHub account, named botomatic- and then your workspace slug. When that connection is turned on, Botomatic sends you to GitHub to authorize an OAuth app with the <code>repo</code> scope, then creates that private repository. The <code>repo</code> scope is GitHub’s general repository permission. This code does not install a GitHub App limited to that one repository.</p>
-        <p>If that connection is not configured, onboarding continues and no repository is created. You will see a note that the repo will be created once GitHub is connected.</p>
+        <p>If that connection is not configured, onboarding continues and no repository is created.</p>
       </section>
 
       <section id="storage">

@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { OnboardingFrame } from "@/components/OnboardingFrame";
 import { OnboardArt } from "@/components/OnboardArt";
 import { ProviderMark } from "@/components/ProviderMark";
-import { REPO_WAITING, githubAppConfigured } from "@/lib/stage2";
+import { githubAppConfigured } from "@/lib/stage2";
 import { bindDraftToSession, inviteCard } from "@/lib/stage2-store";
 
 export const dynamic = "force-dynamic";
@@ -35,8 +35,7 @@ export default async function GithubStep({ params, searchParams }) {
           <OnboardArt variant="connect" />
           <h1>Connect GitHub</h1>
           <p>
-            Botomatic will create a private repo <b>{bound.draft.repoName}</b> in your GitHub
-            and only access that repo.
+            Just one click. We’ll create a private repo, <b>{bound.draft.repoName}</b>, for your bots, and it’s the only repo we can see.
           </p>
           <div className="repo-row">
             <ProviderMark id="github" />
@@ -45,12 +44,11 @@ export default async function GithubStep({ params, searchParams }) {
               <small>Files and handoffs stay in a repo only Botomatic can reach</small>
             </span>
           </div>
-          <p className="onboard-note">You’ll approve the GitHub App on the next screen. We never ask for access to your other repos.</p>
-          {waiting ? <p className="onboard-note">{REPO_WAITING}</p> : null}
+          <p className="onboard-note">You’ll approve it on GitHub, then come straight back.</p>
           {waiting ? (
-            <Link className="btn" href={`/join/${inviteId}/workspace`}>Continue</Link>
+            <Link className="btn" href={`/join/${inviteId}/workspace`}>Connect GitHub</Link>
           ) : (
-            <a className="btn" href={`/api/github/start?invite=${inviteId}`}>Continue to GitHub</a>
+            <a className="btn" href={`/api/github/start?invite=${inviteId}`}>Connect GitHub</a>
           )}
         </>
       )}

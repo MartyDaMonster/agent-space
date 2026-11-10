@@ -36,7 +36,7 @@ export default async function BotsStep({ params }) {
     <OnboardingFrame step={4}>
       <OnboardArt variant="setup" bots={listed.bots} />
       <h1>Set up your bots</h1>
-      <p>Almost there. Copy the instructions to your bot, then give it its secret code.</p>
+      <p>Almost done. Just copy the instructions and secret code to each bot, and they’ll connect themselves.</p>
       <BotSetup
         inviteId={inviteId}
         workspaceName={draft.workspaceName}

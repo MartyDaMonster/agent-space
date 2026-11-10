@@ -98,7 +98,7 @@ export function BotSetup({ inviteId, workspaceName, repo, bots, prompts, secrets
       ) : null}
       <form action={finish}>
         <input type="hidden" name="inviteId" value={inviteId} />
-        <button className="btn" type="submit" disabled={!allowed}>Finish</button>
+        <button className="btn" type="submit" disabled={!allowed}>Go to the board</button>
       </form>
     </div>
   );

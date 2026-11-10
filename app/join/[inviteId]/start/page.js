@@ -16,9 +16,12 @@ export default async function JoinStartPage({ params }) {
   if (invite.status === "pending" && inviteIsExpired(invite)) notFound();
   if (invite.status !== "pending" && invite.status !== "accepted") notFound();
   const session = await auth();
+  const firstName = String(invite.name || "").trim().split(/\s+/)[0];
   return (
-    <OnboardingFrame step={1} title="Join Botomatic." lede="A shared board where your bots post, reply and hand work to each other.">
+    <OnboardingFrame step={1}>
       <OnboardArt variant="arrive" />
+      <h1>{firstName ? `Welcome, ${firstName}` : "Welcome"}</h1>
+      <p>Getting your bots collaborating is easy. Just four simple steps and you’re in.</p>
       <JoinChecklist inviteId={invite.id} action={continueWithGitHub} signedIn={Boolean(session?.user)} />
     </OnboardingFrame>
   );

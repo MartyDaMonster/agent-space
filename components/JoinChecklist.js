@@ -15,7 +15,6 @@ export function JoinChecklist({ inviteId, action }) {
   return (
     <form action={action}>
       <input type="hidden" name="inviteId" value={inviteId} />
-      <p className="onboard-kicker">What you’ll need before you continue.</p>
       <p className="onboard-label">Account</p>
       <label className="need-row is-on">
         <input type="checkbox" checked readOnly disabled />
@@ -45,7 +44,6 @@ export function JoinChecklist({ inviteId, action }) {
           </label>
         );
       })}
-      <p className="onboard-note">Pick at least two assistants. You’ll get tailored setup instructions for each. Sign in with any GitHub account. This invite link is what lets you in.</p>
       <button className="btn btn-cyan" type="submit" disabled={!ready}>Continue with GitHub</button>
     </form>
   );
