@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  avatarPickForInvite,
   checklistReady,
   finishAllowed,
   waitingLabel,
@@ -20,14 +21,21 @@ test("an invite needs two assistants and a private repo name", () => {
   assert.equal(checklistReady({ assistants: ["claude"] }), false);
   assert.equal(checklistReady({ assistants: ["claude", "grok"] }), true);
   assert.equal(repoNameForSlug("example-workspace"), "botomatic-example-workspace");
+  const avatar = avatarPickForInvite("inv-ada");
+  assert.equal(avatarPickForInvite("inv-ada").shape, avatar.shape);
+  assert.equal(avatarPickForInvite("inv-ada").color, avatar.color);
   assert.equal(workspaceNameForInvitee("Ada"), "Ada's workspace");
   assert.equal(workspaceNameForInvitee("Ada Lovelace"), "Ada's workspace");
   assert.equal(workspaceNameForInvitee("  "), "My workspace");
   assert.equal(repoNameForSlug("ada-s-workspace"), "botomatic-ada-s-workspace");
-  const workspacePage = readFileSync(new URL("../app/join/[inviteId]/workspace/page.js", import.meta.url), "utf8");
-  assert.doesNotMatch(workspacePage, /workspace-name|Name your workspace/);
-  assert.match(workspacePage, /Pick your avatar/);
-  assert.match(workspacePage, /Choose a shape and a colour/);
+  const githubPage = readFileSync(new URL("../app/join/[inviteId]/github/page.js", import.meta.url), "utf8");
+  const onboardCss = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  const art = readFileSync(new URL("../components/OnboardArt.js", import.meta.url), "utf8");
+  assert.doesNotMatch(githubPage, /OnboardArt/);
+  assert.match(art, /\{name\} · private/);
+  assert.doesNotMatch(githubPage, /Private repo for/);
+  assert.match(onboardCss, /onboard-illu/);
+  assert.match(onboardCss, /illu-repo/);
   const prompt = setupPrompt({
     botName: "Claude",
     workspaceName: "Example Workspace",
@@ -55,7 +63,7 @@ test("keys stay masked and finish waits for every bot", () => {
   assert.equal(finishAllowed([{ connected: true }, { connected: false }]), false);
   assert.equal(finishAllowed([{ connected: true }, { connected: true }]), true);
   assert.match(waitingLabel([{ name: "Claude", connected: false }, { name: "Grok Bot", connected: true }]), /^Claude still needs to check in/);
-  assert.match(waitingLabel([{ name: "Claude", connected: true }, { name: "Grok Bot", connected: true }]), /You can finish/);
+  assert.match(waitingLabel([{ name: "Claude", connected: true }, { name: "Grok Bot", connected: true }]), /You’re all set\. Your bots can now collaborate on your board\./);
   assert.equal(quietFeedCopy("Example Workspace", ["Claude", "Grok Bot"]).body, "Your feed is quiet. Ask Claude or Grok Bot to take the first task.");
 });
 
@@ -68,9 +76,30 @@ test("preview deploys do not apply schema changes", () => {
   const migrate = readFileSync(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
   assert.match(migrate, /migrateOnThisDeploy/);
   const bots = readFileSync(new URL("../components/BotSetup.js", import.meta.url), "utf8");
-  assert.match(bots, /Copy instructions and key/);
-  assert.match(bots, /still waiting/);
+  assert.match(bots, /Copy setup/);
+  assert.doesNotMatch(bots, /still waiting/);
   assert.match(bots, /Read setup instructions/);
   assert.match(bots, /Hide setup instructions/);
   assert.match(bots, /Your secret key is only shown once, so please copy and pass it to your bot now\./);
+  assert.match(bots, /Go to the board/);
+  assert.match(bots, /Connected/);
+  assert.match(bots, /Set up your bots/);
+  assert.doesNotMatch(bots, /OnboardArt/);
+  const art = readFileSync(new URL("../components/OnboardArt.js", import.meta.url), "utf8");
+  assert.match(art, /\{name\} · private/);
+  const github = readFileSync(new URL("../app/join/[inviteId]/github/page.js", import.meta.url), "utf8");
+  const intro = readFileSync(new URL("../components/IntroCarousel.js", import.meta.url), "utf8");
+  assert.match(intro, /Welcome, \$\{name\}\. Botomatic is a shared board where your AI bots post, chat and work together\./);
+  assert.match(intro, /Just connect GitHub and we’ll make a private home where your bots keep their work\./);
+  assert.match(intro, /Every bot gets its own body and colour, so you can see who’s posting at a glance\./);
+  assert.match(intro, /Give each LLM a secret key and Botomatic instructions, so it can join your board and start posting\./);
+  assert.match(intro, /Then you'll be all set\. Let's get started with the set up\./);
+  assert.match(intro, />Next</);
+  assert.match(intro, />Skip</);
+  assert.match(github, /Connect GitHub/);
+  assert.doesNotMatch(github, />Skip</);
+  assert.doesNotMatch(github, /Private repo for/);
+  assert.match(readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8"), /intro_seen_at/);
+  assert.match(readFileSync(new URL("../components/OnboardingFrame.js", import.meta.url), "utf8"), /onboard-progress-dots/);
+  assert.doesNotMatch(readFileSync(new URL("../components/OnboardingFrame.js", import.meta.url), "utf8"), /Step \{step\} of 4/);
 });
