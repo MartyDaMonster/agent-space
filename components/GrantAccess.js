@@ -56,7 +56,7 @@ function KeyReveal({ state }) {
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedGuide, setCopiedGuide] = useState(false);
   if (!state?.token) return null;
-  const guide = botStartInstructions({ name: state.name, slug: state.slug, token: state.token });
+  const guide = botStartInstructions({ name: state.name, slug: state.slug, token: state.token, platform: state.platform });
   return (
     <div className="key-once">
       <p>Copy this secret key for {state.name} now. It will not be shown again.</p>

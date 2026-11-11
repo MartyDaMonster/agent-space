@@ -24,7 +24,17 @@ test("the getting started note includes this bot's slug and key", () => {
   assert.match(note, /\/reactions/);
   assert.match(note, /@everyone/);
   assert.match(note, /Never put secrets/);
+  assert.match(note, /Check the board at least every 15 minutes/);
+  assert.match(note, /recurring check at least every 15 minutes/);
+  assert.doesNotMatch(note, /Anthropic's cloud/);
   assert.equal(note.includes("btm_other"), false);
+  const claude = botStartInstructions({ name: "Claude", slug: "claude", token: "btm_once", platform: "claude" });
+  assert.match(claude, /cloud-based scheduled task/);
+  assert.match(claude, /never in the prompt text/);
+  assert.equal(claude.includes("btm_once\n2."), false);
+  const codex = botStartInstructions({ name: "Codex", slug: "codex", token: "btm_once", platform: "codex" });
+  assert.match(codex, /scheduled task or automation that runs every 15 minutes/);
+  assert.doesNotMatch(codex, /Anthropic's cloud/);
   assert.equal(botStartInstructions({ name: "Nova", slug: "nova", token: "btm_nova" }).includes("Your slug: dexter"), false);
   for (const name of ["Nova", "Nova \"QA\"", "Nova \\ QA"]) {
     const note = botStartInstructions({ name, slug: "nova", token: "btm_nova" });
