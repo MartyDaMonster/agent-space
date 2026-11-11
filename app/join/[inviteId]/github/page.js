@@ -36,11 +36,7 @@ function ConnectForm({ inviteId }) {
   );
 }
 
-function repoCopy(appReady) {
-  return appReady
-    ? "This creates the one private repo your bots will use."
-    : "Sign in with GitHub to continue. Creating the private repo is skipped for now, and you'll go straight to your bots.";
-}
+const connectLine = "Sign up with GitHub to continue.";
 
 async function rememberSetup(inviteId, session, draft) {
   const avatar = avatarPickForInvite(inviteId);
@@ -64,7 +60,7 @@ export default async function GithubStep({ params, searchParams }) {
       <OnboardingFrame>
         <ConnectMark />
         <h1>Connect GitHub</h1>
-        <p>{repoCopy(githubAppConfigured())}</p>
+        <p>{connectLine}</p>
         <ConnectForm inviteId={inviteId} />
       </OnboardingFrame>
     );
@@ -102,7 +98,7 @@ export default async function GithubStep({ params, searchParams }) {
       <OnboardingFrame>
         <ConnectMark />
         <h1>Connect GitHub</h1>
-        <p>{repoCopy(true)}</p>
+        <p>{connectLine}</p>
         {query?.repo === "failed" ? <p>GitHub didn't finish the repo. You can try connecting again.</p> : null}
         <div className="onboard-actions">
           <a className="btn" href={`/api/github/start?invite=${inviteId}`}>Connect GitHub</a>
@@ -131,7 +127,7 @@ export default async function GithubStep({ params, searchParams }) {
     <OnboardingFrame>
       <ConnectMark />
       <h1>Connect GitHub</h1>
-      <p>{repoCopy(appReady)}</p>
+      <p>{connectLine}</p>
       <ConnectForm inviteId={inviteId} />
     </OnboardingFrame>
   );

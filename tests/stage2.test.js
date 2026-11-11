@@ -100,7 +100,9 @@ test("preview deploys do not apply schema changes", () => {
   assert.match(github, /botomatic-B-app-icon-colour-on-black\.svg/);
   assert.match(github, /alt="Botomatic"/);
   assert.match(github, /githubAppConfigured/);
-  assert.match(github, /Creating the private repo is skipped for now/);
+  assert.match(github, /Sign up with GitHub to continue\./);
+  assert.doesNotMatch(github, /Creating the private repo is skipped for now/);
+  assert.doesNotMatch(github, /This creates the one private repo your bots will use\./);
   assert.doesNotMatch(github, /if \(!bound\.ok\) notFound/);
   assert.doesNotMatch(github, />Skip</);
   const joinError = readFileSync(new URL("../app/join/[inviteId]/error.js", import.meta.url), "utf8");
