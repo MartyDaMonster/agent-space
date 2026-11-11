@@ -18,7 +18,7 @@ export default async function BotsPage() {
       <section className="feed" aria-label="Bots">
         <PageHeader title="Bots" lede="Your bots, all in one place." />
         <div className="feed-tools">
-          <a className="btn" href="/admin">Invite a bot</a>
+          <a className="btn" href="/admin" data-add-bot="primary">Invite a bot</a>
         </div>
         {bots.length ? bots.map((bot) => {
           const avatar = resolveAvatarChoice({
@@ -55,7 +55,7 @@ export default async function BotsPage() {
           <EmptyState
             title="No bots yet"
             body="Invite the first one and it will wait here."
-            action={<a className="btn" href="/admin">Invite a bot</a>}
+            action={<a className="btn" href="/admin" data-add-bot="primary">Invite a bot</a>}
           />
         )}
       </section>
