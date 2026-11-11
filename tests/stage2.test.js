@@ -13,6 +13,8 @@ import {
   promptContainsSecret,
   quietFeedCopy,
   repoNameForSlug,
+  checkInRoutine,
+  pasteChatLine,
   setupPrompt,
   workspaceNameForInvitee
 } from "../lib/stage2.js";
@@ -45,10 +47,31 @@ test("an invite needs two assistants and a private repo name", () => {
   assert.match(prompt, /Use the key saved as BOTOMATIC_KEY/);
   assert.match(prompt, /Check the board at least every 15 minutes/);
   assert.match(prompt, /Reply when someone hands you work on this board/);
+  assert.match(prompt, /Set up your check-in routine:/);
+  assert.match(prompt, /cloud-based scheduled task/);
+  assert.match(prompt, /Anthropic's cloud, not this computer/);
+  assert.match(prompt, /never in the prompt text/);
+  assert.match(prompt, /Confirm both are on by posting a short check-in/);
   assert.doesNotMatch(prompt, /Martin/);
   assert.match(prompt, /Needs an Anthropic account/);
   assert.equal(promptContainsSecret(prompt), false);
   assert.equal(prompt.includes("bmk_live_"), false);
+  const openai = setupPrompt({
+    botName: "ChatGPT",
+    workspaceName: "Example Workspace",
+    repo: "botomatic-example-workspace",
+    assistantId: "chatgpt"
+  });
+  assert.match(openai, /scheduled task or automation that runs every 15 minutes/);
+  assert.match(openai, /posting a short check-in on the board/);
+  assert.doesNotMatch(openai, /Anthropic's cloud/);
+  assert.equal(promptContainsSecret(openai), false);
+  assert.equal(checkInRoutine("codex"), checkInRoutine("chatgpt"));
+  assert.equal(pasteChatLine("claude"), "Open a new Claude Cowork chat and paste these instructions.");
+  assert.equal(pasteChatLine("chatgpt"), "Open a new Codex chat and paste these instructions.");
+  assert.equal(pasteChatLine("codex"), pasteChatLine("chatgpt"));
+  assert.equal(pasteChatLine("grok"), "");
+  assert.equal(pasteChatLine("muse"), "");
   const grok = setupPrompt({
     botName: "Grok Bot",
     workspaceName: "Example Workspace",
@@ -56,6 +79,9 @@ test("an invite needs two assistants and a private repo name", () => {
     assistantId: "grok"
   });
   assert.match(grok, /POST \/api\/posts with \{"text":"\.\.\."\}/);
+  assert.match(grok, /recurring check at least every 15 minutes/);
+  assert.doesNotMatch(grok, /Anthropic's cloud/);
+  assert.equal(promptContainsSecret(grok), false);
 });
 
 test("keys stay masked and finish waits for every bot", () => {
@@ -79,6 +105,9 @@ test("preview deploys do not apply schema changes", () => {
   assert.match(bots, /Copy setup/);
   assert.doesNotMatch(bots, /still waiting/);
   assert.match(bots, /Read setup instructions/);
+  assert.match(bots, /pasteChatLine/);
+  const grantUi = readFileSync(new URL("../components/GrantAccess.js", import.meta.url), "utf8");
+  assert.match(grantUi, /pasteChatLine\(state\.platform\)/);
   assert.match(bots, /Hide setup instructions/);
   assert.match(bots, /Your secret key is only shown once, so please copy and pass it to your bot now\./);
   assert.match(bots, /Go to the board/);

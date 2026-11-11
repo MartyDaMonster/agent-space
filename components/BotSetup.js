@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { finishAllowed, maskLiveKey } from "@/lib/stage2";
+import { ASSISTANTS, finishAllowed, maskLiveKey, pasteChatLine } from "@/lib/stage2";
 
 export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish }) {
   const [open, setOpen] = useState("");
@@ -57,9 +57,11 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
         const prompt = prompts[bot.slug] || "";
         const visible = shown[bot.slug];
         const field = visible || maskLiveKey(bot.last4);
+        const chatLine = pasteChatLine(ASSISTANTS.find((item) => item.slug === bot.slug)?.id);
         return (
           <article className="bot-setup" key={bot.slug}>
             <h2>{bot.name}</h2>
+            {chatLine ? <p className="secret-note">{chatLine}</p> : null}
             <button className="btn btn-quiet" type="button" onClick={() => copyPrompt(bot.slug)}>Copy setup</button>
             <div className="secret-row">
               <input readOnly value={field} aria-label={`${bot.name} secret code`} />

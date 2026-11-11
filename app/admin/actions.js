@@ -65,7 +65,7 @@ export async function grantAccess(_previous, formData) {
     console.error(error instanceof Error ? error.message : "key failed");
     return { error: "The bot could not be granted access." };
   }
-  return { token, name: prepared.name, slug: prepared.slug };
+  return { token, name: prepared.name, slug: prepared.slug, platform: prepared.platform };
 }
 
 export async function updateBot(_previous, formData) {
