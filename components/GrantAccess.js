@@ -4,8 +4,7 @@ import { useActionState, useState } from "react";
 import { grantAccess, revokeBotKey, updateBot } from "@/app/admin/actions";
 import { AVATAR_COLORS, AVATAR_SHAPES } from "@/lib/avatar-presets";
 import { botStartInstructions } from "@/lib/grant";
-import { claudeSetupNotes } from "@/lib/claude-setup";
-import { pasteChatLine } from "@/lib/stage2";
+import { setupNotes } from "@/lib/stage2";
 import { slugFromName } from "@/lib/slug";
 import { Avatar } from "./Avatar";
 import { AvatarMark } from "./AvatarMark";
@@ -57,6 +56,7 @@ export function AvatarFields({ shape: initialShape = "square", color: initialCol
 function KeyReveal({ state }) {
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedGuide, setCopiedGuide] = useState(false);
+  const [open, setOpen] = useState(false);
   if (!state?.token) return null;
   const guide = botStartInstructions({
     name: state.name,
@@ -66,14 +66,13 @@ function KeyReveal({ state }) {
     ownerName: state.ownerName,
     otherBots: state.otherBots
   });
-  const chatLine = pasteChatLine(state.platform);
+  const notes = setupNotes(state.platform);
   return (
     <div className="key-once">
       <p>Copy this secret key for {state.name} now. It will not be shown again.</p>
       <code>{state.token}</code>
-      <p>{state.platform === "claude" ? "Getting started. These instructions do not include your key." : `Getting started. Paste this to ${state.name}. It includes the key, and it is shown only once.`}</p>
-      {(state.platform === "claude" ? claudeSetupNotes() : [chatLine].filter(Boolean)).map((line) => <p key={line}>{line}</p>)}
-      <pre>{guide}</pre>
+      <p>Shown once. Save it in a password manager or vault.</p>
+      {notes.map((line) => <p key={line}>{line}</p>)}
       <div className="copy-row">
         <button
           className="btn"
@@ -104,6 +103,10 @@ function KeyReveal({ state }) {
           {copiedKey ? "Copied" : "Copy key"}
         </button>
       </div>
+      <button className="text-link" type="button" onClick={() => setOpen((value) => !value)}>
+        {open ? "Hide instructions" : "Show instructions"}
+      </button>
+      {open ? <pre>{guide}</pre> : null}
     </div>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { claudeSetupNotes, copySetupText } from "@/lib/claude-setup";
-import { ASSISTANTS, finishAllowed, maskLiveKey, pasteChatLine } from "@/lib/stage2";
+import { copySetupText } from "@/lib/claude-setup";
+import { ASSISTANTS, finishAllowed, maskLiveKey, setupNotes } from "@/lib/stage2";
 
 export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish }) {
   const [open, setOpen] = useState("");
@@ -33,10 +33,7 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
     };
   }, [inviteId]);
   async function copyPrompt(slug) {
-    const prompt = prompts[slug] || "";
-    const token = shown[slug];
-    const assistantId = ASSISTANTS.find((item) => item.slug === slug)?.id || "";
-    const text = copySetupText({ prompt, token, assistantId });
+    const text = copySetupText({ prompt: prompts[slug] || "" });
     if (text) await navigator.clipboard.writeText(text);
   }
   async function copySecret(slug) {
@@ -60,7 +57,7 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
         const visible = shown[bot.slug];
         const field = visible || maskLiveKey(bot.last4);
         const assistantId = ASSISTANTS.find((item) => item.slug === bot.slug)?.id || "";
-        const notes = assistantId === "claude" ? claudeSetupNotes() : [pasteChatLine(assistantId)].filter(Boolean);
+        const notes = setupNotes(assistantId);
         return (
           <article className="bot-setup" key={bot.slug}>
             <h2>{bot.name}</h2>
@@ -71,14 +68,12 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
               <button className="btn btn-quiet" type="button" onClick={() => copySecret(bot.slug)} disabled={!visible}>Copy</button>
             </div>
             <p className="secret-note">
-              {assistantId === "claude"
-                ? "Shown once. Add it in the Botomatic environment, not the chat."
-                : "Your secret key is only shown once, so please copy and pass it to your bot now."}
+              Shown once. Save it in a password manager or vault.
               {" "}
               <button type="button" className="text-link" onClick={() => renew(bot.slug)}>Regenerate</button>
             </p>
             <button className="text-link" type="button" onClick={() => setOpen(open === bot.slug ? "" : bot.slug)}>
-              {open === bot.slug ? "Hide setup instructions" : "Read setup instructions"}
+              {open === bot.slug ? "Hide instructions" : "Show instructions"}
             </button>
             {open === bot.slug ? <pre className="setup-prompt">{prompt}</pre> : null}
           </article>
