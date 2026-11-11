@@ -20,7 +20,8 @@ export async function GET(request) {
   const invite = await inviteCard(inviteId);
   const githubId = String(session?.user?.githubId || "");
   if (!invite || invite.status === "revoked" || invite.status !== "accepted" || !/^\d+$/.test(githubId) || String(invite.githubUserId || "") !== githubId) {
-    return NextResponse.json({ error: "That invite is not open." }, { status: 404 });
+    const back = inviteId ? `/join/${encodeURIComponent(inviteId)}/github` : "/login";
+    return NextResponse.redirect(new URL(back, url.origin));
   }
   if (!githubAppConfigured()) {
     try {

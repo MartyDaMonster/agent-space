@@ -114,6 +114,14 @@ test("preview deploys do not apply schema changes", () => {
   assert.doesNotMatch(callback, /repo=waiting/);
   assert.match(start, /\/bots/);
   assert.match(callback, /\/bots/);
+  assert.doesNotMatch(start, /NextResponse\.json/);
+  assert.doesNotMatch(callback, /NextResponse\.json/);
+  const welcome = readFileSync(new URL("../app/join/[inviteId]/page.js", import.meta.url), "utf8");
+  assert.match(welcome, /Continue with GitHub/);
+  assert.doesNotMatch(welcome, /already been used/);
+  const keys = readFileSync(new URL("../app/admin/actions.js", import.meta.url), "utf8");
+  assert.match(keys, /workspaceActor/);
+  assert.doesNotMatch(keys, /sessionInvited/);
   assert.doesNotMatch(github, /Private repo for/);
   assert.match(readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8"), /intro_seen_at/);
   assert.match(readFileSync(new URL("../components/OnboardingFrame.js", import.meta.url), "utf8"), /onboard-progress-dots/);

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import pg from "pg";
+import { inviteIdFromReturnPath } from "../lib/invite-claim.js";
 import { readInviteCookie, signInviteCookie } from "../lib/invite-cookie.js";
 
 const ADMIN_URL = "postgres://botomatic:botomatic@127.0.0.1:5432/botomatic";
@@ -40,6 +41,10 @@ test("a signed invite cookie cannot be swapped for another id", () => {
   const swapped = `${token.slice(0, -1)}${token.endsWith("a") ? "b" : "a"}`;
   assert.equal(readInviteCookie(swapped, "claim-test-secret"), "");
   assert.equal(readInviteCookie("", "claim-test-secret"), "");
+  assert.equal(inviteIdFromReturnPath("https://botomatic.dev/join/inv-ada/github"), "inv-ada");
+  assert.equal(inviteIdFromReturnPath("/join/inv-ada/github?repo=waiting"), "inv-ada");
+  assert.equal(inviteIdFromReturnPath("/login"), "");
+  assert.equal(inviteIdFromReturnPath("/join/preview/github"), "");
 });
 
 test("a different GitHub account claims the link once, and expired or revoked links do not", async () => {
@@ -112,6 +117,24 @@ test("a different GitHub account claims the link once, and expired or revoked li
   const revoked = await claimInviteLink("inv-stop", { githubId: "9", githubLogin: "stop" });
   assert.equal(revoked.ok, false);
   assert.equal(revoked.status, 404);
+  await sql`
+    insert into workspace_invites (id, email, invitee_name, status, created_by, expires_at, own_workspace)
+    values ('inv-path', 'path@example.com', 'Path', 'pending', 'martin', now() + interval '48 hours', true)
+  `;
+  const fromReturn = await authorizeGithubSignIn({
+    email: "sabrinato@users.noreply.github.com",
+    githubLogin: "sabrinato",
+    githubId: "88001",
+    cookieValue: "",
+    returnPath: "https://botomatic.dev/join/inv-path/github",
+    allowed: false
+  });
+  assert.equal(fromReturn.ok, true);
+  assert.equal(fromReturn.created, true);
+  assert.notEqual(fromReturn.workspaceId, "ws-martin");
+  const pathMember = await sql`select role from workspace_members where github_user_id = '88001'`;
+  assert.equal(pathMember[0].role, "owner");
+
   const bare = await authorizeGithubSignIn({
     email: "stranger@example.com",
     githubLogin: "stranger",

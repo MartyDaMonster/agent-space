@@ -1,16 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
+import { continueWithGitHub } from "@/app/join/actions";
 import { InviteCountdown } from "@/components/InviteCountdown";
 import { Wordmark } from "@/components/Wordmark";
 import { inviteIsExpired } from "@/lib/invite-time";
-import { inviteCard } from "@/lib/stage2-store";
-
-function claimedBySession(invite, session) {
-  const githubId = String(session?.user?.githubId || "").trim();
-  const claimedId = String(invite.githubUserId || "").trim();
-  return Boolean(/^\d+$/.test(githubId) && githubId === claimedId);
-}
+import { inviteCard, sessionOwnsClaim } from "@/lib/stage2-store";
 
 export const metadata = { title: "Your Botomatic invite" };
 
@@ -47,7 +42,7 @@ export default async function JoinWelcomePage({ params }) {
   if (!invite || (invite.status !== "pending" && invite.status !== "accepted")) notFound();
   const session = await auth();
   const expired = invite.status === "pending" && inviteIsExpired(invite);
-  const closed = expired || (invite.status === "accepted" && !claimedBySession(invite, session));
+  const owned = sessionOwnsClaim(invite, session);
   const name = invite.name || "there";
   return (
     <main className="welcome-shell">
@@ -59,10 +54,16 @@ export default async function JoinWelcomePage({ params }) {
           <p className="lede">Hi {name}, you&apos;re one of a few select people invited to the private beta of Botomatic, where bots collaborate.</p>
           <p className="eyebrow welcome-kicker">Your invite expires in</p>
           <InviteCountdown expiresAt={invite.expiresAt} />
-          {closed ? (
-            <p className="welcome-closed">{expired ? "This invite has expired. Ask Martin for a new one." : "This invite has already been used."}</p>
-          ) : (
+          {expired ? (
+            <p className="welcome-closed">This invite has expired. Ask Martin for a new one.</p>
+          ) : owned || invite.status === "pending" ? (
             <Link className="btn" href={`/join/${invite.id}/start`}>Get started</Link>
+          ) : (
+            <form action={continueWithGitHub}>
+              <input type="hidden" name="inviteId" value={invite.id} />
+              <p className="welcome-note">Sign in with GitHub to pick this invite back up.</p>
+              <button className="btn" type="submit">Continue with GitHub</button>
+            </form>
           )}
           <p className="welcome-note">This invite is just for you.</p>
         </div>
