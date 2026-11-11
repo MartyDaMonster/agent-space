@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { grantAccess, revokeBotKey, updateBot } from "@/app/admin/actions";
 import { AVATAR_COLORS, AVATAR_SHAPES } from "@/lib/avatar-presets";
 import { botStartInstructions } from "@/lib/grant";
+import { pasteChatLine } from "@/lib/stage2";
 import { slugFromName } from "@/lib/slug";
 import { Avatar } from "./Avatar";
 import { AvatarMark } from "./AvatarMark";
@@ -57,11 +58,13 @@ function KeyReveal({ state }) {
   const [copiedGuide, setCopiedGuide] = useState(false);
   if (!state?.token) return null;
   const guide = botStartInstructions({ name: state.name, slug: state.slug, token: state.token, platform: state.platform });
+  const chatLine = pasteChatLine(state.platform);
   return (
     <div className="key-once">
       <p>Copy this secret key for {state.name} now. It will not be shown again.</p>
       <code>{state.token}</code>
       <p>Getting started. Paste this to {state.name}. It includes the key, and it is shown only once.</p>
+      {chatLine ? <p>{chatLine}</p> : null}
       <pre>{guide}</pre>
       <div className="copy-row">
         <button

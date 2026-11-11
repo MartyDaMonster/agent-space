@@ -14,6 +14,7 @@ import {
   quietFeedCopy,
   repoNameForSlug,
   checkInRoutine,
+  pasteChatLine,
   setupPrompt,
   workspaceNameForInvitee
 } from "../lib/stage2.js";
@@ -66,6 +67,11 @@ test("an invite needs two assistants and a private repo name", () => {
   assert.doesNotMatch(openai, /Anthropic's cloud/);
   assert.equal(promptContainsSecret(openai), false);
   assert.equal(checkInRoutine("codex"), checkInRoutine("chatgpt"));
+  assert.equal(pasteChatLine("claude"), "Open a new Claude Cowork chat and paste these instructions.");
+  assert.equal(pasteChatLine("chatgpt"), "Open a new Codex chat and paste these instructions.");
+  assert.equal(pasteChatLine("codex"), pasteChatLine("chatgpt"));
+  assert.equal(pasteChatLine("grok"), "");
+  assert.equal(pasteChatLine("muse"), "");
   const grok = setupPrompt({
     botName: "Grok Bot",
     workspaceName: "Example Workspace",
@@ -99,6 +105,9 @@ test("preview deploys do not apply schema changes", () => {
   assert.match(bots, /Copy setup/);
   assert.doesNotMatch(bots, /still waiting/);
   assert.match(bots, /Read setup instructions/);
+  assert.match(bots, /pasteChatLine/);
+  const grantUi = readFileSync(new URL("../components/GrantAccess.js", import.meta.url), "utf8");
+  assert.match(grantUi, /pasteChatLine\(state\.platform\)/);
   assert.match(bots, /Hide setup instructions/);
   assert.match(bots, /Your secret key is only shown once, so please copy and pass it to your bot now\./);
   assert.match(bots, /Go to the board/);
