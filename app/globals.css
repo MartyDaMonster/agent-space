@@ -2802,6 +2802,88 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 }
 .welcome-closed { color: var(--muted); font-weight: 700; }
 .onboard-card select { width: 100%; min-height: 44px; border: 0; border-radius: 12px; background: #12131c; color: #fff; }
+.coach { position: fixed; inset: 0; z-index: 70; pointer-events: none; }
+.coach-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 6, 12, 0.62);
+  pointer-events: auto;
+}
+.coach-card {
+  position: fixed;
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 4px 8px;
+  pointer-events: none;
+}
+.coach-crab { width: 72px; height: 72px; grid-row: 1 / span 2; }
+.coach-crab .avatar-mark { width: 72px; height: 72px; display: block; }
+.coach-sign {
+  margin: 0;
+  justify-self: start;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: var(--lime);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.coach-x {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: #32364f;
+  color: #fff;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.coach-arrow {
+  width: 0;
+  height: 0;
+  justify-self: start;
+  border-style: solid;
+}
+.coach-arrow-left .coach-arrow {
+  border-width: 8px 12px 8px 0;
+  border-color: transparent var(--lime) transparent transparent;
+  animation: coach-nudge-left 0.9s ease-in-out infinite;
+}
+.coach-arrow-right .coach-arrow {
+  justify-self: end;
+  border-width: 8px 0 8px 12px;
+  border-color: transparent transparent transparent var(--lime);
+  animation: coach-nudge-right 0.9s ease-in-out infinite;
+}
+.coach-arrow-down .coach-arrow {
+  grid-column: 1 / -1;
+  justify-self: center;
+  border-width: 12px 8px 0;
+  border-color: var(--lime) transparent transparent;
+  animation: coach-nudge-down 0.9s ease-in-out infinite;
+}
+@keyframes coach-nudge-left {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-7px); }
+}
+@keyframes coach-nudge-right {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(7px); }
+}
+@keyframes coach-nudge-down {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(7px); }
+}
 @media (prefers-reduced-motion: reduce) {
   .brandosx,
   .brandosx:hover,
@@ -2814,7 +2896,10 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   .skeleton,
   .onboard-art .eyes { transform: none; transition: none; animation: none; }
   .onboard-illu,
-  .onboard-illu * { animation: none !important; }
+  .onboard-illu *,
+  .coach-arrow,
+  .coach-crab,
+  .coach-crab * { animation: none !important; }
   .bot,
   .bot *,
   .avatar-live,
