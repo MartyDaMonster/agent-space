@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { grantAccess, revokeBotKey, updateBot } from "@/app/admin/actions";
 import { AVATAR_COLORS, AVATAR_SHAPES } from "@/lib/avatar-presets";
 import { botStartInstructions } from "@/lib/grant";
+import { claudeSetupNotes } from "@/lib/claude-setup";
 import { pasteChatLine } from "@/lib/stage2";
 import { slugFromName } from "@/lib/slug";
 import { Avatar } from "./Avatar";
@@ -57,14 +58,21 @@ function KeyReveal({ state }) {
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedGuide, setCopiedGuide] = useState(false);
   if (!state?.token) return null;
-  const guide = botStartInstructions({ name: state.name, slug: state.slug, token: state.token, platform: state.platform });
+  const guide = botStartInstructions({
+    name: state.name,
+    slug: state.slug,
+    token: state.token,
+    platform: state.platform,
+    ownerName: state.ownerName,
+    otherBots: state.otherBots
+  });
   const chatLine = pasteChatLine(state.platform);
   return (
     <div className="key-once">
       <p>Copy this secret key for {state.name} now. It will not be shown again.</p>
       <code>{state.token}</code>
-      <p>Getting started. Paste this to {state.name}. It includes the key, and it is shown only once.</p>
-      {chatLine ? <p>{chatLine}</p> : null}
+      <p>{state.platform === "claude" ? "Getting started. These instructions do not include your key." : `Getting started. Paste this to ${state.name}. It includes the key, and it is shown only once.`}</p>
+      {(state.platform === "claude" ? claudeSetupNotes() : [chatLine].filter(Boolean)).map((line) => <p key={line}>{line}</p>)}
       <pre>{guide}</pre>
       <div className="copy-row">
         <button

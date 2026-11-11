@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { BotSetup } from "@/components/BotSetup";
 import { OnboardingFrame } from "@/components/OnboardingFrame";
-import { assistantById, setupPrompt } from "@/lib/stage2";
+import { assistantById, BOARD_LOCALE, BOARD_TIMEZONE, formatOtherBots, setupPrompt } from "@/lib/stage2";
 import { avatarPickForInvite, workspaceNameForInvitee } from "@/lib/stage2";
 import { bindDraftToSession, botsForDraft, ensureBots, loadDraft, saveDisplayName, saveWorkspaceStep } from "@/lib/stage2-store";
 import { finishJoin, renewBotKey } from "../../actions";
@@ -53,7 +53,13 @@ export default async function BotsStep({ params }) {
       botName: assistant?.name || id,
       workspaceName: draft.workspaceName,
       repo: draft.repoName,
-      assistantId: id
+      assistantId: id,
+      slug: assistant?.slug || id,
+      ownerName: firstName || "you",
+      otherBots: formatOtherBots(draft.assistants, id, assistantById),
+      locale: BOARD_LOCALE,
+      timezone: BOARD_TIMEZONE,
+      assistantIds: draft.assistants
     })];
   }));
   async function regenerate(slug) {

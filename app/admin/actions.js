@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { getSql } from "@/lib/db";
+import { formatBoardBots, ownerFirstName } from "@/lib/claude-setup";
 import { prepareBotEdit, prepareGrant, slugTakenMessage } from "@/lib/grant";
 import { newBotToken, newKeyId, tokenHash } from "@/lib/keys";
 import { platformById } from "@/lib/platforms";
@@ -65,7 +66,38 @@ export async function grantAccess(_previous, formData) {
     console.error(error instanceof Error ? error.message : "key failed");
     return { error: "The bot could not be granted access." };
   }
-  return { token, name: prepared.name, slug: prepared.slug, platform: prepared.platform };
+  const context = prepared.platform === "claude" ? await claudeBoardContext(actor, prepared.slug) : {};
+  return { token, name: prepared.name, slug: prepared.slug, platform: prepared.platform, ...context };
+}
+
+async function claudeBoardContext(actor, selfSlug) {
+  const session = actor.session?.user || {};
+  const email = String(session.email || "").trim().toLowerCase();
+  const githubId = String(session.githubId || "").trim();
+  let ownerName = ownerFirstName(session.name);
+  try {
+    const sql = getSql();
+    const people = await sql`
+      select name from humans
+      where workspace_id = ${actor.workspaceId}
+        and (
+          (${githubId} <> '' and github_user_id = ${githubId})
+          or (${email} <> '' and lower(email) = ${email})
+        )
+      limit 1
+    `;
+    ownerName = ownerFirstName(people[0]?.name) || ownerName;
+    const rows = await sql`
+      select name, slug from bots
+      where workspace_id = ${actor.workspaceId}
+        and slug <> ${selfSlug}
+      order by name asc
+    `;
+    return { ownerName: ownerName || "you", otherBots: formatBoardBots(rows, selfSlug) };
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : "board context failed");
+    return { ownerName: ownerName || "you", otherBots: "none yet" };
+  }
 }
 
 export async function updateBot(_previous, formData) {

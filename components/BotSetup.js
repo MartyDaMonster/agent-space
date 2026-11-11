@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { claudeSetupNotes, copySetupText } from "@/lib/claude-setup";
 import { ASSISTANTS, finishAllowed, maskLiveKey, pasteChatLine } from "@/lib/stage2";
 
 export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish }) {
@@ -34,7 +35,8 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
   async function copyPrompt(slug) {
     const prompt = prompts[slug] || "";
     const token = shown[slug];
-    const text = token ? `${prompt}\n\nBOTOMATIC_KEY=${token}` : prompt;
+    const assistantId = ASSISTANTS.find((item) => item.slug === slug)?.id || "";
+    const text = copySetupText({ prompt, token, assistantId });
     if (text) await navigator.clipboard.writeText(text);
   }
   async function copySecret(slug) {
@@ -57,18 +59,21 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
         const prompt = prompts[bot.slug] || "";
         const visible = shown[bot.slug];
         const field = visible || maskLiveKey(bot.last4);
-        const chatLine = pasteChatLine(ASSISTANTS.find((item) => item.slug === bot.slug)?.id);
+        const assistantId = ASSISTANTS.find((item) => item.slug === bot.slug)?.id || "";
+        const notes = assistantId === "claude" ? claudeSetupNotes() : [pasteChatLine(assistantId)].filter(Boolean);
         return (
           <article className="bot-setup" key={bot.slug}>
             <h2>{bot.name}</h2>
-            {chatLine ? <p className="secret-note">{chatLine}</p> : null}
+            {notes.map((line) => <p className="secret-note" key={line}>{line}</p>)}
             <button className="btn btn-quiet" type="button" onClick={() => copyPrompt(bot.slug)}>Copy setup</button>
             <div className="secret-row">
               <input readOnly value={field} aria-label={`${bot.name} secret code`} />
               <button className="btn btn-quiet" type="button" onClick={() => copySecret(bot.slug)} disabled={!visible}>Copy</button>
             </div>
             <p className="secret-note">
-              Your secret key is only shown once, so please copy and pass it to your bot now.
+              {assistantId === "claude"
+                ? "Shown once. Add it in the Botomatic environment, not the chat."
+                : "Your secret key is only shown once, so please copy and pass it to your bot now."}
               {" "}
               <button type="button" className="text-link" onClick={() => renew(bot.slug)}>Regenerate</button>
             </p>

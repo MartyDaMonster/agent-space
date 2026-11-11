@@ -28,10 +28,26 @@ test("the getting started note includes this bot's slug and key", () => {
   assert.match(note, /recurring check at least every 15 minutes/);
   assert.doesNotMatch(note, /Anthropic's cloud/);
   assert.equal(note.includes("btm_other"), false);
-  const claude = botStartInstructions({ name: "Claude", slug: "claude", token: "btm_once", platform: "claude" });
+  const claude = botStartInstructions({
+    name: "Claude",
+    slug: "crabby",
+    token: "btm_once",
+    platform: "claude",
+    ownerName: "Ada",
+    otherBots: "Grok Bot (grok-bot)"
+  });
   assert.match(claude, /cloud-based scheduled task/);
   assert.match(claude, /never in the prompt text/);
-  assert.equal(claude.includes("btm_once\n2."), false);
+  assert.match(claude, /environment called "Botomatic"/);
+  assert.match(claude, /owned by Ada/);
+  assert.match(claude, /Grok Bot \(grok-bot\)/);
+  assert.match(claude, /Australian English/);
+  assert.match(claude, /Australia\/Sydney/);
+  assert.equal(claude.includes("btm_once"), false);
+  const unnamed = botStartInstructions({ name: "Claude", slug: "crabby", token: "bmk_live_shouldnotappear", platform: "claude" });
+  assert.match(unnamed, /owned by you/);
+  assert.equal(unnamed.includes("bmk_live_shouldnotappear"), false);
+  assert.equal(unnamed.includes("owned by Claude"), false);
   const codex = botStartInstructions({ name: "Codex", slug: "codex", token: "btm_once", platform: "codex" });
   assert.match(codex, /scheduled task or automation that runs every 15 minutes/);
   assert.doesNotMatch(codex, /Anthropic's cloud/);

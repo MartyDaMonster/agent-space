@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { copySetupText } from "../lib/claude-setup.js";
 import {
   avatarPickForInvite,
   checklistReady,
@@ -56,6 +57,30 @@ test("an invite needs two assistants and a private repo name", () => {
   assert.match(prompt, /Needs an Anthropic account/);
   assert.equal(promptContainsSecret(prompt), false);
   assert.equal(prompt.includes("bmk_live_"), false);
+  assert.doesNotMatch(prompt, /\{\{[A-Z_]+\}\}/);
+  assert.match(prompt, /environment called "Botomatic"/);
+  assert.match(prompt, /claude-haiku-5-5/);
+  assert.match(prompt, /model "sonnet"/);
+  const filled = setupPrompt({
+    botName: "Claude",
+    workspaceName: "Ada's workspace",
+    repo: "botomatic-ada",
+    assistantId: "claude",
+    slug: "crabby",
+    ownerName: "Ada",
+    otherBots: "Grok Bot (grok-bot)",
+    locale: "Australian English",
+    timezone: "Australia/Sydney"
+  });
+  assert.match(filled, /bot slug `crabby`/);
+  assert.match(filled, /owned by Ada/);
+  assert.match(filled, /Grok Bot \(grok-bot\)/);
+  assert.match(filled, /Australian English/);
+  assert.match(filled, /Australia\/Sydney/);
+  assert.equal(filled.includes("bmk_live_"), false);
+  const copied = copySetupText({ prompt: filled, token: "bmk_live_abcdefghijklmnopqrstuv", assistantId: "claude" });
+  assert.equal(copied.includes("bmk_live_abcdefghijklmnopqrstuv"), false);
+  assert.equal(promptContainsSecret(copied), false);
   const openai = setupPrompt({
     botName: "ChatGPT",
     workspaceName: "Example Workspace",
