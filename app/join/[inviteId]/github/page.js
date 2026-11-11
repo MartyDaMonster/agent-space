@@ -16,6 +16,15 @@ import {
 
 export const dynamic = "force-dynamic";
 
+function ConnectMark() {
+  return (
+    <picture className="connect-mark">
+      <source srcSet="/brand/botomatic-B-app-icon-colour-on-black.svg" type="image/svg+xml" />
+      <img src="/brand/botomatic-B-app-icon-colour-on-black.png" alt="Botomatic" width="96" height="96" />
+    </picture>
+  );
+}
+
 function ConnectForm({ inviteId }) {
   return (
     <form action={continueWithGitHub} className="onboard-actions">
@@ -53,6 +62,7 @@ export default async function GithubStep({ params, searchParams }) {
   if (inviteId === "preview") {
     return (
       <OnboardingFrame>
+        <ConnectMark />
         <h1>Connect GitHub</h1>
         <p>{repoCopy(githubAppConfigured())}</p>
         <ConnectForm inviteId={inviteId} />
@@ -90,6 +100,7 @@ export default async function GithubStep({ params, searchParams }) {
     });
     return (
       <OnboardingFrame>
+        <ConnectMark />
         <h1>Connect GitHub</h1>
         <p>{repoCopy(true)}</p>
         {query?.repo === "failed" ? <p>GitHub didn't finish the repo. You can try connecting again.</p> : null}
@@ -103,6 +114,7 @@ export default async function GithubStep({ params, searchParams }) {
   if (session?.user && invite.status === "accepted") {
     return (
       <OnboardingFrame>
+        <ConnectMark />
         <h1>Connect GitHub</h1>
         <p>This invite is already linked to a different GitHub account. Sign out, then open your invite link again.</p>
         <div className="onboard-actions">
@@ -117,6 +129,7 @@ export default async function GithubStep({ params, searchParams }) {
 
   return (
     <OnboardingFrame>
+      <ConnectMark />
       <h1>Connect GitHub</h1>
       <p>{repoCopy(appReady)}</p>
       <ConnectForm inviteId={inviteId} />
