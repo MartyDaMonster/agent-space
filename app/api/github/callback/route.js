@@ -29,7 +29,9 @@ export async function GET(request) {
   });
   jar.set(GITHUB_STATE_COOKIE, "", { ...githubStateCookieOptions(), maxAge: 0 });
   if (!allowed.ok || !invite) {
-    return NextResponse.json({ error: "That invite is not open." }, { status: 404 });
+    const inviteId = parsed?.inviteId || "";
+    const back = inviteId ? `/join/${encodeURIComponent(inviteId)}/github` : "/login";
+    return NextResponse.redirect(new URL(back, url.origin));
   }
   const inviteId = allowed.inviteId;
   if (!githubAppConfigured()) {

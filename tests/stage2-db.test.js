@@ -78,11 +78,26 @@ test("invite, onboarding, and bot routes stay inside one workspace", async () =>
   assert.equal(claimed.email, "ada@example.com");
   const wrong = await bindDraftToSession("inv-ada", eve);
   assert.equal(wrong.status, 404);
+  const byLogin = await bindDraftToSession("inv-ada", { user: { githubLogin: "Octocat", email: "other@example.com" } });
+  assert.equal(byLogin.ok, true);
   const bound = await bindDraftToSession("inv-ada", claimer);
   assert.equal(bound.ok, true);
 
   const created = await ensureBots("inv-ada", claimer);
   assert.equal(created.ok, true);
+  const { sessionInvited } = await import("../lib/access.js");
+  const { workspaceActor } = await import("../lib/workspace-session.js");
+  assert.equal(sessionInvited(claimer), false);
+  const writer = await workspaceActor(claimer);
+  assert.ok(writer);
+  assert.equal(writer.role, "owner");
+  assert.equal(writer.workspaceId, created.workspaceId);
+  assert.notEqual(writer.workspaceId, "ws-martin");
+  const stranger = await workspaceActor({ user: { email: "eve@example.com", githubLogin: "eve", githubId: "99" } });
+  assert.equal(stranger, null);
+  const martin = await workspaceActor({ user: { email: "marty.hungerford3181@gmail.com", githubId: "150204025", githubLogin: "MartyDaMonster" } });
+  assert.equal(martin.workspaceId, "ws-martin");
+  assert.equal(martin.role, "owner");
   assert.notEqual(created.workspaceId, "ws-martin");
   assert.equal(created.revealed.length, 2);
   assert.equal(created.revealed.some((item) => item.token.includes(" ")), false);

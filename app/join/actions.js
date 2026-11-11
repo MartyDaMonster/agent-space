@@ -1,12 +1,13 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { auth } from "@/auth";
 import {
   ensureBots,
   finishOnboardingDraft,
+  inviteCard,
   markRepo,
   regenerateBotKey,
   saveAssistantChoice,
@@ -16,6 +17,7 @@ import {
   saveWorkspaceStep
 } from "@/lib/stage2-store";
 import { githubAppConfigured } from "@/lib/stage2";
+import { inviteIsExpired } from "@/lib/invite-time";
 import { INVITE_COOKIE, inviteCookieOptions, signInviteCookie } from "@/lib/invite-cookie";
 
 export async function finishIntro(formData) {
@@ -40,8 +42,15 @@ export async function finishIntro(formData) {
 
 export async function continueWithGitHub(formData) {
   const inviteId = String(formData.get("inviteId") || "");
-  const saved = await saveAssistantChoice(inviteId, formData.getAll("assistant"));
-  if (!saved.ok) return { error: saved.error };
+  const invite = await inviteCard(inviteId);
+  if (!invite || invite.status === "revoked") notFound();
+  if (invite.status === "pending") {
+    if (inviteIsExpired(invite)) notFound();
+    const saved = await saveAssistantChoice(inviteId, formData.getAll("assistant"));
+    if (!saved.ok) return { error: saved.error };
+  } else if (invite.status !== "accepted") {
+    notFound();
+  }
   const jar = await cookies();
   jar.set(INVITE_COOKIE, signInviteCookie(inviteId), inviteCookieOptions());
   await signIn("github", { redirectTo: `/join/${inviteId}/github` });

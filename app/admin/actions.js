@@ -2,21 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { sessionInvited } from "@/lib/access";
 import { getSql } from "@/lib/db";
 import { prepareBotEdit, prepareGrant, slugTakenMessage } from "@/lib/grant";
 import { newBotToken, newKeyId, tokenHash } from "@/lib/keys";
 import { platformById } from "@/lib/platforms";
 import { isSlug } from "@/lib/slug";
 import { resolveAvatar } from "@/lib/store-avatar";
-import { workspaceIdForSession } from "@/lib/workspace-session";
+import { workspaceActor } from "@/lib/workspace-session";
 
 async function requireHuman() {
-  const session = await auth();
-  if (!sessionInvited(session)) return null;
-  const workspaceId = await workspaceIdForSession(session);
-  if (!workspaceId) return null;
-  return { session, workspaceId };
+  return workspaceActor(await auth());
 }
 
 export async function grantAccess(_previous, formData) {

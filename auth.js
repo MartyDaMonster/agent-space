@@ -34,12 +34,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         githubIds: process.env.ALLOWED_GITHUB_IDS
       });
       const jar = await cookies();
+      const returnPath = jar.get("__Secure-authjs.callback-url")?.value
+        || jar.get("authjs.callback-url")?.value
+        || "";
       const decision = provider === "github" || allowed
         ? await authorizeGithubSignIn({
           email,
           githubLogin,
           githubId,
           cookieValue: jar.get(INVITE_COOKIE)?.value || "",
+          returnPath,
           allowed
         })
         : { ok: false };
