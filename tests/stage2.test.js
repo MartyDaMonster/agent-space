@@ -97,6 +97,8 @@ test("preview deploys do not apply schema changes", () => {
   assert.match(intro, />Next</);
   assert.match(intro, />Skip</);
   assert.match(github, /Connect GitHub/);
+  assert.match(github, /botomatic-B-app-icon-colour-on-black\.svg/);
+  assert.match(github, /alt="Botomatic"/);
   assert.match(github, /githubAppConfigured/);
   assert.match(github, /Creating the private repo is skipped for now/);
   assert.doesNotMatch(github, /if \(!bound\.ok\) notFound/);
