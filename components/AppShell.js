@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { signOutAction } from "@/app/actions";
+import { signOutAction, signOutEverywhereAction } from "@/app/actions";
 import { Wordmark } from "./Wordmark";
 import { Person } from "./Person";
 import { PageFade } from "./PageFade";
@@ -38,6 +38,9 @@ export function AppShell({ name, image, projects = [], activePath = "", showAdmi
       <AccountLinks showAdmin={showAdmin} pathname={pathname} />
       <form action={signOutAction}>
         <button type="submit">Sign out</button>
+      </form>
+      <form action={signOutEverywhereAction}>
+        <button type="submit">Sign out of all devices</button>
       </form>
     </>
   );

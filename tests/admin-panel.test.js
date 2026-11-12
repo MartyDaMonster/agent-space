@@ -15,7 +15,13 @@ const statements = readFileSync(new URL("../scripts/migrate.sql", import.meta.ur
   .map((statement) => statement.trim())
   .filter((statement) => statement && !statement.startsWith("--"));
 
-const martin = { user: { email: "marty.hungerford3181@gmail.com", githubLogin: "MartyDaMonster" } };
+const martin = {
+  user: {
+    email: "marty.hungerford3181@gmail.com",
+    githubLogin: "MartyDaMonster",
+    authAt: Math.floor(Date.now() / 1000)
+  }
+};
 const ada = { user: { email: "ada@example.com", githubLogin: "ada" } };
 
 async function resetDatabase() {

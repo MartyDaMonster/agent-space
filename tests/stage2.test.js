@@ -145,8 +145,13 @@ test("preview deploys do not apply schema changes", () => {
   const callback = readFileSync(new URL("../app/api/github/callback/route.js", import.meta.url), "utf8");
   assert.doesNotMatch(start, /repo=waiting/);
   assert.doesNotMatch(callback, /repo=waiting/);
-  assert.match(start, /\/bots/);
-  assert.match(callback, /\/bots/);
+  assert.doesNotMatch(start, /ensureChosenAssistants/);
+  assert.doesNotMatch(callback, /ensureChosenAssistants/);
+  assert.doesNotMatch(github, /ensureChosenAssistants/);
+  assert.match(start, /ADD_BOT_PATH/);
+  assert.match(callback, /ADD_BOT_PATH/);
+  assert.doesNotMatch(start, /\/bots/);
+  assert.doesNotMatch(callback, /\/bots/);
   assert.doesNotMatch(start, /NextResponse\.json/);
   assert.doesNotMatch(callback, /NextResponse\.json/);
   const welcome = readFileSync(new URL("../app/join/[inviteId]/page.js", import.meta.url), "utf8");
