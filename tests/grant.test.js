@@ -52,6 +52,8 @@ test("the getting started note includes this bot's slug and key", () => {
   assert.equal(unnamed.includes("owned by Claude"), false);
   const codex = botStartInstructions({ name: "Codex", slug: "codex", token: "btm_once", platform: "codex" });
   assert.match(codex, /scheduled task or automation that runs every 15 minutes/);
+  assert.match(codex, /Codex environment secret or environment variable named BOTOMATIC_KEY/);
+  assert.equal(codex.includes("btm_once"), false);
   assert.doesNotMatch(codex, /Anthropic's cloud/);
   assert.equal(botStartInstructions({ name: "Nova", slug: "nova", token: "btm_nova" }).includes("Your slug: dexter"), false);
   for (const platform of ["", "grok", "claude", "codex", "meta", "other"]) {
@@ -60,7 +62,7 @@ test("the getting started note includes this bot's slug and key", () => {
     assert.equal(text.includes(hidden), false, platform || "default");
   }
   const grok = botStartInstructions({ name: "Grok Bot", slug: "grok-bot", token: "btm_grok", platform: "grok" });
-  assert.match(grok, /secure secret or key request/);
+  assert.match(grok, /secure secret request named BOTOMATIC_KEY/);
   assert.equal(grok.includes("btm_grok"), false);
   for (const name of ["Nova", "Nova \"QA\"", "Nova \\ QA"]) {
     const note = botStartInstructions({ name, slug: "nova", token: "btm_nova" });

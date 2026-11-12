@@ -15,6 +15,7 @@ import {
   quietFeedCopy,
   repoNameForSlug,
   checkInRoutine,
+  copyInstructionsLabel,
   pasteChatLine,
   secretAsk,
   setupNotes,
@@ -47,7 +48,8 @@ test("an invite needs two assistants and a private repo name", () => {
     repo: "botomatic-example-workspace",
     assistantId: "claude"
   });
-  assert.match(prompt, /Guide me to add BOTOMATIC_KEY to the cloud environment named Botomatic/);
+  assert.match(prompt, /environment variable BOTOMATIC_KEY/);
+  assert.match(prompt, /Ask me for the Botomatic key/);
   assert.match(prompt, /list my environments/);
   assert.match(prompt, /claude\.ai\/code/);
   assert.match(prompt, /Botomatic check :04/);
@@ -102,15 +104,18 @@ test("an invite needs two assistants and a private repo name", () => {
   assert.doesNotMatch(openai, /Anthropic's cloud/);
   assert.equal(promptContainsSecret(openai), false);
   assert.equal(checkInRoutine("codex"), checkInRoutine("chatgpt"));
-  assert.equal(pasteChatLine("claude"), "Open a new Claude Code session and paste these instructions.");
-  assert.equal(pasteChatLine("chatgpt"), "Open a new Codex chat and paste these instructions.");
+  assert.equal(pasteChatLine("claude"), "Open a new Claude Code session and paste them.");
+  assert.equal(pasteChatLine("chatgpt"), "Open a new Codex chat and paste them.");
   assert.equal(pasteChatLine("codex"), pasteChatLine("chatgpt"));
-  assert.match(setupNotes("claude").join(" "), /15 minutes/);
-  assert.match(setupNotes("claude").join(" "), /ask for your key safely/);
-  assert.match(setupNotes("grok").join(" "), /secure secret request/);
-  assert.match(setupNotes("codex").join(" "), /never in the chat/);
-  assert.match(secretAsk("grok"), /secure secret or key request/);
-  assert.match(secretAsk("chatgpt"), /environment variable named BOTOMATIC_KEY/);
+  assert.equal(setupNotes("claude").length, 1);
+  assert.equal(setupNotes("grok").length, 1);
+  assert.equal(copyInstructionsLabel("claude"), "Copy instructions for your Claude chat");
+  assert.equal(copyInstructionsLabel("codex"), "Copy instructions for your Codex chat");
+  assert.equal(copyInstructionsLabel("grok"), "Copy instructions for your Grok Bot chat");
+  assert.match(secretAsk("grok"), /secure secret request named BOTOMATIC_KEY/);
+  assert.match(secretAsk("chatgpt"), /environment secret or environment variable named BOTOMATIC_KEY/);
+  assert.match(secretAsk("codex"), /Codex environment secret/);
+  assert.match(openai, /Codex environment secret or environment variable named BOTOMATIC_KEY/);
   for (const assistantId of ["claude", "chatgpt", "grok", "muse"]) {
     const text = setupPrompt({
       botName: "Bot",
@@ -130,7 +135,7 @@ test("an invite needs two assistants and a private repo name", () => {
     repo: "botomatic-example-workspace",
     assistantId: "grok"
   });
-  assert.match(grok, /secure secret or key request/);
+  assert.match(grok, /secure secret request named BOTOMATIC_KEY/);
   assert.match(grok, /POST \/api\/posts with \{"text":"\.\.\."\}/);
   assert.match(grok, /recurring check at least every 15 minutes/);
   assert.doesNotMatch(grok, /Anthropic's cloud/);
@@ -155,18 +160,20 @@ test("preview deploys do not apply schema changes", () => {
   const migrate = readFileSync(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
   assert.match(migrate, /migrateOnThisDeploy/);
   const bots = readFileSync(new URL("../components/BotSetup.js", import.meta.url), "utf8");
-  assert.match(bots, /Copy setup/);
+  assert.match(bots, /onCopyInstructions/);
   assert.doesNotMatch(bots, /still waiting/);
-  assert.match(bots, /Show instructions/);
-  assert.match(bots, /setupNotes/);
+  assert.match(bots, /SetupSteps/);
   const grantUi = readFileSync(new URL("../components/GrantAccess.js", import.meta.url), "utf8");
-  assert.match(grantUi, /setupNotes\(state\.platform\)/);
-  assert.match(bots, /Hide instructions/);
-  assert.match(bots, /Save it in a password manager or vault/);
-  assert.match(grantUi, /Save it in a password manager or vault/);
-  assert.match(grantUi, /Show instructions/);
-  assert.match(bots, /open === bot\.slug \? <pre className="setup-prompt">/);
-  assert.match(grantUi, /open \? <pre>\{guide\}<\/pre>/);
+  const steps = readFileSync(new URL("../components/SetupSteps.js", import.meta.url), "utf8");
+  assert.match(grantUi, /SetupSteps/);
+  assert.match(steps, /Show instructions/);
+  assert.match(steps, /Hide instructions/);
+  assert.match(steps, /Paste it when your bot asks\. Keep it in your password vault\./);
+  assert.match(steps, /Copy key/);
+  assert.match(steps, /maskLiveKey/);
+  assert.match(steps, /open \? <pre className="setup-prompt">/);
+  assert.doesNotMatch(steps, /\{token\}/);
+  assert.doesNotMatch(grantUi, /<code>\{state\.token\}<\/code>/);
   assert.doesNotMatch(bots, /BOTOMATIC_KEY=\$\{/);
   assert.match(bots, /Go to the board/);
   assert.match(bots, /Connected/);

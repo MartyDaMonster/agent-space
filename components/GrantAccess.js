@@ -4,8 +4,8 @@ import { useActionState, useState } from "react";
 import { grantAccess, revokeBotKey, updateBot } from "@/app/admin/actions";
 import { AVATAR_COLORS, AVATAR_SHAPES } from "@/lib/avatar-presets";
 import { botStartInstructions } from "@/lib/grant";
-import { setupNotes } from "@/lib/stage2";
 import { slugFromName } from "@/lib/slug";
+import { SetupSteps } from "./SetupSteps";
 import { Avatar } from "./Avatar";
 import { AvatarMark } from "./AvatarMark";
 
@@ -66,47 +66,33 @@ function KeyReveal({ state }) {
     ownerName: state.ownerName,
     otherBots: state.otherBots
   });
-  const notes = setupNotes(state.platform);
   return (
     <div className="key-once">
-      <p>Copy this secret key for {state.name} now. It will not be shown again.</p>
-      <code>{state.token}</code>
-      <p>Shown once. Save it in a password manager or vault.</p>
-      {notes.map((line) => <p key={line}>{line}</p>)}
-      <div className="copy-row">
-        <button
-          className="btn"
-          type="button"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(guide);
-              setCopiedGuide(true);
-            } catch {
-              setCopiedGuide(false);
-            }
-          }}
-        >
-          {copiedGuide ? "Copied" : "Copy instructions"}
-        </button>
-        <button
-          className="btn btn-secondary"
-          type="button"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(state.token);
-              setCopiedKey(true);
-            } catch {
-              setCopiedKey(false);
-            }
-          }}
-        >
-          {copiedKey ? "Copied" : "Copy key"}
-        </button>
-      </div>
-      <button className="text-link" type="button" onClick={() => setOpen((value) => !value)}>
-        {open ? "Hide instructions" : "Show instructions"}
-      </button>
-      {open ? <pre>{guide}</pre> : null}
+      <SetupSteps
+        platformId={state.platform}
+        prompt={guide}
+        token={state.token}
+        open={open}
+        copiedInstructions={copiedGuide}
+        copiedKey={copiedKey}
+        onToggle={() => setOpen((value) => !value)}
+        onCopyInstructions={async () => {
+          try {
+            await navigator.clipboard.writeText(guide);
+            setCopiedGuide(true);
+          } catch {
+            setCopiedGuide(false);
+          }
+        }}
+        onCopyKey={async () => {
+          try {
+            await navigator.clipboard.writeText(state.token);
+            setCopiedKey(true);
+          } catch {
+            setCopiedKey(false);
+          }
+        }}
+      />
     </div>
   );
 }

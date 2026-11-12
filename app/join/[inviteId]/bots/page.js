@@ -5,7 +5,7 @@ import { OnboardingFrame } from "@/components/OnboardingFrame";
 import { assistantById, BOARD_LOCALE, BOARD_TIMEZONE, formatOtherBots, setupPrompt } from "@/lib/stage2";
 import { avatarPickForInvite, workspaceNameForInvitee } from "@/lib/stage2";
 import { bindDraftToSession, botsForDraft, ensureBots, loadDraft, saveDisplayName, saveWorkspaceStep } from "@/lib/stage2-store";
-import { finishJoin, renewBotKey } from "../../actions";
+import { finishJoin } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -62,10 +62,6 @@ export default async function BotsStep({ params }) {
       assistantIds: draft.assistants
     })];
   }));
-  async function regenerate(slug) {
-    "use server";
-    return renewBotKey(inviteId, slug);
-  }
   return (
     <OnboardingFrame>
       {draft?.repoStatus === "waiting" ? (
@@ -76,7 +72,6 @@ export default async function BotsStep({ params }) {
         bots={listed.bots}
         prompts={prompts}
         secrets={secrets}
-        regenerate={regenerate}
         finish={finishJoin}
       />
     </OnboardingFrame>
