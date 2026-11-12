@@ -2630,7 +2630,14 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .onboard-card .bot-setup h2 { margin: 0 0 8px; }
 .onboard-card .secret-note { margin: 8px 0 0; font-size: 13px; }
 .onboard-card .bot-setup .text-link { display: inline-block; margin-top: 10px; }
+.key-once { scroll-margin-top: 72px; }
+.setup-platforms { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; margin: 14px 0 4px; }
+.setup-platforms .btn { width: auto; flex: 1 1 120px; min-width: 0; }
 .setup-steps { display: grid; gap: 18px; width: 100%; min-width: 0; margin-top: 12px; }
+@media (max-width: 520px) {
+  .setup-platforms .btn { flex-basis: 100%; }
+  .setup-step .secret-note { text-align: left; }
+}
 .setup-step { display: grid; gap: 8px; justify-items: center; width: 100%; min-width: 0; }
 .setup-step .onboard-label { margin: 0; }
 .setup-step .secret-note { margin: 0; max-width: 26rem; }

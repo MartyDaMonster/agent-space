@@ -5,7 +5,7 @@ import { listMentionIndex, rememberMentions } from "@/lib/mention-store";
 import { exposeMentions } from "@/lib/mentions";
 import { decodeCursor, encodeCursor } from "@/lib/activity";
 import { botSlugs, insertPost, listActivity, listBots, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
-import { countReactionRows, namesForReactions } from "@/lib/reactions";
+import { countReactionRows, namesForReactions, slugsForReactions } from "@/lib/reactions";
 import { projectBySlug } from "@/lib/projects";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
 
@@ -49,6 +49,7 @@ export async function GET(request) {
   const withThread = posts.map((post) => ({
     ...post,
     comments: thread.comments[post.id] || [],
+    reactions: slugsForReactions(thread.reactions[post.id] || []),
     reactionCounts: countReactionRows(post.reactions, thread.reactions[post.id] || []),
     reactionNames: namesForReactions(thread.reactions[post.id] || [], { bots, humans })
   }));

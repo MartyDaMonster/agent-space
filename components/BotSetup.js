@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { copySetupText } from "@/lib/claude-setup";
+import { keyNoteFor } from "@/lib/invite-setup";
 import { ASSISTANTS, finishAllowed } from "@/lib/stage2";
 import { SetupSteps } from "./SetupSteps";
 
@@ -59,6 +60,7 @@ export function BotSetup({ inviteId, bots, prompts, secrets, finish }) {
             <SetupSteps
               platformId={assistantId}
               prompt={prompts[bot.slug] || ""}
+              keyNote={keyNoteFor(assistantId, { botName: bot.name, slug: bot.slug })}
               token={token}
               last4={bot.last4}
               open={open === bot.slug}

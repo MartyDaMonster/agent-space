@@ -2,11 +2,10 @@
 
 import { copyInstructionsLabel, maskLiveKey, setupNotes } from "@/lib/stage2";
 
-const KEY_NOTE = "Paste it when your bot asks. Keep it in your password vault.";
-
 export function SetupSteps({
   platformId,
   prompt,
+  keyNote = "",
   token = "",
   last4 = "",
   open = false,
@@ -18,6 +17,7 @@ export function SetupSteps({
 }) {
   const line = setupNotes(platformId)[0] || "";
   const tail = String(last4 || token || "").slice(-4);
+  const note = keyNote || "Paste it when your bot asks. Keep it in your password vault.";
   return (
     <div className="setup-steps">
       <section className="setup-step">
@@ -41,7 +41,7 @@ export function SetupSteps({
         <button className="btn btn-secondary" type="button" onClick={onCopyKey} disabled={!token}>
           {copiedKey ? "Copied" : "Copy key"}
         </button>
-        <p className="secret-note">{KEY_NOTE}</p>
+        <p className="secret-note">{note}</p>
         <p className="setup-mask">{maskLiveKey(tail)}</p>
       </section>
     </div>

@@ -48,29 +48,19 @@ test("an invite needs two assistants and a private repo name", () => {
     repo: "botomatic-example-workspace",
     assistantId: "claude"
   });
-  assert.match(prompt, /environment variable BOTOMATIC_KEY/);
-  assert.match(prompt, /Ask me for the Botomatic key/);
-  assert.match(prompt, /list my environments/);
-  assert.match(prompt, /claude\.ai\/code/);
-  assert.match(prompt, /Botomatic check :04/);
-  assert.match(prompt, /Botomatic check :19/);
-  assert.match(prompt, /Botomatic check :34/);
-  assert.match(prompt, /Botomatic check :49/);
-  assert.match(prompt, /Check the board at least every 15 minutes/);
-  assert.match(prompt, /Reply when someone hands you work on this board/);
-  assert.match(prompt, /Set up your check-in routine:/);
-  assert.match(prompt, /cloud-based scheduled task/);
-  assert.match(prompt, /Anthropic's cloud, not this computer/);
-  assert.match(prompt, /never in the prompt text/);
-  assert.match(prompt, /Confirm both are on by posting a short check-in/);
+  assert.match(prompt, /BOTOMATIC_KEY_CLAUDE/);
+  assert.match(prompt, /Never ask me to paste a key into this chat/);
+  assert.match(prompt, /List my cloud environments/);
+  assert.match(prompt, /claude\.ai\/code\/routines/);
+  assert.match(prompt, /04, 19, 34, 49/);
+  assert.match(prompt, /Opus 5\.5/);
   assert.doesNotMatch(prompt, /Martin/);
-  assert.match(prompt, /Needs an Anthropic account/);
   assert.equal(promptContainsSecret(prompt), false);
   assert.equal(prompt.includes("bmk_live_"), false);
-  assert.doesNotMatch(prompt, /\{\{[A-Z_]+\}\}/);
-  assert.match(prompt, /environment called "Botomatic"/);
+  assert.doesNotMatch(prompt, /\{\{/);
+  assert.match(prompt, /"Botomatic Claude"/);
   assert.match(prompt, /claude-haiku-5-5/);
-  assert.match(prompt, /model "sonnet"/);
+  assert.match(prompt, /model "opus"/);
   const filled = setupPrompt({
     botName: "Claude",
     workspaceName: "Ada's workspace",
@@ -99,10 +89,13 @@ test("an invite needs two assistants and a private repo name", () => {
     repo: "botomatic-example-workspace",
     assistantId: "chatgpt"
   });
-  assert.match(openai, /scheduled task or automation that runs every 15 minutes/);
-  assert.match(openai, /posting a short check-in on the board/);
+  assert.match(openai, /Luna, low reasoning/);
+  assert.match(openai, /Sol, medium reasoning/);
+  assert.match(openai, /Keychain/);
+  assert.match(openai, /GET \/api\/posts\?cursor=/);
   assert.doesNotMatch(openai, /Anthropic's cloud/);
   assert.equal(promptContainsSecret(openai), false);
+  assert.doesNotMatch(openai, /\{\{/);
   assert.equal(checkInRoutine("codex"), checkInRoutine("chatgpt"));
   assert.equal(pasteChatLine("claude"), "Open a new Claude Code session and paste them.");
   assert.equal(pasteChatLine("chatgpt"), "Open a new Codex chat and paste them.");
@@ -115,7 +108,7 @@ test("an invite needs two assistants and a private repo name", () => {
   assert.match(secretAsk("grok"), /secure secret request named BOTOMATIC_KEY/);
   assert.match(secretAsk("chatgpt"), /environment secret or environment variable named BOTOMATIC_KEY/);
   assert.match(secretAsk("codex"), /Codex environment secret/);
-  assert.match(openai, /Codex environment secret or environment variable named BOTOMATIC_KEY/);
+  assert.doesNotMatch(openai, /Codex environment secret/);
   for (const assistantId of ["claude", "chatgpt", "grok", "muse"]) {
     const text = setupPrompt({
       botName: "Bot",
@@ -169,6 +162,7 @@ test("preview deploys do not apply schema changes", () => {
   assert.match(steps, /Show instructions/);
   assert.match(steps, /Hide instructions/);
   assert.match(steps, /Paste it when your bot asks\. Keep it in your password vault\./);
+  assert.match(steps, /open = false/);
   assert.match(steps, /Copy key/);
   assert.match(steps, /maskLiveKey/);
   assert.match(steps, /open \? <pre className="setup-prompt">/);

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { grantAccess, revokeBotKey, updateBot } from "@/app/admin/actions";
 import { AVATAR_COLORS, AVATAR_SHAPES } from "@/lib/avatar-presets";
 import { botStartInstructions } from "@/lib/grant";
+import { INVITE_PLATFORMS, keyNoteFor } from "@/lib/invite-setup";
 import { slugFromName } from "@/lib/slug";
 import { SetupSteps } from "./SetupSteps";
 import { Avatar } from "./Avatar";
@@ -57,20 +58,41 @@ function KeyReveal({ state }) {
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedGuide, setCopiedGuide] = useState(false);
   const [open, setOpen] = useState(false);
+  const initial = INVITE_PLATFORMS.some((item) => item.id === state?.platform) ? state.platform : "claude";
+  const [platform, setPlatform] = useState(initial);
   if (!state?.token) return null;
-  const guide = botStartInstructions({
+  const guide = state.prompts?.[platform] || botStartInstructions({
     name: state.name,
     slug: state.slug,
-    token: state.token,
-    platform: state.platform,
+    token: "",
+    platform,
     ownerName: state.ownerName,
     otherBots: state.otherBots
   });
+  const keyNote = state.keyNotes?.[platform] || keyNoteFor(platform, { botName: state.name, slug: state.slug });
   return (
     <div className="key-once">
+      <div className="setup-platforms" role="radiogroup" aria-label="Platform">
+        {INVITE_PLATFORMS.map((item) => (
+          <button
+            key={item.id}
+            className={platform === item.id ? "btn" : "btn btn-secondary"}
+            type="button"
+            aria-pressed={platform === item.id}
+            onClick={() => {
+              setPlatform(item.id);
+              setOpen(false);
+              setCopiedGuide(false);
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
       <SetupSteps
-        platformId={state.platform}
+        platformId={platform}
         prompt={guide}
+        keyNote={keyNote}
         token={state.token}
         open={open}
         copiedInstructions={copiedGuide}
@@ -151,6 +173,7 @@ function revokeButton(row, embedded) {
 }
 
 export function GrantAccess({ platforms, access, lead = true, roster = true, embedded = false }) {
+  void platforms;
   const [state, action, pending] = useActionState(grantAccess, null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -202,8 +225,8 @@ export function GrantAccess({ platforms, access, lead = true, roster = true, emb
           </details>
           <label className="field">
             Platform
-            <select name="platform" required defaultValue="grok">
-              {platforms.map((platform) => (
+            <select name="platform" required defaultValue="claude">
+              {INVITE_PLATFORMS.map((platform) => (
                 <option key={platform.id} value={platform.id}>{platform.label}</option>
               ))}
             </select>
