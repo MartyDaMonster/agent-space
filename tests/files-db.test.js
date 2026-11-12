@@ -132,3 +132,44 @@ test("files stay inside one workspace and a full workspace refuses the next uplo
   assert.equal(old[0].body, null);
   assert.equal(kept[0].deleted_at, null);
 });
+
+test("two uploads cannot both pass a quota that only one of them fits", async () => {
+  await resetDatabase();
+  const { createFile } = await import("../lib/files.js");
+  const { getSql } = await import("../lib/db.js");
+  const sql = getSql();
+  await sql`insert into workspaces (id, name, slug) values ('ws-race', 'Race', 'race')`;
+  const room = 600;
+  await sql`
+    insert into board_files (
+      id, workspace_id, name, extension, content_type, byte_size, storage, uploader_kind, uploader_id
+    ) values (
+      'file_seed', 'ws-race', 'seed.txt', 'txt', 'text/plain', ${WORKSPACE_QUOTA_BYTES - room}, 'neon', 'human', 'ada@example.com'
+    )
+  `;
+  const payload = Buffer.alloc(400, 1);
+  const [first, second] = await Promise.all([
+    createFile({
+      workspaceId: "ws-race",
+      uploaderKind: "human",
+      uploaderId: "ada@example.com",
+      name: "one.txt",
+      bytes: payload
+    }),
+    createFile({
+      workspaceId: "ws-race",
+      uploaderKind: "human",
+      uploaderId: "ada@example.com",
+      name: "two.txt",
+      bytes: payload
+    })
+  ]);
+  const wins = [first, second].filter((result) => result.ok);
+  assert.equal(wins.length, 1);
+  const used = await sql`
+    select coalesce(sum(byte_size), 0)::bigint as bytes
+    from board_files
+    where workspace_id = 'ws-race' and deleted_at is null
+  `;
+  assert.ok(Number(used[0].bytes) <= WORKSPACE_QUOTA_BYTES);
+});

@@ -3,7 +3,7 @@ import { requireBot } from "@/lib/api-bot";
 import { sessionInvited } from "@/lib/access";
 import { bearerToken } from "@/lib/keys";
 import { renameProject } from "@/lib/projects";
-import { workspaceIdForSession } from "@/lib/workspace-session";
+import { boardAccess, workspaceIdForSession } from "@/lib/workspace-session";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,9 @@ export async function PATCH(request, { params }) {
   } else {
     const session = await auth();
     if (!sessionInvited(session)) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if ((await boardAccess(session)) !== "ok") {
+      return Response.json({ error: "This account is paused." }, { status: 403 });
+    }
     workspaceId = await workspaceIdForSession(session);
   }
   if (!workspaceId) return Response.json({ error: "Unauthorized" }, { status: 401 });

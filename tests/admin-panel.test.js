@@ -56,7 +56,7 @@ test("suspension blocks the session and the bot key without touching another wor
   const { getSql } = await import("../lib/db.js");
   const { insertPost } = await import("../lib/posts.js");
   const { botFromAuthorization } = await import("../lib/bot-auth.js");
-  const { boardAccess } = await import("../lib/workspace-session.js");
+  const { boardAccess, writeActor } = await import("../lib/workspace-session.js");
   const { setSuspension, listPeople, revokeAdminKey } = await import("../lib/admin-store.js");
   const sql = getSql();
   await sql`insert into workspaces (id, name, slug) values ('ws-ada', 'Ada', 'ada')`;
@@ -88,6 +88,17 @@ test("suspension blocks the session and the bot key without touching another wor
   const before = await botFromAuthorization(`Bearer ${adaToken}`);
   assert.equal(before.slug, "claude");
   assert.equal(await boardAccess(ada), "ok");
+  await sql`
+    insert into workspace_members (workspace_id, email, github_login, role, suspended_at)
+    values ('ws-ada', 'sam@example.com', 'sam', 'member', now())
+  `;
+  const sam = { user: { email: "sam@example.com", githubLogin: "sam" } };
+  assert.equal(await boardAccess(sam), "paused");
+  assert.equal(await boardAccess(ada), "ok");
+  assert.equal((await botFromAuthorization(`Bearer ${adaToken}`)).slug, "claude");
+  assert.equal((await writeActor(sam)).ok, false);
+  assert.equal((await writeActor(sam)).error, "This account is paused.");
+  assert.equal((await writeActor(ada)).ok, true);
   const paused = await setSuspension(martin, { workspaceId: "ws-ada", scope: "workspace" });
   assert.equal(paused.ok, true);
   assert.equal(await botFromAuthorization(`Bearer ${adaToken}`), null);
