@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { newInviteId } from "@/lib/ids";
 import { sessionInvited } from "@/lib/access";
 import { insertInvite, listInvites } from "@/lib/invites";
+import { rejectCookieCrossOrigin, rejectInviteRate } from "@/lib/request-guard";
 import { authorizeInviteCreate } from "@/lib/workspace";
 import { workspaceRole } from "@/lib/workspace-session";
 
@@ -12,7 +13,7 @@ async function ownerSession(workspaceId) {
   if (!sessionInvited(session)) return { error: Response.json({ error: "Unauthorized" }, { status: 401 }) };
   const role = await workspaceRole(session, workspaceId);
   const allowed = authorizeInviteCreate({ actorWorkspace: workspaceId, actorRole: role, workspaceId });
-  if (!allowed.ok) return { error: Response.json({ error: "Forbidden" }, { status: allowed.status }) };
+  if (!allowed.ok) return { error: Response.json({ error: "Not found." }, { status: 404 }) };
   return { session };
 }
 
@@ -25,9 +26,13 @@ export async function GET(_request, { params }) {
 }
 
 export async function POST(request, { params }) {
+  const blocked = rejectCookieCrossOrigin(request);
+  if (blocked) return blocked;
   const { id } = await params;
   const actor = await ownerSession(id);
   if (actor.error) return actor.error;
+  const limited = rejectInviteRate(actor.session);
+  if (limited) return limited;
   let body;
   try {
     body = await request.json();

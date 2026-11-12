@@ -1,9 +1,12 @@
 import { auth } from "@/auth";
+import { rejectCookieCrossOrigin } from "@/lib/request-guard";
 import { saveWorkspaceStep } from "@/lib/stage2-store";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request, { params }) {
+  const blocked = rejectCookieCrossOrigin(request);
+  if (blocked) return blocked;
   const { inviteId } = await params;
   const session = await auth();
   let body;

@@ -309,27 +309,34 @@ test("routes cannot read, rename, comment, or notify across workspaces", async (
     const adaCookieEarly = await sessionCookie("ada@example.com", "Ada");
     const martinCookieEarly = await sessionCookie("marty.hungerford3181@gmail.com", "Martin");
     const eveCookieEarly = await sessionCookie("eve@example.com", "Eve");
+    const sameOrigin = { origin: "http://127.0.0.1:3111", "content-type": "application/json" };
     const adaRenamesMartin = await fetch("http://127.0.0.1:3111/api/projects/martin-project", {
       method: "PATCH",
-      headers: { cookie: adaCookieEarly, "content-type": "application/json" },
+      headers: { cookie: adaCookieEarly, ...sameOrigin },
       body: JSON.stringify({ name: "Stolen by Ada" })
     });
     assert.equal(adaRenamesMartin.status, 404);
     const martinRenamesAda = await fetch("http://127.0.0.1:3111/api/projects/ada-project", {
       method: "PATCH",
-      headers: { cookie: martinCookieEarly, "content-type": "application/json" },
+      headers: { cookie: martinCookieEarly, ...sameOrigin },
       body: JSON.stringify({ name: "Stolen by Martin" })
     });
     assert.equal(martinRenamesAda.status, 404);
     const eveRenames = await fetch("http://127.0.0.1:3111/api/projects/martin-project", {
       method: "PATCH",
-      headers: { cookie: eveCookieEarly, "content-type": "application/json" },
+      headers: { cookie: eveCookieEarly, ...sameOrigin },
       body: JSON.stringify({ name: "Stolen by Eve" })
     });
     assert.equal(eveRenames.status, 401);
-    const adaRenamesOwn = await fetch("http://127.0.0.1:3111/api/projects/ada-project", {
+    const adaNoOrigin = await fetch("http://127.0.0.1:3111/api/projects/ada-project", {
       method: "PATCH",
       headers: { cookie: adaCookieEarly, "content-type": "application/json" },
+      body: JSON.stringify({ name: "No origin" })
+    });
+    assert.equal(adaNoOrigin.status, 403);
+    const adaRenamesOwn = await fetch("http://127.0.0.1:3111/api/projects/ada-project", {
+      method: "PATCH",
+      headers: { cookie: adaCookieEarly, ...sameOrigin },
       body: JSON.stringify({ name: "Ada Named" })
     });
     assert.equal(adaRenamesOwn.status, 200);
@@ -352,13 +359,13 @@ test("routes cannot read, rename, comment, or notify across workspaces", async (
     const martinCookie = await sessionCookie("marty.hungerford3181@gmail.com", "Martin");
     const created = await fetch("http://127.0.0.1:3111/api/workspaces/ws-ada/invites", {
       method: "POST",
-      headers: { cookie: martinCookie, "content-type": "application/json" },
+      headers: { cookie: martinCookie, origin: "http://127.0.0.1:3111", "content-type": "application/json" },
       body: JSON.stringify({ email: "ada@example.com" })
     });
-    assert.equal(created.status, 403);
+    assert.equal(created.status, 404);
     const ownerCreated = await fetch("http://127.0.0.1:3111/api/workspaces/ws-martin/invites", {
       method: "POST",
-      headers: { cookie: martinCookie, "content-type": "application/json" },
+      headers: { cookie: martinCookie, origin: "http://127.0.0.1:3111", "content-type": "application/json" },
       body: JSON.stringify({ email: "ada@example.com" })
     });
     const ownerBody = await ownerCreated.json();

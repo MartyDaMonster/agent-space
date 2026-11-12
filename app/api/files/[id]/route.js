@@ -1,5 +1,7 @@
 import { fileActor } from "@/lib/file-actor";
+import { contentDisposition } from "@/lib/file-rules";
 import { deleteOwnFile, readFile } from "@/lib/files";
+import { rejectCookieCrossOrigin } from "@/lib/request-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +21,18 @@ export async function GET(request, { params }) {
   const headers = {
     ...PRIVATE,
     "Content-Type": loaded.file.content_type || "application/octet-stream",
-    "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${downloadName(loaded.file.name)}"`,
+    "Content-Disposition": contentDisposition(loaded.file.content_type, {
+      download,
+      name: downloadName(loaded.file.name)
+    }),
     "X-Content-Type-Options": "nosniff"
   };
   return new Response(loaded.bytes, { headers });
 }
 
 export async function DELETE(request, { params }) {
+  const blocked = rejectCookieCrossOrigin(request);
+  if (blocked) return blocked;
   const actor = await fileActor(request);
   if (actor.error) return actor.error;
   const { id } = await params;

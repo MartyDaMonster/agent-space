@@ -1,5 +1,6 @@
 import { fileActor, uploadBytes } from "@/lib/file-actor";
 import { createFile, workspaceUsage } from "@/lib/files";
+import { rejectCookieCrossOrigin, rejectHumanUploadRate } from "@/lib/request-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +14,12 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const blocked = rejectCookieCrossOrigin(request);
+  if (blocked) return blocked;
   const actor = await fileActor(request);
   if (actor.error) return actor.error;
+  const limited = rejectHumanUploadRate(actor);
+  if (limited) return limited;
   const upload = await uploadBytes(request);
   if (!upload.ok) return Response.json({ error: upload.error }, { status: upload.status, headers: PRIVATE });
   const saved = await createFile({

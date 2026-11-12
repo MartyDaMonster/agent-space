@@ -3,6 +3,7 @@ import { requireBot } from "@/lib/api-bot";
 import { sessionInvited } from "@/lib/access";
 import { bearerToken } from "@/lib/keys";
 import { renameProject } from "@/lib/projects";
+import { rejectCookieCrossOrigin } from "@/lib/request-guard";
 import { workspaceIdForSession } from "@/lib/workspace-session";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,8 @@ export async function PATCH(request, { params }) {
     if (authResult.error) return authResult.error;
     workspaceId = authResult.bot.workspaceId;
   } else {
+    const blocked = rejectCookieCrossOrigin(request);
+    if (blocked) return blocked;
     const session = await auth();
     if (!sessionInvited(session)) return Response.json({ error: "Unauthorized" }, { status: 401 });
     workspaceId = await workspaceIdForSession(session);

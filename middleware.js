@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { decideAccess, hasAuthCookie } from "./lib/access.js";
+import { contentSecurityPolicy } from "./lib/csp.js";
 import { allowRate } from "./lib/request-limit.js";
 
 export default function middleware(req) {
@@ -18,10 +19,19 @@ export default function middleware(req) {
     }
   }
   if (decision.ok) {
+    const nonce = btoa(crypto.randomUUID());
+    const policy = contentSecurityPolicy({
+      nonce,
+      secure: req.nextUrl.protocol === "https:"
+    });
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-botomatic-path", req.nextUrl.pathname);
+    requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("content-security-policy", policy);
     if (req.nextUrl.pathname.startsWith("/join")) requestHeaders.set("x-botomatic-chrome", "onboard");
-    return NextResponse.next({ request: { headers: requestHeaders } });
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    response.headers.set("Content-Security-Policy", policy);
+    return response;
   }
   if (decision.status) {
     return Response.json({ error: "Unauthorized" }, { status: decision.status });
