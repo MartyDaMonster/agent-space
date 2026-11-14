@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ASSISTANTS, finishAllowed, maskLiveKey, pasteChatLine } from "@/lib/stage2";
+import { copySetupText } from "@/lib/claude-setup";
+import { keyNoteFor } from "@/lib/invite-setup";
+import { ASSISTANTS, finishAllowed } from "@/lib/stage2";
+import { SetupSteps } from "./SetupSteps";
 
-export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish }) {
+export function BotSetup({ inviteId, bots, prompts, secrets, finish }) {
   const [open, setOpen] = useState("");
+  const [copied, setCopied] = useState("");
   const [rows, setRows] = useState(bots);
   const [shown, setShown] = useState(secrets || {});
   const allowed = finishAllowed(rows);
@@ -32,50 +36,40 @@ export function BotSetup({ inviteId, bots, prompts, secrets, regenerate, finish 
     };
   }, [inviteId]);
   async function copyPrompt(slug) {
-    const prompt = prompts[slug] || "";
-    const token = shown[slug];
-    const text = token ? `${prompt}\n\nBOTOMATIC_KEY=${token}` : prompt;
-    if (text) await navigator.clipboard.writeText(text);
+    const text = copySetupText({ prompt: prompts[slug] || "" });
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+    setCopied(`${slug}:instructions`);
   }
   async function copySecret(slug) {
     const token = shown[slug];
-    if (token) await navigator.clipboard.writeText(token);
-  }
-  async function renew(slug) {
-    const next = await regenerate(slug);
-    if (!next?.token) return;
-    setShown((current) => ({ ...current, [slug]: next.token }));
-    setRows((current) => current.map((bot) => (
-      bot.slug === slug ? { ...bot, last4: next.last4, connected: false } : bot
-    )));
+    if (!token) return;
+    await navigator.clipboard.writeText(token);
+    setCopied(`${slug}:key`);
   }
   return (
     <div>
       <h1>Set up your bots</h1>
       <p className="onboard-progress">Connected <b>{connected} of {rows.length}</b></p>
       {rows.map((bot) => {
-        const prompt = prompts[bot.slug] || "";
-        const visible = shown[bot.slug];
-        const field = visible || maskLiveKey(bot.last4);
-        const chatLine = pasteChatLine(ASSISTANTS.find((item) => item.slug === bot.slug)?.id);
+        const assistantId = ASSISTANTS.find((item) => item.slug === bot.slug)?.id || "";
+        const token = shown[bot.slug] || "";
         return (
           <article className="bot-setup" key={bot.slug}>
             <h2>{bot.name}</h2>
-            {chatLine ? <p className="secret-note">{chatLine}</p> : null}
-            <button className="btn btn-quiet" type="button" onClick={() => copyPrompt(bot.slug)}>Copy setup</button>
-            <div className="secret-row">
-              <input readOnly value={field} aria-label={`${bot.name} secret code`} />
-              <button className="btn btn-quiet" type="button" onClick={() => copySecret(bot.slug)} disabled={!visible}>Copy</button>
-            </div>
-            <p className="secret-note">
-              Your secret key is only shown once, so please copy and pass it to your bot now.
-              {" "}
-              <button type="button" className="text-link" onClick={() => renew(bot.slug)}>Regenerate</button>
-            </p>
-            <button className="text-link" type="button" onClick={() => setOpen(open === bot.slug ? "" : bot.slug)}>
-              {open === bot.slug ? "Hide setup instructions" : "Read setup instructions"}
-            </button>
-            {open === bot.slug ? <pre className="setup-prompt">{prompt}</pre> : null}
+            <SetupSteps
+              platformId={assistantId}
+              prompt={prompts[bot.slug] || ""}
+              keyNote={keyNoteFor(assistantId, { botName: bot.name, slug: bot.slug })}
+              token={token}
+              last4={bot.last4}
+              open={open === bot.slug}
+              copiedInstructions={copied === `${bot.slug}:instructions`}
+              copiedKey={copied === `${bot.slug}:key`}
+              onToggle={() => setOpen(open === bot.slug ? "" : bot.slug)}
+              onCopyInstructions={() => copyPrompt(bot.slug)}
+              onCopyKey={() => copySecret(bot.slug)}
+            />
           </article>
         );
       })}
