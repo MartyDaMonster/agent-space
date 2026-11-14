@@ -7,7 +7,14 @@ import { decodeCursor, encodeCursor } from "@/lib/activity";
 import { botSlugs, insertPost, listActivity, listBots, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { countReactionRows, namesForReactions, slugsForReactions } from "@/lib/reactions";
 import { projectBySlug } from "@/lib/projects";
+import { listSpacePosts, spaceFiles, spaceThread, addSpaceBotPost } from "@/lib/space-feed";
+import { spaceAccess, spaceWritesOpen } from "@/lib/space-access";
+import { spaceParticipants } from "@/lib/spaces";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
+
+function botViewer(bot) {
+  return { kind: "bot", workspaceId: bot.workspaceId, slug: bot.slug };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +23,26 @@ export async function GET(request) {
   if (authResult.error) return authResult.error;
   const parsed = parseFeedQuery(new URL(request.url).searchParams);
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
+  const spaceSlug = new URL(request.url).searchParams.get("space");
+  if (spaceSlug) {
+    const access = await spaceAccess(botViewer(authResult.bot), spaceSlug);
+    if (!access.ok) return Response.json({ error: "Not found." }, { status: 404 });
+    const posts = await listSpacePosts(access.space.id, { limit: parsed.limit });
+    const thread = await spaceThread(posts.map((post) => post.id), access.space.id);
+    const people = await spaceParticipants(access.space.id);
+    const grouped = await spaceFiles(posts.map((post) => post.id), access.space.id, { kind: "bot", id: authResult.bot.slug });
+    const withThread = posts.map((post) => ({
+      ...post,
+      comments: thread.comments[post.id] || [],
+      reactions: slugsForReactions(thread.reactions[post.id] || []),
+      reactionNames: namesForReactions(thread.reactions[post.id] || [], {
+        bots: people.bots.map((bot) => ({ slug: bot.qualified, name: bot.name })),
+        humans: []
+      }),
+      files: grouped.posts[post.id] || []
+    }));
+    return Response.json({ posts: withThread, space: access.space.slug });
+  }
   let projectId = null;
   if (parsed.project) {
     const project = await projectBySlug(parsed.project, authResult.bot.workspaceId);
@@ -79,6 +106,37 @@ export async function POST(request) {
     body = await request.json();
   } catch {
     return Response.json({ error: "Post body must be a JSON object." }, { status: 400 });
+  }
+  const spaceSlug = typeof body.space === "string" ? body.space.trim() : "";
+  if (spaceSlug) {
+    const access = await spaceAccess(botViewer(authResult.bot), spaceSlug);
+    if (!access.ok) return Response.json({ error: "Not found." }, { status: 404 });
+    const open = spaceWritesOpen(access);
+    if (!open.ok) return Response.json({ error: open.error || "Not found." }, { status: open.status });
+    if (typeof body.project === "string" && body.project.trim()) {
+      return Response.json({ error: "Projects stay on the private board." }, { status: 400 });
+    }
+    const slugs = new Set([authResult.bot.slug]);
+    const result = validateApiPost(body, {
+      from: authResult.bot.slug,
+      createdAt: utcStamp(),
+      slugs
+    });
+    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    try {
+      const saved = await addSpaceBotPost({
+        bot: authResult.bot,
+        space: access.space,
+        post: result.post,
+        fileIds: Array.isArray(body.files) ? body.files : []
+      });
+      if (!saved.ok) return Response.json({ error: saved.error || "Not found." }, { status: saved.status || 404 });
+      return Response.json({ post: saved.post, warnings: result.warnings }, { status: 201 });
+    } catch (error) {
+      const status = error.status || 500;
+      const message = status === 409 ? error.message : "The post could not be saved.";
+      return Response.json({ error: message }, { status });
+    }
   }
   const slugs = await botSlugs(authResult.bot.workspaceId);
   slugs.add(authResult.bot.slug);
