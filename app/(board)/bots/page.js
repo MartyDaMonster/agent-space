@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/Avatar";
 import { BotEditor } from "@/components/BotEditor";
+import { RemoveBot } from "@/components/RemoveBot";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import { resolveAvatarChoice } from "@/lib/avatar-presets";
@@ -34,17 +35,20 @@ export default async function BotsPage() {
               <div className="bot-card-main">
                 <div className="bot-card-top">
                   <h2 className="bot-name">{bot.name}</h2>
-                  <BotEditor
-                    key={`${bot.slug}-${bot.name}-${bot.platform}-${bot.description}-${avatar.shape}-${avatar.color}`}
-                    bot={{
-                      slug: bot.slug,
-                      name: bot.name,
-                      platform: bot.platform || "other",
-                      description: bot.description || "",
-                      shape: avatar.shape,
-                      color: avatar.color
-                    }}
-                  />
+                  <div className="bot-card-actions">
+                    <BotEditor
+                      key={`${bot.slug}-${bot.name}-${bot.platform}-${bot.description}-${avatar.shape}-${avatar.color}`}
+                      bot={{
+                        slug: bot.slug,
+                        name: bot.name,
+                        platform: bot.platform || "other",
+                        description: bot.description || "",
+                        shape: avatar.shape,
+                        color: avatar.color
+                      }}
+                    />
+                    <RemoveBot slug={bot.slug} name={bot.name} />
+                  </div>
                 </div>
                 <p>@{bot.slug}{platformLabel(bot.platform) ? ` · ${platformLabel(bot.platform)}` : ""}</p>
                 <p>{bot.description}</p>

@@ -5,9 +5,10 @@ import { auth } from "@/auth";
 import { getSql } from "@/lib/db";
 import { formatBoardBots, ownerFirstName } from "@/lib/claude-setup";
 import { keyNoteFor } from "@/lib/invite-setup";
-import { prepareBotEdit, prepareGrant, promptsForInvite, slugTakenMessage } from "@/lib/grant";
+import { prepareBotEdit, prepareGrant, promptsForInvite, SLUG_TAKEN, slugTakenMessage } from "@/lib/grant";
 import { newBotToken, newKeyId, tokenHash } from "@/lib/keys";
 import { platformById } from "@/lib/platforms";
+import { removeWorkspaceBot } from "@/lib/remove-bot";
 import { isSlug } from "@/lib/slug";
 import { resolveAvatar } from "@/lib/store-avatar";
 import { REAUTH_ERROR, requireFreshAuth } from "@/lib/session-policy";
@@ -37,22 +38,44 @@ export async function grantAccess(_previous, formData) {
   const platform = platformById(prepared.platform);
   const sql = getSql();
   const description = `Granted access on ${platform.label}.`.slice(0, 200);
+  const prior = await sql`
+    select removed_at from bots
+    where slug = ${prepared.slug} and workspace_id = ${actor.workspaceId}
+    limit 1
+  `;
+  if (prior.length && !prior[0].removed_at) return { error: SLUG_TAKEN };
   try {
-    await sql`
-      insert into bots (slug, name, color, avatar, description, platform, avatar_url, avatar_shape, avatar_color, workspace_id)
-      values (
-        ${prepared.slug},
-        ${prepared.name},
-        ${platform.color},
-        ${avatar.avatar},
-        ${description},
-        ${prepared.platform},
-        ${avatar.url},
-        ${avatar.shape},
-        ${avatar.color},
-        ${actor.workspaceId}
-      )
-    `;
+    if (prior.length) {
+      await sql`
+        update bots
+        set name = ${prepared.name},
+            color = ${platform.color},
+            avatar = ${avatar.avatar},
+            description = ${description},
+            platform = ${prepared.platform},
+            avatar_url = ${avatar.url},
+            avatar_shape = ${avatar.shape},
+            avatar_color = ${avatar.color},
+            removed_at = null
+        where slug = ${prepared.slug} and workspace_id = ${actor.workspaceId}
+      `;
+    } else {
+      await sql`
+        insert into bots (slug, name, color, avatar, description, platform, avatar_url, avatar_shape, avatar_color, workspace_id)
+        values (
+          ${prepared.slug},
+          ${prepared.name},
+          ${platform.color},
+          ${avatar.avatar},
+          ${description},
+          ${prepared.platform},
+          ${avatar.url},
+          ${avatar.shape},
+          ${avatar.color},
+          ${actor.workspaceId}
+        )
+      `;
+    }
   } catch (error) {
     const taken = slugTakenMessage(error);
     if (taken) return { error: taken };
@@ -146,7 +169,7 @@ export async function updateBot(_previous, formData) {
         avatar_url = ${avatar.url},
         avatar_shape = ${avatar.shape},
         avatar_color = ${avatar.color}
-    where slug = ${slug} and workspace_id = ${actor.workspaceId}
+    where slug = ${slug} and workspace_id = ${actor.workspaceId} and removed_at is null
     returning slug
   `;
   if (!rows.length) return { error: "That bot could not be found." };
@@ -182,13 +205,24 @@ export async function saveBotCard(_previous, formData) {
         avatar_url = ${avatar.url},
         avatar_shape = ${avatar.shape},
         avatar_color = ${avatar.color}
-    where slug = ${slug} and workspace_id = ${actor.workspaceId}
+    where slug = ${slug} and workspace_id = ${actor.workspaceId} and removed_at is null
     returning slug
   `;
   if (!rows.length) return { error: "That bot could not be found." };
   revalidatePath("/bots");
   revalidatePath("/admin");
   return { saved: true };
+}
+
+export async function removeBot(_previous, formData) {
+  const actor = await requireHuman();
+  if (!actor) return { error: "You need to be signed in." };
+  const result = await removeWorkspaceBot(actor, formData.get("slug"));
+  if (!result.ok) return { error: result.error };
+  revalidatePath("/bots");
+  revalidatePath("/admin");
+  revalidatePath("/");
+  return { removed: true, name: result.name };
 }
 
 export async function revokeBotKey(formData) {

@@ -495,6 +495,8 @@ alter table post_reactions add constraint post_reactions_workspace_post_fkey
 alter table post_mentions add constraint post_mentions_workspace_post_fkey
   foreign key (workspace_id, post_id) references posts (workspace_id, id) on delete cascade;
 
+alter table bots add column if not exists removed_at timestamptz;
+
 create unique index if not exists projects_workspace_slug_uidx on projects (workspace_id, slug);
 create unique index if not exists humans_workspace_email_uidx on humans (workspace_id, email);
 
