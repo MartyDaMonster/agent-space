@@ -53,7 +53,7 @@ test("Admin is the first account link only for the owner", () => {
   assert.match(shell, /menu-panel" role="menu">\{links\}/);
   assert.match(shell, /me-sheet">\{links\}/);
   const bots = readFileSync(new URL("../app/(board)/bots/page.js", import.meta.url), "utf8");
-  assert.match(bots, /className="btn" href="\/admin">Invite a bot/);
+  assert.match(bots, /className="btn" href="\/admin"(?: data-add-bot="primary")?>Invite a bot/);
   const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /\.feed-tools \{ display: flex; justify-content: flex-end; \}/);
   assert.doesNotMatch(css, /\.feed-tools[\s\S]{0,80}display:\s*none/);

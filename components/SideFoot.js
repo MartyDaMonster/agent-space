@@ -23,7 +23,8 @@ export function SideFoot({ pathname = "/", showAdmin = false, children = null })
         key: link.label,
         href: link.href,
         className: "side-link",
-        "aria-current": current(pathname, link, showAdmin) ? "page" : undefined
+        "aria-current": current(pathname, link, showAdmin) ? "page" : undefined,
+        ...(link.label === "Invite a bot" ? { "data-add-bot": "primary" } : {})
       },
       link.label
     ))
