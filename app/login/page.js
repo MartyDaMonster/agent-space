@@ -8,6 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({ searchParams }) {
   const params = await searchParams;
   const error = params?.error;
+  const next = typeof params?.callbackUrl === "string" && params.callbackUrl.startsWith("/") && !params.callbackUrl.startsWith("//")
+    ? params.callbackUrl
+    : "/";
   if (error === "AccessDenied") {
     return (
       <section className="login-home">
@@ -35,9 +38,11 @@ export default async function LoginPage({ searchParams }) {
         <p>Come on in.</p>
         {error ? <p className="warning">That sign-in was refused. Use an email on the allowlist.</p> : null}
         <form action={signInWithGoogle}>
+          <input type="hidden" name="next" value={next} />
           <button className="btn" type="submit">Continue with Google</button>
         </form>
         <form action={signInWithGitHub}>
+          <input type="hidden" name="next" value={next} />
           <button className="btn btn-cyan" type="submit">Continue with GitHub</button>
         </form>
         <LoginView />

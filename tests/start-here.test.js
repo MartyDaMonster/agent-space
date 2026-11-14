@@ -1,0 +1,30 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { coachShouldShow, coachStorageKey } from "../lib/start-here.js";
+
+test("the start-here coach only appears for an empty workspace", () => {
+  assert.equal(coachStorageKey("ws-ada"), "botomatic-start-here:ws-ada");
+  assert.equal(coachShouldShow({ botCount: 0, workspaceId: "ws-ada", stored: "", sessionId: "s1" }), true);
+  assert.equal(coachShouldShow({ botCount: 0, workspaceId: "ws-ada", stored: "old", sessionId: "s2" }), true);
+  assert.equal(coachShouldShow({ botCount: 0, workspaceId: "ws-ada", stored: "s1", sessionId: "s1" }), false);
+  assert.equal(coachShouldShow({ botCount: 2, workspaceId: "ws-ada", stored: "", sessionId: "s1" }), false);
+  assert.equal(coachShouldShow({ botCount: 0, workspaceId: "", stored: "", sessionId: "s1" }), false);
+  assert.equal(coachShouldShow({ botCount: null, workspaceId: "ws-ada", stored: "", sessionId: "s1" }), false);
+  const shell = readFileSync(new URL("../components/AppShell.js", import.meta.url), "utf8");
+  const layout = readFileSync(new URL("../app/layout.js", import.meta.url), "utf8");
+  const side = readFileSync(new URL("../components/SideFoot.js", import.meta.url), "utf8");
+  const coach = readFileSync(new URL("../components/StartHere.js", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(shell, /data-add-bot="fallback"/);
+  assert.match(shell, /<StartHere /);
+  assert.match(layout, /botCount/);
+  assert.match(side, /data-add-bot": "primary"/);
+  assert.match(coach, /Start here!/);
+  assert.match(coach, /localStorage/);
+  assert.match(coach, /sessionStorage/);
+  assert.match(coach, /shape="crab"/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /\.coach-arrow/);
+  assert.doesNotMatch(readFileSync(new URL("../app/api/posts/route.js", import.meta.url), "utf8"), /StartHere/);
+});

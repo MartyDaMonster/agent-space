@@ -3,12 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { getSql } from "@/lib/db";
-import { prepareBotEdit, prepareGrant, SLUG_TAKEN, slugTakenMessage } from "@/lib/grant";
+import { formatBoardBots, ownerFirstName } from "@/lib/claude-setup";
+import { keyNoteFor } from "@/lib/invite-setup";
+import { prepareBotEdit, prepareGrant, promptsForInvite, SLUG_TAKEN, slugTakenMessage } from "@/lib/grant";
 import { newBotToken, newKeyId, tokenHash } from "@/lib/keys";
 import { platformById } from "@/lib/platforms";
 import { removeWorkspaceBot } from "@/lib/remove-bot";
 import { isSlug } from "@/lib/slug";
 import { resolveAvatar } from "@/lib/store-avatar";
+import { REAUTH_ERROR, requireFreshAuth } from "@/lib/session-policy";
 import { workspaceActor } from "@/lib/workspace-session";
 
 async function requireHuman() {
@@ -18,6 +21,8 @@ async function requireHuman() {
 export async function grantAccess(_previous, formData) {
   const actor = await requireHuman();
   if (!actor) return { error: "You need to be signed in." };
+  const fresh = requireFreshAuth(actor.session);
+  if (!fresh.ok) return { error: fresh.error || REAUTH_ERROR };
   const prepared = prepareGrant({
     name: formData.get("name"),
     slug: formData.get("slug"),
@@ -88,7 +93,59 @@ export async function grantAccess(_previous, formData) {
     console.error(error instanceof Error ? error.message : "key failed");
     return { error: "The bot could not be granted access." };
   }
-  return { token, name: prepared.name, slug: prepared.slug, platform: prepared.platform };
+  const context = await claudeBoardContext(actor, prepared.slug);
+  const fields = {
+    botName: prepared.name,
+    slug: prepared.slug,
+    ownerName: context.ownerName,
+    otherBots: context.otherBots,
+    slugs: context.slugs
+  };
+  return {
+    token,
+    name: prepared.name,
+    slug: prepared.slug,
+    platform: prepared.platform,
+    prompts: promptsForInvite(fields),
+    keyNotes: {
+      claude: keyNoteFor("claude", fields),
+      codex: keyNoteFor("codex", fields),
+      grok: keyNoteFor("grok", fields)
+    }
+  };
+}
+
+async function claudeBoardContext(actor, selfSlug) {
+  const session = actor.session?.user || {};
+  const email = String(session.email || "").trim().toLowerCase();
+  const githubId = String(session.githubId || "").trim();
+  let ownerName = ownerFirstName(session.name);
+  try {
+    const sql = getSql();
+    const people = await sql`
+      select name from humans
+      where workspace_id = ${actor.workspaceId}
+        and (
+          (${githubId} <> '' and github_user_id = ${githubId})
+          or (${email} <> '' and lower(email) = ${email})
+        )
+      limit 1
+    `;
+    ownerName = ownerFirstName(people[0]?.name) || ownerName;
+    const rows = await sql`
+      select name, slug from bots
+      where workspace_id = ${actor.workspaceId}
+      order by name asc
+    `;
+    return {
+      ownerName: ownerName || "you",
+      otherBots: formatBoardBots(rows, selfSlug),
+      slugs: rows.map((row) => row.slug)
+    };
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : "board context failed");
+    return { ownerName: ownerName || "you", otherBots: "none yet", slugs: [selfSlug] };
+  }
 }
 
 export async function updateBot(_previous, formData) {
@@ -171,6 +228,7 @@ export async function removeBot(_previous, formData) {
 export async function revokeBotKey(formData) {
   const actor = await requireHuman();
   if (!actor) return;
+  if (!requireFreshAuth(actor.session).ok) return;
   const id = String(formData.get("id") || "");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return;
   const sql = getSql();
