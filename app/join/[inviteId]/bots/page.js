@@ -4,7 +4,8 @@ import { BotSetup } from "@/components/BotSetup";
 import { OnboardingFrame } from "@/components/OnboardingFrame";
 import { assistantById, BOARD_LOCALE, BOARD_TIMEZONE, formatOtherBots, setupPrompt } from "@/lib/stage2";
 import { avatarPickForInvite, workspaceNameForInvitee } from "@/lib/stage2";
-import { bindDraftToSession, botsForDraft, ensureBots, loadDraft, saveDisplayName, saveWorkspaceStep } from "@/lib/stage2-store";
+import { ADD_BOT_PATH } from "@/lib/onboarding-exit";
+import { bindDraftToSession, botsForDraft, loadDraft, saveDisplayName, saveWorkspaceStep } from "@/lib/stage2-store";
 import { finishJoin } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -26,27 +27,15 @@ export default async function BotsStep({ params }) {
   } catch {
     // The workspace name can be filled in later. Don't trap the invitee on a failed write.
   }
-  const ready = await ensureBots(inviteId, session);
-  const listed = ready.ok ? await botsForDraft(inviteId, session) : { ok: false };
-  if (!ready.ok || !listed.ok) {
-    return (
-      <OnboardingFrame>
-        <h1>Set up your bots</h1>
-        <p>{ready.error || "We couldn't set up the bots yet."}</p>
-        <div className="onboard-actions">
-          <a className="btn" href={`/join/${inviteId}/bots`}>Try again</a>
-          <a className="btn btn-skip" href="/">Go to the board</a>
-        </div>
-      </OnboardingFrame>
-    );
-  }
+  const listed = await botsForDraft(inviteId, session);
+  if (!listed.ok || !listed.bots?.length) redirect(ADD_BOT_PATH);
   try {
     await saveDisplayName(inviteId, session, firstName);
   } catch {
     // The board still opens with the GitHub name.
   }
   const draft = await loadDraft(inviteId);
-  const secrets = Object.fromEntries((ready.revealed || []).map((item) => [item.slug, item.token]));
+  const secrets = {};
   const prompts = Object.fromEntries((draft.assistants || []).map((id) => {
     const assistant = assistantById(id);
     return [assistant?.slug || id, setupPrompt({

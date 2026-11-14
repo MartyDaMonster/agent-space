@@ -3,6 +3,7 @@ import { newInviteId } from "@/lib/ids";
 import { sessionInvited } from "@/lib/access";
 import { insertInvite, listInvites } from "@/lib/invites";
 import { authorizeInviteCreate } from "@/lib/workspace";
+import { requireFreshAuth } from "@/lib/session-policy";
 import { workspaceRole } from "@/lib/workspace-session";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,9 @@ export async function POST(request, { params }) {
   const { id } = await params;
   const actor = await ownerSession(id);
   if (actor.error) return actor.error;
+  if (!requireFreshAuth(actor.session).ok) {
+    return Response.json({ error: "Sign in again to do this." }, { status: 401 });
+  }
   let body;
   try {
     body = await request.json();

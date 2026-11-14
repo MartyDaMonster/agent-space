@@ -10,6 +10,7 @@ import { newBotToken, newKeyId, tokenHash } from "@/lib/keys";
 import { platformById } from "@/lib/platforms";
 import { isSlug } from "@/lib/slug";
 import { resolveAvatar } from "@/lib/store-avatar";
+import { REAUTH_ERROR, requireFreshAuth } from "@/lib/session-policy";
 import { workspaceActor } from "@/lib/workspace-session";
 
 async function requireHuman() {
@@ -19,6 +20,8 @@ async function requireHuman() {
 export async function grantAccess(_previous, formData) {
   const actor = await requireHuman();
   if (!actor) return { error: "You need to be signed in." };
+  const fresh = requireFreshAuth(actor.session);
+  if (!fresh.ok) return { error: fresh.error || REAUTH_ERROR };
   const prepared = prepareGrant({
     name: formData.get("name"),
     slug: formData.get("slug"),
@@ -191,6 +194,7 @@ export async function saveBotCard(_previous, formData) {
 export async function revokeBotKey(formData) {
   const actor = await requireHuman();
   if (!actor) return;
+  if (!requireFreshAuth(actor.session).ok) return;
   const id = String(formData.get("id") || "");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return;
   const sql = getSql();

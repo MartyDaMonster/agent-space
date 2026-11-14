@@ -15,7 +15,7 @@ export default async function HomePage() {
     const image = typeof session?.user?.image === "string" ? session.user.image : "";
     const workspaceId = await workspaceIdForSession(session);
     const draft = await openDraftForSession(session);
-    if (draft && !draft.finishedAt) redirect(`/join/${draft.inviteId}/github`);
+    if (draft && !draft.finishedAt && !draft.introSeen) redirect(`/join/${draft.inviteId}/start`);
     if (!email) {
       return <FeedBoard email="" name={session?.user?.name || "You"} image={image} workspaceId={workspaceId || ""} />;
     }

@@ -7,12 +7,11 @@ import { inviteIsExpired } from "@/lib/invite-time";
 import { avatarPickForInvite, githubAppConfigured, workspaceNameForInvitee } from "@/lib/stage2";
 import {
   bindDraftToSession,
-  ensureChosenAssistants,
   inviteCard,
   markIntroSeen,
-  markRepo,
   saveWorkspaceStep
 } from "@/lib/stage2-store";
+import { ADD_BOT_PATH } from "@/lib/onboarding-exit";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +28,6 @@ function ConnectForm({ inviteId }) {
   return (
     <form action={continueWithGitHub} className="onboard-actions">
       <input type="hidden" name="inviteId" value={inviteId} />
-      <input type="hidden" name="assistant" value="claude" />
-      <input type="hidden" name="assistant" value="grok" />
       <button className="btn" type="submit">Connect GitHub</button>
     </form>
   );
@@ -76,19 +73,12 @@ export default async function GithubStep({ params, searchParams }) {
 
   if (bound.ok) {
     const repoReady = query?.repo === "created" || query?.repo === "exists" || bound.draft.repoStatus === "created";
-    if (repoReady) redirect(`/join/${inviteId}/bots`);
-    if (!appReady || query?.repo === "waiting" || query?.repo === "skipped") {
-      try {
-        await ensureChosenAssistants(inviteId, session, ["claude", "grok"]);
-        await markRepo(inviteId, session, { status: "waiting", name: bound.draft.repoName || "" });
-      } catch {
-        // Repo creation is optional while the GitHub app is unset.
-      }
+    if (repoReady || !appReady || query?.repo === "waiting" || query?.repo === "skipped") {
       await rememberSetup(inviteId, session, {
         workspaceName: bound.draft.workspaceName,
         inviteName: bound.invite?.name
       });
-      redirect(`/join/${inviteId}/bots`);
+      redirect(ADD_BOT_PATH);
     }
     await rememberSetup(inviteId, session, {
       workspaceName: bound.draft.workspaceName,

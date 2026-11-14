@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { GrantAccess } from "@/components/GrantAccess";
 import { AdminPanel } from "@/components/AdminPanel";
 import { AdminScreen } from "@/components/AdminScreen";
@@ -8,6 +9,7 @@ import { listAdminInvites, listAudit, listPeople } from "@/lib/admin-store";
 import { adminOverview } from "@/lib/admin-stats";
 import { martinAdmin } from "@/lib/admin-panel";
 import { PLATFORMS, platformLabel } from "@/lib/platforms";
+import { adminWindowState, sessionClock } from "@/lib/session-policy";
 import { workspaceIdForSession } from "@/lib/workspace-session";
 import { revokeInviteAction, resendInvite, sendAdminInvite, sendInviteTest, suspendAccess } from "@/app/admin/panel-actions";
 
@@ -27,6 +29,12 @@ function createdLabel(value) {
 export default async function AdminPage() {
   try {
     const session = await auth();
+    const window = adminWindowState({
+      now: sessionClock(),
+      start: session?.user?.sessionStart,
+      adminSeen: session?.user?.adminSeen
+    });
+    if (session?.user?.adminBlock || window !== "ok") redirect("/login?callbackUrl=/admin");
     const workspaceId = await workspaceIdForSession(session) || "";
     const sql = getSql();
     const keys = await sql`
