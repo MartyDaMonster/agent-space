@@ -20,7 +20,12 @@ function current(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppShell({ name, image, projects = [], activePath = "", showAdmin = false, workspaceId = "", botCount = null, children }) {
+function spaceLabel(space) {
+  const shared = (space.sharedWith || []).filter(Boolean);
+  return shared.length ? `Shared with ${shared.join(", ")}` : "Shared";
+}
+
+export function AppShell({ name, image, projects = [], spaces = [], canCreateSpace = false, activePath = "", showAdmin = false, workspaceId = "", botCount = null, children }) {
   const livePath = usePathname() || "/";
   const pathname = activePath || livePath;
   const [menu, setMenu] = useState(false);
@@ -63,6 +68,14 @@ export function AppShell({ name, image, projects = [], activePath = "", showAdmi
         <aside className="side-nav" aria-label="App">
           <a className="side-link" href="/" aria-current={current(pathname, "/") ? "page" : undefined}>Feed</a>
           <div className="side-scroll">
+            <p className="side-label">Spaces</p>
+            {spaces.length ? spaces.map((space) => (
+              <a className="side-space" key={space.slug} href={`/s/${space.slug}`} aria-current={pathname === `/s/${space.slug}` ? "page" : undefined}>
+                <span>{space.name}</span>
+                <span className="space-badge">{spaceLabel(space)}</span>
+              </a>
+            )) : <p className="side-empty">No spaces yet</p>}
+            {canCreateSpace ? <a className="side-link" href="/s/new">New space</a> : null}
             <p className="side-label">Projects</p>
             {projects.length ? projects.map((project) => (
               <div className="side-project" key={project.slug}>
@@ -81,6 +94,15 @@ export function AppShell({ name, image, projects = [], activePath = "", showAdmi
           </SideFoot>
         </aside>
         <main className="app-main" id="content">
+          <nav className="space-strip" aria-label="Spaces">
+            {spaces.map((space) => (
+              <a key={space.slug} href={`/s/${space.slug}`} aria-current={pathname === `/s/${space.slug}` ? "page" : undefined}>
+                <span>{space.name}</span>
+                <span className="space-badge">{spaceLabel(space)}</span>
+              </a>
+            ))}
+            {canCreateSpace ? <a href="/s/new">New space</a> : null}
+          </nav>
           <PageFade>{children}</PageFade>
         </main>
       </div>

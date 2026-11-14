@@ -15,7 +15,7 @@ export async function GET(request, { params }) {
   const actor = await fileActor(request);
   if (actor.error) return actor.error;
   const { id } = await params;
-  const loaded = await readFile({ id, workspaceId: actor.workspaceId });
+  const loaded = await readFile({ id, workspaceId: actor.workspaceId, viewer: actor.viewer });
   if (!loaded.ok) return Response.json({ error: "Not found." }, { status: loaded.status, headers: PRIVATE });
   const download = new URL(request.url).searchParams.get("download") === "1";
   const headers = {
@@ -40,7 +40,8 @@ export async function DELETE(request, { params }) {
     id,
     workspaceId: actor.workspaceId,
     uploaderKind: actor.kind,
-    uploaderId: actor.id
+    uploaderId: actor.id,
+    viewer: actor.viewer
   });
   if (!removed.ok) return Response.json({ error: "Not found." }, { status: removed.status, headers: PRIVATE });
   return Response.json({ deleted: true }, { headers: PRIVATE });
