@@ -73,7 +73,7 @@ test("invite, onboarding, and bot routes stay inside one workspace", async () =>
   assert.equal(saved.ok, true);
   const { claimInviteLink } = await import("../lib/invite-claim.js");
   const claimer = { user: { email: "ada@example.com", name: "Ada", githubLogin: "octocat", githubId: "42" } };
-  const claimed = await claimInviteLink("inv-ada", { githubId: "42", githubLogin: "octocat" });
+  const claimed = await claimInviteLink("inv-ada", { githubId: "42", githubLogin: "octocat", email: "ada@example.com" });
   assert.equal(claimed.ok, true);
   assert.equal(claimed.email, "ada@example.com");
   const wrong = await bindDraftToSession("inv-ada", eve);
@@ -124,6 +124,17 @@ test("invite, onboarding, and bot routes stay inside one workspace", async () =>
     update api_keys set last_seen_at = now()
     where workspace_id = ${created.workspaceId}
   `;
+  await sql`update workspace_members set suspended_at = now() where lower(email) = 'ada@example.com'`;
+  const { botFromAuthorization } = await import("../lib/bot-auth.js");
+  const stillLive = await botFromAuthorization(`Bearer ${created.revealed[0].token}`);
+  assert.equal(stillLive.slug, created.revealed[0].slug);
+  const pausedKey = await regenerateBotKey("inv-ada", claimer, "claude");
+  assert.equal(pausedKey.ok, false);
+  assert.equal(pausedKey.status, 403);
+  assert.equal(pausedKey.error, "This account is paused.");
+  const pausedFinish = await finishOnboardingDraft("inv-ada", claimer);
+  assert.equal(pausedFinish.ok, false);
+  await sql`update workspace_members set suspended_at = null where lower(email) = 'ada@example.com'`;
   const done = await finishOnboardingDraft("inv-ada", claimer);
   assert.equal(done.ok, true);
   assert.equal(done.workspaceId, created.workspaceId);
@@ -161,7 +172,8 @@ test("an invitee reaches a new workspace without the GitHub App", async () => {
   assert.equal((await saveAssistantChoice(created.invite.id, ["claude", "grok"])).ok, true);
   const claimed = await claimInviteLink(created.invite.id, {
     githubId: "99",
-    githubLogin: "octocat"
+    githubLogin: "octocat",
+    email: "ada@example.com"
   });
   assert.equal(claimed.ok, true);
   assert.equal(claimed.email, "ada@example.com");

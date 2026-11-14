@@ -152,6 +152,8 @@ test("preview deploys do not apply schema changes", () => {
   assert.equal(GITHUB_APP_ENV.includes("GITHUB_APP_PRIVATE_KEY"), true);
   const migrate = readFileSync(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
   assert.match(migrate, /migrateOnThisDeploy/);
+  assert.match(migrate, /schema_migrations/);
+  assert.match(migrate, /already applied/);
   const bots = readFileSync(new URL("../components/BotSetup.js", import.meta.url), "utf8");
   assert.match(bots, /onCopyInstructions/);
   assert.doesNotMatch(bots, /still waiting/);
@@ -217,7 +219,9 @@ test("preview deploys do not apply schema changes", () => {
   assert.match(welcome, /Continue with GitHub/);
   assert.doesNotMatch(welcome, /already been used/);
   const keys = readFileSync(new URL("../app/admin/actions.js", import.meta.url), "utf8");
-  assert.match(keys, /workspaceActor/);
+  assert.match(keys, /writeActor/);
+  assert.match(readFileSync(new URL("../lib/workspace-session.js", import.meta.url), "utf8"), /This account is paused/);
+  assert.doesNotMatch(readFileSync(new URL("../lib/bot-auth.js", import.meta.url), "utf8"), /member_paused/);
   assert.doesNotMatch(keys, /sessionInvited/);
   assert.doesNotMatch(github, /Private repo for/);
   assert.match(readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8"), /intro_seen_at/);

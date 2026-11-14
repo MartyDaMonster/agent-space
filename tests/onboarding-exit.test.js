@@ -38,7 +38,7 @@ test("completing or skipping onboarding creates zero bots and goes to add a bot"
     values ('inv-exit', 'ws-exit', 'ada@example.com', 'Ada Lovelace', 'pending', 'Martin', now() + interval '48 hours', true)
   `;
   const claimer = { user: { email: "ada@example.com", name: "Ada Lovelace", githubLogin: "ada", githubId: "88021" } };
-  const claimed = await claimInviteLink("inv-exit", { githubId: "88021", githubLogin: "ada" });
+  const claimed = await claimInviteLink("inv-exit", { githubId: "88021", githubLogin: "ada", email: "ada@example.com" });
   assert.equal(claimed.ok, true);
   const workspaceId = claimed.membership.workspaceId;
   const before = await sql`select count(*)::int as n from bots where workspace_id = ${workspaceId}`;

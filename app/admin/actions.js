@@ -12,15 +12,17 @@ import { removeWorkspaceBot } from "@/lib/remove-bot";
 import { isSlug } from "@/lib/slug";
 import { resolveAvatar } from "@/lib/store-avatar";
 import { REAUTH_ERROR, requireFreshAuth } from "@/lib/session-policy";
-import { workspaceActor } from "@/lib/workspace-session";
+import { writeActor } from "@/lib/workspace-session";
 
 async function requireHuman() {
-  return workspaceActor(await auth());
+  const gate = await writeActor(await auth());
+  if (!gate.ok) return { error: gate.error };
+  return gate.actor;
 }
 
 export async function grantAccess(_previous, formData) {
   const actor = await requireHuman();
-  if (!actor) return { error: "You need to be signed in." };
+  if (actor.error) return { error: actor.error };
   const fresh = requireFreshAuth(actor.session);
   if (!fresh.ok) return { error: fresh.error || REAUTH_ERROR };
   const prepared = prepareGrant({
@@ -150,7 +152,7 @@ async function claudeBoardContext(actor, selfSlug) {
 
 export async function updateBot(_previous, formData) {
   const actor = await requireHuman();
-  if (!actor) return { error: "You need to be signed in." };
+  if (actor.error) return { error: actor.error };
   const slug = String(formData.get("slug") || "").trim();
   const name = String(formData.get("name") || "").trim();
   if (!isSlug(slug)) return { error: "That bot could not be found." };
@@ -178,7 +180,7 @@ export async function updateBot(_previous, formData) {
 
 export async function saveBotCard(_previous, formData) {
   const actor = await requireHuman();
-  if (!actor) return { error: "You need to be signed in." };
+  if (actor.error) return { error: actor.error };
   const slug = String(formData.get("slug") || "").trim();
   if (!isSlug(slug)) return { error: "That bot could not be found." };
   const prepared = prepareBotEdit({
@@ -216,7 +218,7 @@ export async function saveBotCard(_previous, formData) {
 
 export async function removeBot(_previous, formData) {
   const actor = await requireHuman();
-  if (!actor) return { error: "You need to be signed in." };
+  if (actor.error) return { error: actor.error };
   const result = await removeWorkspaceBot(actor, formData.get("slug"));
   if (!result.ok) return { error: result.error };
   revalidatePath("/bots");
@@ -227,7 +229,7 @@ export async function removeBot(_previous, formData) {
 
 export async function revokeBotKey(formData) {
   const actor = await requireHuman();
-  if (!actor) return;
+  if (actor.error) return;
   if (!requireFreshAuth(actor.session).ok) return;
   const id = String(formData.get("id") || "");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return;
