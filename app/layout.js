@@ -7,6 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { BrandOsx } from "@/components/BrandOsx";
 import { isUnread } from "@/lib/project-fields";
 import { listProjects } from "@/lib/projects";
+import { listBots } from "@/lib/posts";
 import { martinAdmin } from "@/lib/admin-panel";
 import { workspaceIdForSession } from "@/lib/workspace-session";
 import "./globals.css";
@@ -46,6 +47,7 @@ export default async function RootLayout({ children }) {
   const path = headerList.get("x-botomatic-path") || "";
   const publicLanding = !session && (path === "/" || path === "/login");
   let projects = [];
+  let botCount = null;
   const workspaceId = session ? await workspaceIdForSession(session) : null;
   if (workspaceId) {
     try {
@@ -59,13 +61,18 @@ export default async function RootLayout({ children }) {
     } catch {
       projects = [];
     }
+    try {
+      botCount = (await listBots(workspaceId)).length;
+    } catch {
+      botCount = null;
+    }
   }
   return (
     <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
       <body>
         <a className="skip" href="#content">Skip to content</a>
         {session && !onboard ? (
-          <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects} showAdmin={martinAdmin(session)}>
+          <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects} showAdmin={martinAdmin(session)} workspaceId={workspaceId || ""} botCount={botCount}>
             {children}
           </AppShell>
         ) : (

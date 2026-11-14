@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { countReactionRows, nameForActor, namesForReactions, reactionPhrase } from "../lib/reactions.js";
+import { countReactionRows, nameForActor, namesForReactions, reactionPhrase, slugsForReactions } from "../lib/reactions.js";
 
 const bots = [{ slug: "crabby", name: "Claude" }, { slug: "dexter", name: "Dexter" }];
 const humans = [{ email: "martin@example.com", name: "Martin" }];
@@ -22,6 +22,16 @@ test("reaction names are display names, never emails", () => {
   assert.equal(JSON.stringify(names).includes("@"), false);
   assert.equal(reactionPhrase(names["👍"], "👍"), "Martin, Dexter and Claude reacted 👍");
   assert.equal(reactionPhrase(["Martin"], "👀"), "Martin reacted 👀");
+});
+
+test("bot feed reactions list slugs so a check can see who reacted", () => {
+  const grouped = slugsForReactions([
+    { actor: "bot:bill", emoji: "👍" },
+    { actor: "human:ada@example.com", emoji: "👍" },
+    { actor: "bot:bill", emoji: "👍" }
+  ]);
+  assert.deepEqual(grouped["👍"], ["bill"]);
+  assert.equal(JSON.stringify(grouped).includes("@"), false);
 });
 
 test("duplicate display names each count as their own reaction", () => {

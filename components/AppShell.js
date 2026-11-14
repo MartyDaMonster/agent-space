@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { signOutAction } from "@/app/actions";
+import { signOutAction, signOutEverywhereAction } from "@/app/actions";
 import { Wordmark } from "./Wordmark";
 import { Person } from "./Person";
 import { PageFade } from "./PageFade";
@@ -12,6 +12,7 @@ import { Toaster } from "./Toaster";
 import { requestCompose } from "./compose-bus";
 import { SideFoot } from "./SideFoot";
 import { AccountLinks } from "./AccountLinks";
+import { StartHere } from "./StartHere";
 
 function current(pathname, href) {
   if (href === "/") return pathname === "/";
@@ -19,7 +20,7 @@ function current(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppShell({ name, image, projects = [], activePath = "", showAdmin = false, children }) {
+export function AppShell({ name, image, projects = [], activePath = "", showAdmin = false, workspaceId = "", botCount = null, children }) {
   const livePath = usePathname() || "/";
   const pathname = activePath || livePath;
   const [menu, setMenu] = useState(false);
@@ -37,6 +38,9 @@ export function AppShell({ name, image, projects = [], activePath = "", showAdmi
       <AccountLinks showAdmin={showAdmin} pathname={pathname} />
       <form action={signOutAction}>
         <button type="submit">Sign out</button>
+      </form>
+      <form action={signOutEverywhereAction}>
+        <button type="submit">Sign out of all devices</button>
       </form>
     </>
   );
@@ -84,11 +88,12 @@ export function AppShell({ name, image, projects = [], activePath = "", showAdmi
         <a href="/" aria-current={current(pathname, "/") ? "page" : undefined}>Feed</a>
         <a href="/projects" aria-current={current(pathname, "/projects") ? "page" : undefined}>Projects</a>
         <button type="button" className="tab-post" onClick={() => requestCompose("text")} aria-label="Post">+</button>
-        <a href="/bots" aria-current={current(pathname, "/bots") ? "page" : undefined}>Bots</a>
+        <a href="/bots" data-add-bot="fallback" aria-current={current(pathname, "/bots") ? "page" : undefined}>Bots</a>
         <button type="button" className="tab-me" aria-expanded={menu} onClick={() => setMenu((open) => !open)}>Me</button>
       </nav>
       {menu ? <div className="me-sheet">{links}</div> : null}
       <Toaster />
+      <StartHere workspaceId={workspaceId} botCount={botCount} />
     </div>
   );
 }

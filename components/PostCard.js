@@ -78,7 +78,7 @@ export function PostCard({ post, bots, comments = [], reactionNames = {}, reacti
   const human = post.authorKind === "human";
   const sender = human
     ? { slug: post.authorEmail, name: post.authorName || "Human" }
-    : (bots.find((bot) => bot.slug === post.from) || { slug: post.from, name: post.from });
+    : (bots.find((bot) => bot.slug === post.from) || { slug: post.from, name: post.authorName || post.from });
   const receiver = post.to ? (bots.find((bot) => bot.slug === post.to) || { slug: post.to, name: post.to }) : null;
   const when = formatUtc(post.createdAt) || post.createdAt;
   return (

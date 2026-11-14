@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 import pg from "pg";
 import { newKeyId, tokenHash } from "../lib/keys.js";
@@ -15,7 +15,13 @@ const statements = readFileSync(new URL("../scripts/migrate.sql", import.meta.ur
   .map((statement) => statement.trim())
   .filter((statement) => statement && !statement.startsWith("--"));
 
-const martin = { user: { email: "marty.hungerford3181@gmail.com", githubLogin: "MartyDaMonster" } };
+const martin = {
+  user: {
+    email: "marty.hungerford3181@gmail.com",
+    githubLogin: "MartyDaMonster",
+    authAt: Math.floor(Date.now() / 1000)
+  }
+};
 const ada = { user: { email: "ada@example.com", githubLogin: "ada" } };
 
 async function resetDatabase() {
@@ -222,4 +228,36 @@ test("the old workspace invite route still opens a new workspace", async () => {
   assert.notEqual(legacy.membership.workspaceId, "ws-martin");
   const legacyMembers = await sql`select workspace_id from workspace_members where lower(email) = 'legacy@example.com'`;
   assert.deepEqual(legacyMembers.map((row) => row.workspace_id), [legacy.membership.workspaceId]);
+});
+
+test("admin invite create and revoke still need a fresh sign-in, and revoke ends that session", async () => {
+  await resetDatabase();
+  const { createAdminInvite, revokeAdminInvite } = await import("../lib/admin-store.js");
+  const { getSql } = await import("../lib/db.js");
+  const { issueSession, sessionLive } = await import("../lib/session-store.js");
+  const sql = getSql();
+  const stale = { user: { email: martin.user.email, githubLogin: martin.user.githubLogin } };
+  const blocked = await createAdminInvite(stale, { name: "Bea", email: "bea@example.com" });
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.error, "Sign in again to do this.");
+  await sql`
+    insert into workspace_members (workspace_id, email, role)
+    values ('ws-martin', 'bea@example.com', 'member')
+  `;
+  await sql`
+    insert into workspace_invites (id, workspace_id, email, status, created_by, expires_at, own_workspace)
+    values ('inv-bea', 'ws-martin', 'bea@example.com', 'pending', 'marty.hungerford3181@gmail.com', now() + interval '48 hours', false)
+  `;
+  const open = await issueSession("email:bea@example.com");
+  const staleRevoke = await revokeAdminInvite(stale, "inv-bea");
+  assert.equal(staleRevoke.ok, false);
+  assert.equal(staleRevoke.error, "Sign in again to do this.");
+  assert.equal(await sessionLive(open.id, open.version), true);
+  const revoked = await revokeAdminInvite(martin, "inv-bea");
+  assert.equal(revoked.ok, true);
+  assert.equal(await sessionLive(open.id, open.version), false);
+  const store = readFileSync(new URL("../lib/admin-store.js", import.meta.url), "utf8");
+  assert.match(store, /bumpWorkspaceMembers/);
+  assert.equal(existsSync(new URL("../app/api/workspaces/[id]/invites/route.js", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../app/api/workspaces/[id]/invites/[inviteId]/revoke/route.js", import.meta.url)), false);
 });

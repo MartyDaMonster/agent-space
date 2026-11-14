@@ -152,7 +152,7 @@ test("an invitee reaches a new workspace without the GitHub App", async () => {
   }
   const { githubAppConfigured } = await import("../lib/stage2.js");
   assert.equal(githubAppConfigured(), false);
-  const martin = { user: { email: "marty.hungerford3181@gmail.com", githubLogin: "MartyDaMonster" } };
+  const martin = { user: { email: "marty.hungerford3181@gmail.com", githubLogin: "MartyDaMonster", authAt: Math.floor(Date.now() / 1000) } };
   const { createAdminInvite } = await import("../lib/admin-store.js");
   const { getSql } = await import("../lib/db.js");
   const {

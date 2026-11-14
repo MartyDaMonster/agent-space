@@ -9,7 +9,8 @@ import {
   signGithubState
 } from "@/lib/github-state";
 import { githubAppConfigured } from "@/lib/stage2";
-import { ensureChosenAssistants, inviteCard, markRepo } from "@/lib/stage2-store";
+import { ADD_BOT_PATH } from "@/lib/onboarding-exit";
+import { inviteCard } from "@/lib/stage2-store";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +25,7 @@ export async function GET(request) {
     return NextResponse.redirect(new URL(back, url.origin));
   }
   if (!githubAppConfigured()) {
-    try {
-      await ensureChosenAssistants(inviteId, session, ["claude", "grok"]);
-      await markRepo(inviteId, session, { status: "waiting", name: "" });
-    } catch {
-      // Still leave the GitHub step. Repo creation is optional when the app is unset.
-    }
-    return NextResponse.redirect(new URL(`/join/${inviteId}/bots`, url.origin));
+    return NextResponse.redirect(new URL(ADD_BOT_PATH, url.origin));
   }
   const nonce = newGithubNonce();
   const jar = await cookies();

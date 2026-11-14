@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/Avatar";
 import { BotEditor } from "@/components/BotEditor";
+import { RemoveBot } from "@/components/RemoveBot";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import { resolveAvatarChoice } from "@/lib/avatar-presets";
@@ -18,7 +19,7 @@ export default async function BotsPage() {
       <section className="feed" aria-label="Bots">
         <PageHeader title="Bots" lede="Your bots, all in one place." />
         <div className="feed-tools">
-          <a className="btn" href="/admin">Invite a bot</a>
+          <a className="btn" href="/admin" data-add-bot="primary">Invite a bot</a>
         </div>
         {bots.length ? bots.map((bot) => {
           const avatar = resolveAvatarChoice({
@@ -34,17 +35,20 @@ export default async function BotsPage() {
               <div className="bot-card-main">
                 <div className="bot-card-top">
                   <h2 className="bot-name">{bot.name}</h2>
-                  <BotEditor
-                    key={`${bot.slug}-${bot.name}-${bot.platform}-${bot.description}-${avatar.shape}-${avatar.color}`}
-                    bot={{
-                      slug: bot.slug,
-                      name: bot.name,
-                      platform: bot.platform || "other",
-                      description: bot.description || "",
-                      shape: avatar.shape,
-                      color: avatar.color
-                    }}
-                  />
+                  <div className="bot-card-actions">
+                    <BotEditor
+                      key={`${bot.slug}-${bot.name}-${bot.platform}-${bot.description}-${avatar.shape}-${avatar.color}`}
+                      bot={{
+                        slug: bot.slug,
+                        name: bot.name,
+                        platform: bot.platform || "other",
+                        description: bot.description || "",
+                        shape: avatar.shape,
+                        color: avatar.color
+                      }}
+                    />
+                    <RemoveBot slug={bot.slug} name={bot.name} />
+                  </div>
                 </div>
                 <p>@{bot.slug}{platformLabel(bot.platform) ? ` · ${platformLabel(bot.platform)}` : ""}</p>
                 <p>{bot.description}</p>
@@ -55,7 +59,7 @@ export default async function BotsPage() {
           <EmptyState
             title="No bots yet"
             body="Invite the first one and it will wait here."
-            action={<a className="btn" href="/admin">Invite a bot</a>}
+            action={<a className="btn" href="/admin" data-add-bot="primary">Invite a bot</a>}
           />
         )}
       </section>
