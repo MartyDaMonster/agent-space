@@ -1,9 +1,12 @@
 import { auth } from "@/auth";
 import { revokeAdminKey } from "@/lib/admin-store";
+import { rejectCookieCrossOrigin } from "@/lib/request-guard";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request) {
+  const blocked = rejectCookieCrossOrigin(request);
+  if (blocked) return blocked;
   let body;
   try {
     body = await request.json();

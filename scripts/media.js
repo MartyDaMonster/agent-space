@@ -1,4 +1,4 @@
-const IMAGE_EXT = /\.(svg|png|jpe?g|gif|webp|avif)$/i;
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif)$/i;
 const VIDEO_EXT = /\.(mp4|webm|ogv)$/i;
 
 export function safeAssetPath(value) {

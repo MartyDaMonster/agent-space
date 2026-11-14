@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { appOrigin } from "@/lib/app-origin";
+import { allowInviteAction } from "@/lib/human-rate";
 import {
   createAdminInvite,
   resendAdminInvite,
@@ -22,26 +23,34 @@ async function refresh(result) {
   return { ok: true, notice: result.notice || "" };
 }
 
+async function pacedInvite(run) {
+  const session = await auth();
+  const actor = String(session?.user?.email || "").trim().toLowerCase();
+  if (actor && !allowInviteAction(actor)) {
+    return refresh({ ok: false, error: "Wait a minute before sending another invite." });
+  }
+  return refresh(await run(session));
+}
+
 export async function sendAdminInvite(_previous, formData) {
-  return refresh(await createAdminInvite(await auth(), {
+  return pacedInvite((session) => createAdminInvite(session, {
     name: String(formData.get("name") || ""),
     email: String(formData.get("email") || "")
-  }, { origin: await requestOrigin() }));
+  }, { origin: requestOrigin() }));
 }
 
 export async function sendInviteTest() {
-  const session = await auth();
-  return refresh(await sendAdminTestEmail(session, { origin: await requestOrigin() }));
+  return pacedInvite((session) => sendAdminTestEmail(session, { origin: requestOrigin() }));
 }
 
 export async function resendInvite(formData) {
-  return refresh(await resendAdminInvite(await auth(), String(formData.get("inviteId") || ""), {
-    origin: await requestOrigin()
+  return pacedInvite((session) => resendAdminInvite(session, String(formData.get("inviteId") || ""), {
+    origin: requestOrigin()
   }));
 }
 
 export async function revokeInviteAction(formData) {
-  return refresh(await revokeAdminInvite(await auth(), String(formData.get("inviteId") || "")));
+  return pacedInvite((session) => revokeAdminInvite(session, String(formData.get("inviteId") || "")));
 }
 
 export async function suspendAccess(formData) {

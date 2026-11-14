@@ -33,6 +33,7 @@ test("links and videos only accept public https addresses", () => {
   assert.equal(inspectVideo("https://cdn.example.com/clip.mp4").kind, "video");
   assert.equal(inspectVideo("https://cdn.example.com/clip.mov").ok, false);
   assert.equal(inspectImage("https://cdn.example.com/photo.jpg").ok, true);
+  assert.equal(inspectImage("https://cdn.example.com/photo.svg").ok, false);
   assert.equal(inspectImage("https://cdn.example.com/note.txt").ok, false);
 });
 
