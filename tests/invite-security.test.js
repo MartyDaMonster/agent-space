@@ -17,7 +17,7 @@ const statements = readFileSync(new URL("../scripts/migrate.sql", import.meta.ur
   .map((statement) => statement.trim())
   .filter((statement) => statement && !statement.startsWith("--"));
 
-const martin = { user: { email: "marty.hungerford3181@gmail.com", githubLogin: "MartyDaMonster" } };
+const martin = { user: { email: "marty.hungerford3181@gmail.com", githubLogin: "MartyDaMonster", authAt: Math.floor(Date.now() / 1000) } };
 
 async function resetDatabase() {
   const { resetSqlCache, createSql } = await import("../lib/db.js");
@@ -51,22 +51,30 @@ test("C1 a claim does not become Martin or enter another invite's workspace", as
       ('inv-shared-b', 'shared@example.com', 'Two', 'pending', 'seed', now() + interval '48 hours', true)
   `;
   const cookie = signInviteCookie("inv-martinmail");
-  const claimed = await authorizeGithubSignIn({
+  const rejected = await authorizeGithubSignIn({
     email: "stranger@example.com",
     githubLogin: "stranger",
     githubId: "999",
     cookieValue: cookie,
     allowed: false
   });
+  assert.equal(rejected.ok, false);
+  const claimed = await authorizeGithubSignIn({
+    email: "marty.hungerford3181@gmail.com",
+    githubLogin: "stranger",
+    githubId: "999",
+    cookieValue: cookie,
+    allowed: false
+  });
   assert.equal(claimed.ok, true);
-  assert.equal(claimed.email, "stranger@example.com");
+  assert.equal(claimed.email, "marty.hungerford3181@gmail.com");
   assert.equal(claimed.inviteEmail, "marty.hungerford3181@gmail.com");
   assert.notEqual(claimed.workspaceId, "ws-martin");
   const stranger = { user: { email: "marty.hungerford3181@gmail.com", githubId: "999", githubLogin: "MartyDaMonster" } };
   assert.equal(inviteAllowed({ email: stranger.user.email, githubId: stranger.user.githubId }), false);
   assert.equal(await workspaceIdForSession(stranger), claimed.workspaceId);
-  const first = await claimInviteLink("inv-shared-a", { githubId: "111", githubLogin: "one" });
-  const second = await claimInviteLink("inv-shared-b", { githubId: "222", githubLogin: "two" });
+  const first = await claimInviteLink("inv-shared-a", { githubId: "111", githubLogin: "one", email: "shared@example.com" });
+  const second = await claimInviteLink("inv-shared-b", { githubId: "222", githubLogin: "two", email: "shared@example.com" });
   assert.equal(first.ok, true);
   assert.equal(second.ok, true);
   assert.notEqual(first.membership.workspaceId, second.membership.workspaceId);
@@ -81,7 +89,10 @@ test("C1 a claim does not become Martin or enter another invite's workspace", as
     insert into workspace_invites (id, email, invitee_name, status, created_by, expires_at, own_workspace)
     values ('inv-ada-new', 'ada@example.com', 'Ada', 'pending', 'seed', now() + interval '48 hours', true)
   `;
-  const taken = await claimInviteLink("inv-ada-new", { githubId: "424242", githubLogin: "newbie" });
+  const wrongPerson = await claimInviteLink("inv-ada-new", { githubId: "424242", githubLogin: "newbie", email: "newbie@example.com" });
+  assert.equal(wrongPerson.ok, false);
+  assert.equal(wrongPerson.status, 404);
+  const taken = await claimInviteLink("inv-ada-new", { githubId: "424242", githubLogin: "newbie", email: "ada@example.com" });
   assert.equal(taken.ok, true);
   assert.notEqual(taken.membership.workspaceId, "ws-old");
   assert.equal(await workspaceIdForSession({ user: { email: "ada@example.com", githubId: "424242" } }), taken.membership.workspaceId);
@@ -116,7 +127,7 @@ test("H1 a pending invite cannot outlive 48 hours and a null expiry cannot be cl
     assert.ok(span <= 48 * 60 * 60 * 1000 + 1000);
   }
   assert.equal((await claimInviteLink("inv-null", { githubId: "5" })).status, 404);
-  assert.equal((await claimInviteLink("inv-long", { githubId: "6" })).ok, true);
+  assert.equal((await claimInviteLink("inv-long", { githubId: "6", email: "long@example.com" })).ok, true);
 });
 
 test("M1 github access matches the numeric user id only", async () => {

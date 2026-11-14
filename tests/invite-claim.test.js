@@ -47,7 +47,7 @@ test("a signed invite cookie cannot be swapped for another id", () => {
   assert.equal(inviteIdFromReturnPath("/join/preview/github"), "");
 });
 
-test("a different GitHub account claims the link once, and expired or revoked links do not", async () => {
+test("only the invited email or GitHub login can claim a link, and expired or revoked links do not", async () => {
   await resetDatabase();
   const { getSql } = await import("../lib/db.js");
   const { claimInviteLink, authorizeGithubSignIn } = await import("../lib/invite-claim.js");
@@ -65,8 +65,19 @@ test("a different GitHub account claims the link once, and expired or revoked li
     values ('inv-stop', 'stop@example.com', 'revoked', 'martin', now(), true)
   `;
   const cookie = signInviteCookie("inv-ada");
-  const claimed = await authorizeGithubSignIn({
+  const stranger = await authorizeGithubSignIn({
     email: "octocat@users.noreply.github.com",
+    githubLogin: "octocat",
+    githubId: "4242",
+    cookieValue: cookie,
+    allowed: false
+  });
+  assert.equal(stranger.ok, false);
+  const stillPending = await sql`select status, github_user_id from workspace_invites where id = 'inv-ada'`;
+  assert.equal(stillPending[0].status, "pending");
+  assert.equal(stillPending[0].github_user_id, null);
+  const claimed = await authorizeGithubSignIn({
+    email: "Ada@Example.com",
     githubLogin: "octocat",
     githubId: "4242",
     cookieValue: cookie,
@@ -74,7 +85,7 @@ test("a different GitHub account claims the link once, and expired or revoked li
   });
   assert.equal(claimed.ok, true);
   assert.equal(claimed.created, true);
-  assert.equal(claimed.email, "octocat@users.noreply.github.com");
+  assert.equal(claimed.email, "Ada@Example.com");
   assert.equal(claimed.inviteEmail, "ada@example.com");
   assert.notEqual(claimed.workspaceId, "ws-martin");
   const member = await sql`
@@ -100,7 +111,7 @@ test("a different GitHub account claims the link once, and expired or revoked li
   const outsiders = await sql`select email from workspace_members where github_user_id = '7777'`;
   assert.equal(outsiders.length, 0);
   const retry = await authorizeGithubSignIn({
-    email: "octocat@users.noreply.github.com",
+    email: "Ada@Example.com",
     githubLogin: "octocat",
     githubId: "4242",
     cookieValue: cookie,
@@ -108,7 +119,7 @@ test("a different GitHub account claims the link once, and expired or revoked li
   });
   assert.equal(retry.ok, true);
   assert.equal(retry.created, false);
-  assert.equal(retry.email, "octocat@users.noreply.github.com");
+  assert.equal(retry.email, "Ada@Example.com");
   assert.equal(retry.inviteEmail, "ada@example.com");
 
   const expired = await claimInviteLink("inv-old", { githubId: "8", githubLogin: "old" });
@@ -122,7 +133,7 @@ test("a different GitHub account claims the link once, and expired or revoked li
     values ('inv-path', 'path@example.com', 'Path', 'pending', 'martin', now() + interval '48 hours', true)
   `;
   const fromReturn = await authorizeGithubSignIn({
-    email: "sabrinato@users.noreply.github.com",
+    email: "path@example.com",
     githubLogin: "sabrinato",
     githubId: "88001",
     cookieValue: "",

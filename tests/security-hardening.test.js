@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 import { contentSecurityPolicy } from "../lib/csp.js";
 import { contentDisposition } from "../lib/file-rules.js";
@@ -112,9 +112,13 @@ test("human uploads and invite actions stop after their minute budget", () => {
   assert.equal(allowInviteAction(inviter, now), false);
   assert.equal(allowInviteAction("", now), false);
   const panel = readFileSync(new URL("../app/admin/panel-actions.js", import.meta.url), "utf8");
-  const invites = readFileSync(new URL("../app/api/workspaces/[id]/invites/route.js", import.meta.url), "utf8");
+  const invites = readFileSync(new URL("../app/api/admin/invites/route.js", import.meta.url), "utf8");
+  const revoke = readFileSync(new URL("../app/api/admin/invites/[inviteId]/revoke/route.js", import.meta.url), "utf8");
   assert.match(panel, /allowInviteAction/);
+  assert.match(invites, /rejectCookieCrossOrigin/);
   assert.match(invites, /rejectInviteRate/);
-  assert.match(invites, /status: 404/);
-  assert.doesNotMatch(invites, /Forbidden/);
+  assert.match(revoke, /rejectCookieCrossOrigin/);
+  assert.match(revoke, /rejectInviteRate/);
+  assert.equal(existsSync(new URL("../app/api/workspaces/[id]/invites/route.js", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../app/api/workspaces/[id]/invites/[inviteId]/revoke/route.js", import.meta.url)), false);
 });

@@ -53,7 +53,7 @@ export function Onboarding() {
   return (
     <section className="onboard-card" aria-roledescription="carousel" aria-label="Welcome">
       <form action={finishOnboarding} className="onboard-skip">
-        <input type="hidden" name="next" value="/" />
+        <input type="hidden" name="next" value="/admin" />
         <button className="text-btn" type="submit">Skip</button>
       </form>
       <div
@@ -95,7 +95,7 @@ export function Onboarding() {
         {last ? (
           <form action={finishOnboarding}>
             <input type="hidden" name="next" value="/admin" />
-            <button className="btn" type="submit">Get started</button>
+            <button className="btn" type="submit">Next</button>
           </form>
         ) : (
           <button className="btn" type="button" onClick={() => setIndex((value) => value + 1)}>Next</button>

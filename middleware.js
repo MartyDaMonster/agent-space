@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { decideAccess, hasAuthCookie } from "./lib/access.js";
+import { trustedClientIp } from "./lib/client-ip.js";
 import { contentSecurityPolicy } from "./lib/csp.js";
 import { allowRate } from "./lib/request-limit.js";
 
@@ -10,7 +11,7 @@ export default function middleware(req) {
     authorization: req.headers.get("authorization")
   });
   if (decision.ok && (req.nextUrl.pathname === "/join" || req.nextUrl.pathname.startsWith("/join/"))) {
-    const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "local";
+    const ip = trustedClientIp(req.headers) || "local";
     if (!allowRate(`join:${ip}`, 30, 60_000)) {
       return new Response("Too many requests", {
         status: 429,

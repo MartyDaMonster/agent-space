@@ -1,7 +1,19 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { createSql } from "../lib/db.js";
 import { migrateOnThisDeploy } from "../lib/stage2.js";
+
+export function schemaVersion(source) {
+  return createHash("sha256").update(String(source || "")).digest("hex").slice(0, 16);
+}
+
+export function splitStatements(source) {
+  return String(source || "")
+    .split(/;\s*(?:\n|$)/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement && !statement.startsWith("--"));
+}
 
 export async function dropForeignKeysTo(sql, table) {
   if (!/^[a-z_]+$/.test(table)) throw new Error("Unexpected table.");
@@ -42,6 +54,22 @@ async function applyStatements(sql, statements) {
   }
 }
 
+export async function applySchemaOnce(sql, source) {
+  await sql.query(`
+    create table if not exists schema_migrations (
+      version text primary key,
+      applied_at timestamptz not null default now()
+    )
+  `);
+  const version = schemaVersion(source);
+  const found = await sql`select version from schema_migrations where version = ${version}`;
+  if (found.length) return { applied: false, version, statements: 0 };
+  const statements = splitStatements(source);
+  await applyStatements(sql, statements);
+  await sql`insert into schema_migrations (version) values (${version}) on conflict (version) do nothing`;
+  return { applied: true, version, statements: statements.length };
+}
+
 async function main() {
   const optional = process.argv.includes("--optional");
   if (!migrateOnThisDeploy()) {
@@ -60,12 +88,12 @@ async function main() {
   }
   const sql = createSql(url);
   const source = readFileSync(new URL("./migrate.sql", import.meta.url), "utf8");
-  const statements = source
-    .split(/;\s*(?:\n|$)/)
-    .map((statement) => statement.trim())
-    .filter((statement) => statement && !statement.startsWith("--"));
-  await applyStatements(sql, statements);
-  console.log(`Applied ${statements.length} statements.`);
+  const result = await applySchemaOnce(sql, source);
+  if (!result.applied) {
+    console.log(`Schema ${result.version} is already applied.`);
+    return;
+  }
+  console.log(`Applied ${result.statements} statements. Recorded ${result.version}.`);
 }
 
 const invoked = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

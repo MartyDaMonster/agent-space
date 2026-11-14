@@ -75,11 +75,15 @@ test("only a workspace owner can create or revoke an invite", () => {
   assert.equal(created.ok, true);
   assert.equal(revokeInvite(created.invite, OTHER).status, 404);
   assert.equal(revokeInvite(created.invite, MARTIN).invite.status, "revoked");
-  const accepted = acceptInvite(created.invite, { githubLogin: "someone" });
+  const stranger = acceptInvite(created.invite, { email: "someone@example.com", githubLogin: "someone" });
+  assert.equal(stranger.ok, false);
+  assert.equal(stranger.status, 404);
+  assert.equal(JSON.stringify(stranger).includes("ada@example.com"), false);
+  const accepted = acceptInvite(created.invite, { email: "ada@example.com", githubLogin: "octocat" });
   assert.equal(accepted.ok, true);
   assert.equal(accepted.membership.workspaceId, MARTIN);
   assert.equal(accepted.membership.email, "ada@example.com");
-  assert.equal(accepted.membership.githubLogin, "someone");
+  assert.equal(accepted.membership.githubLogin, "octocat");
   const acceptedAda = {
     id: "inv-ada",
     workspaceId: "ws-ada",

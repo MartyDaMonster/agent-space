@@ -368,9 +368,10 @@ test("routes cannot read, rename, comment, or notify across workspaces", async (
       headers: { cookie: martinCookie, origin: "http://127.0.0.1:3111", "content-type": "application/json" },
       body: JSON.stringify({ email: "ada@example.com" })
     });
-    const ownerBody = await ownerCreated.json();
-    assert.equal(ownerCreated.status, 201, JSON.stringify(ownerBody));
-    const gone = await fetch(`http://127.0.0.1:3111/api/workspaces/ws-martin/invites/${ownerBody.invite.id}/accept`, {
+    const ownerText = await ownerCreated.text();
+    assert.equal(ownerCreated.status, 404);
+    assert.equal(ownerText.includes("ada@example.com"), false);
+    const gone = await fetch("http://127.0.0.1:3111/api/workspaces/ws-martin/invites/inv-missing/revoke", {
       method: "POST",
       headers: { cookie: martinCookie }
     });
