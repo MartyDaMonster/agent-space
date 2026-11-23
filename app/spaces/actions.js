@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { cleanComment, cleanEmoji, cleanPostText } from "@/lib/compose";
-import { REACTION_EMOJI } from "@/lib/compose";
+import { cleanComment, cleanEmoji, cleanPostText, REACTION_EMOJI } from "@/lib/compose";
+import { getSql } from "@/lib/db";
+import { canManageContent } from "@/lib/moderation";
 import { boardAccess, workspaceIdForSession, workspaceRole } from "@/lib/workspace-session";
 import { spaceAccess, spaceWritesOpen } from "@/lib/space-access";
 import {
@@ -12,6 +13,7 @@ import {
   archiveSpace,
   createSpace,
   createSpaceInvite,
+  liftSpaceBotBlock,
   removeSpaceBot,
   removeSpaceWorkspace,
   renameSpace,
@@ -49,6 +51,11 @@ function viewer(actor) {
   return viewerFromSession(actor.session, actor.workspaceId, actor.role);
 }
 
+function bounce(slug, result) {
+  const message = result?.error || "That did not work.";
+  redirect(`/s/${slug}?notice=${encodeURIComponent(message)}`);
+}
+
 export async function createSpaceAction(_previous, formData) {
   const actor = await person();
   if (!actor) return { error: "You need to be signed in." };
@@ -74,11 +81,13 @@ export async function renameSpaceAction(_previous, formData) {
 }
 
 export async function archiveSpaceAction(formData) {
+  const slug = String(formData.get("slug") || "");
   const actor = await person();
-  if (!actor) return;
-  const access = await spaceAccess(viewer(actor), String(formData.get("slug") || ""));
-  await archiveSpace({ access, session: actor.session, email: actor.email });
-  if (access?.ok) revalidatePath(`/s/${access.space.slug}`);
+  if (!actor) bounce(slug, { error: "You need to be signed in." });
+  const access = await spaceAccess(viewer(actor), slug);
+  const result = await archiveSpace({ access, session: actor.session, email: actor.email });
+  if (!result?.ok) bounce(slug, result);
+  revalidatePath(`/s/${slug}`);
 }
 
 export async function inviteSpaceAction(_previous, formData) {
@@ -92,16 +101,18 @@ export async function inviteSpaceAction(_previous, formData) {
 }
 
 export async function revokeSpaceInviteAction(formData) {
+  const slug = String(formData.get("slug") || "");
   const actor = await person();
-  if (!actor) return;
-  const access = await spaceAccess(viewer(actor), String(formData.get("slug") || ""));
-  await revokeSpaceInvite({
+  if (!actor) bounce(slug, { error: "You need to be signed in." });
+  const access = await spaceAccess(viewer(actor), slug);
+  const result = await revokeSpaceInvite({
     access,
     session: actor.session,
     email: actor.email,
     inviteId: String(formData.get("inviteId") || "")
   });
-  if (access?.ok) revalidatePath(`/s/${access.space.slug}`);
+  if (!result?.ok) bounce(slug, result);
+  revalidatePath(`/s/${slug}`);
 }
 
 export async function saveSpaceBotsAction(_previous, formData) {
@@ -116,30 +127,50 @@ export async function saveSpaceBotsAction(_previous, formData) {
 }
 
 export async function removeWorkspaceAction(formData) {
+  const slug = String(formData.get("slug") || "");
   const actor = await person();
-  if (!actor) return;
-  const access = await spaceAccess(viewer(actor), String(formData.get("slug") || ""));
-  await removeSpaceWorkspace({
+  if (!actor) bounce(slug, { error: "You need to be signed in." });
+  const access = await spaceAccess(viewer(actor), slug);
+  const result = await removeSpaceWorkspace({
     access,
     session: actor.session,
     email: actor.email,
     workspaceId: String(formData.get("workspaceId") || "")
   });
-  if (access?.ok) revalidatePath(`/s/${access.space.slug}`);
+  if (!result?.ok) bounce(slug, result);
+  revalidatePath(`/s/${slug}`);
 }
 
 export async function removeBotAction(formData) {
+  const slug = String(formData.get("slug") || "");
   const actor = await person();
-  if (!actor) return;
-  const access = await spaceAccess(viewer(actor), String(formData.get("slug") || ""));
-  await removeSpaceBot({
+  if (!actor) bounce(slug, { error: "You need to be signed in." });
+  const access = await spaceAccess(viewer(actor), slug);
+  const result = await removeSpaceBot({
     access,
     session: actor.session,
     email: actor.email,
     workspaceId: String(formData.get("workspaceId") || ""),
     slug: String(formData.get("bot") || "")
   });
-  if (access?.ok) revalidatePath(`/s/${access.space.slug}`);
+  if (!result?.ok) bounce(slug, result);
+  revalidatePath(`/s/${slug}`);
+}
+
+export async function liftSpaceBotAction(formData) {
+  const slug = String(formData.get("slug") || "");
+  const actor = await person();
+  if (!actor) bounce(slug, { error: "You need to be signed in." });
+  const access = await spaceAccess(viewer(actor), slug);
+  const result = await liftSpaceBotBlock({
+    access,
+    session: actor.session,
+    email: actor.email,
+    workspaceId: String(formData.get("workspaceId") || ""),
+    slug: String(formData.get("bot") || "")
+  });
+  if (!result?.ok) bounce(slug, result);
+  revalidatePath(`/s/${slug}`);
 }
 
 export async function hideSpacePostAction(formData) {
@@ -219,14 +250,29 @@ export async function reactSpacePost(formData) {
 }
 
 export async function deleteOwnSpacePost(formData) {
+  const slug = String(formData.get("slug") || "");
   const actor = await person();
-  if (!actor) return;
-  const access = await spaceAccess(viewer(actor), String(formData.get("slug") || ""));
-  if (!access.ok) return;
-  const post = await findSpacePost(access.space.id, String(formData.get("postId") || ""), { includeHidden: true });
-  if (!post || post.authorKind !== "human" || post.workspaceId !== actor.workspaceId) return;
-  await deletePostNow(post.id, post.workspaceId);
-  revalidatePath(`/s/${access.space.slug}`);
+  if (!actor) bounce(slug, { error: "You need to be signed in." });
+  const access = await spaceAccess(viewer(actor), slug);
+  if (!access.ok) bounce(slug, { error: "That space could not be found." });
+  const open = spaceWritesOpen(access);
+  if (!open.ok) bounce(slug, open);
+  const postId = String(formData.get("postId") || "");
+  const sql = getSql();
+  const rows = await sql`
+    select author_kind, author_email, workspace_id
+    from posts
+    where id = ${postId} and space_id = ${access.space.id} and deleted_at is null
+  `;
+  if (rows.length !== 1) bounce(slug, { error: "That post is gone." });
+  const allowed = canManageContent({
+    actorEmail: actor.email,
+    authorEmail: rows[0].author_email,
+    allowlist: process.env.ALLOWED_EMAILS
+  });
+  if (rows[0].author_kind !== "human" || !allowed) bounce(slug, { error: "You can only delete your own posts." });
+  await deletePostNow(postId, rows[0].workspace_id);
+  revalidatePath(`/s/${slug}`);
 }
 
 export async function acceptSpaceInviteAction(formData) {

@@ -2,7 +2,7 @@ import { requireBot } from "@/lib/api-bot";
 import { cleanEmoji } from "@/lib/compose";
 import { postExists, toggleReaction } from "@/lib/posts";
 import { addSpaceReaction, findSpacePost } from "@/lib/space-feed";
-import { spaceAccess, spaceWritesOpen } from "@/lib/space-access";
+import { spaceAccess, spaceChoice, spaceWritesOpen } from "@/lib/space-access";
 import { spaceParticipants } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,9 @@ export async function POST(request, { params }) {
   }
   const emoji = cleanEmoji(body?.emoji);
   if (!emoji.ok) return Response.json({ error: emoji.error }, { status: 400 });
-  const spaceSlug = new URL(request.url).searchParams.get("space") || (typeof body?.space === "string" ? body.space.trim() : "");
+  const choice = spaceChoice(request, body);
+  if (!choice.ok) return Response.json({ error: choice.error }, { status: choice.status });
+  const spaceSlug = choice.space;
   if (spaceSlug) {
     const access = await spaceAccess(
       { kind: "bot", workspaceId: authResult.bot.workspaceId, slug: authResult.bot.slug },

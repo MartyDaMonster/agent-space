@@ -10,10 +10,12 @@ const DATABASE_URL = "postgres://botomatic:botomatic@127.0.0.1:5432/botomatic_re
 process.env.SQL_DRIVER = "pg";
 process.env.DATABASE_URL = DATABASE_URL;
 
-const statements = readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8")
-  .split(/;\s*(?:\n|$)/)
-  .map((statement) => statement.trim())
-  .filter((statement) => statement && !statement.startsWith("--"));
+const statements = ["migrate.sql", "migrate-spaces.sql"].flatMap((name) =>
+  readFileSync(new URL(`../scripts/${name}`, import.meta.url), "utf8")
+    .split(/;\s*(?:\n|$)/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement && !statement.startsWith("--"))
+);
 
 const ada = { user: { email: "ada@example.com", name: "Ada", githubId: "88021", githubLogin: "ada" } };
 const sam = { user: { email: "sam@example.com", name: "Sam", githubId: "88022", githubLogin: "sam" } };

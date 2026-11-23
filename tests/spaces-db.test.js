@@ -4,12 +4,13 @@ import { register } from "node:module";
 import test from "node:test";
 import pg from "pg";
 import { createSql, getSql, resetSqlCache } from "../lib/db.js";
-import { createFile, readFile } from "../lib/files.js";
+import { createFile, deleteOwnFile, readFile } from "../lib/files.js";
 import { fileAccess, WORKSPACE_QUOTA_BYTES } from "../lib/file-rules.js";
 import { botStartInstructions } from "../lib/grant.js";
 import { claudeInvitePrompt, codexInvitePrompt } from "../lib/invite-setup.js";
 import { newBotToken, newKeyId, tokenHash } from "../lib/keys.js";
-import { listPosts } from "../lib/posts.js";
+import { destroyComment, findComment, listPosts, markCommentDeleted, markCommentRestored } from "../lib/posts.js";
+import { removeWorkspaceBot } from "../lib/remove-bot.js";
 import { consumeRateLimit } from "../lib/rate-limit.js";
 import { addSpaceBotComment, addSpaceBotPost, listSpacePosts } from "../lib/space-feed.js";
 import { spaceAccess } from "../lib/space-access.js";
@@ -18,6 +19,7 @@ import {
   archiveSpace,
   createSpace,
   createSpaceInvite,
+  liftSpaceBotBlock,
   removeSpaceBot,
   removeSpaceWorkspace,
   revokeSpaceInvite,
@@ -33,10 +35,12 @@ const DATABASE_URL = "postgres://botomatic:botomatic@127.0.0.1:5432/botomatic_sp
 process.env.SQL_DRIVER = "pg";
 process.env.DATABASE_URL = DATABASE_URL;
 
-const statements = readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8")
-  .split(/;\s*(?:\n|$)/)
-  .map((statement) => statement.trim())
-  .filter((statement) => statement && !statement.startsWith("--"));
+const statements = ["migrate.sql", "migrate-spaces.sql"].flatMap((name) =>
+  readFileSync(new URL(`../scripts/${name}`, import.meta.url), "utf8")
+    .split(/;\s*(?:\n|$)/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement && !statement.startsWith("--"))
+);
 
 const ada = { kind: "human", workspaceId: "ws-ada", email: "ada@example.com", role: "owner" };
 const bea = { kind: "human", workspaceId: "ws-bea", email: "bea@example.com", role: "owner" };
@@ -470,6 +474,185 @@ test("shared spaces stay off the private board and reject outsiders", async () =
     headers: { authorization: `Bearer ${tokens.ada}` }
   }));
   assert.equal(limitedPrivate.status, 429);
+
+  const rejoined = await createSpaceInvite({
+    access: await spaceAccess(ada, space.slug),
+    session: freshSession("ada@example.com"),
+    email: "ada@example.com"
+  });
+  assert.equal(rejoined.ok, true, rejoined.error);
+  assert.ok(rejoined.inviteId.startsWith("sinv-"));
+  assert.ok(rejoined.inviteId.slice("sinv-".length).length >= 32);
+  assert.equal((await acceptSpaceInvite({
+    inviteId: rejoined.inviteId,
+    workspaceId: "ws-bea",
+    email: "bea@example.com",
+    role: "owner"
+  })).ok, true);
+  assert.equal((await setSpaceBots({
+    access: await spaceAccess(bea, space.slug),
+    email: "bea@example.com",
+    slugs: ["dexter"]
+  })).ok, true);
+  const staleLink = await createSpaceInvite({
+    access: await spaceAccess(ada, space.slug),
+    session: freshSession("ada@example.com"),
+    email: "ada@example.com"
+  });
+  await sql`
+    insert into board_files (
+      id, workspace_id, space_id, name, extension, content_type, byte_size, storage, body,
+      uploader_kind, uploader_id
+    ) values (
+      'file-ada-dex', 'ws-ada', ${space.id}, 'a.txt', 'txt', 'text/plain', 4, 'db', 'hi',
+      'bot', 'dexter'
+    )
+  `;
+  const stolen = await deleteOwnFile({
+    id: "file-ada-dex",
+    workspaceId: "ws-bea",
+    uploaderKind: "bot",
+    uploaderId: "dexter",
+    viewer: beaDexter
+  });
+  assert.equal(stolen.status, 404);
+  const stillThere = await sql`select id from board_files where id = 'file-ada-dex' and deleted_at is null`;
+  assert.equal(stillThere.length, 1);
+  const ownDelete = await deleteOwnFile({
+    id: "file-ada-dex",
+    workspaceId: "ws-ada",
+    uploaderKind: "bot",
+    uploaderId: "dexter",
+    viewer: adaDexter
+  });
+  assert.equal(ownDelete.ok, true);
+
+  await sql`
+    insert into comments (
+      id, post_id, workspace_id, author_kind, author_slug, author_name, body, space_id, author_workspace_id
+    ) values (
+      'cmt-space', 'named', 'ws-ada', 'bot', 'dexter', 'Dexter', 'in the space', ${space.id}, 'ws-bea'
+    )
+  `;
+  assert.equal(await findComment("cmt-space", "ws-ada"), null);
+  await markCommentDeleted("cmt-space", "ws-ada");
+  await markCommentRestored("cmt-space", "ws-ada");
+  await sql`update comments set deleted_at = now() where id = 'cmt-space'`;
+  await markCommentRestored("cmt-space", "ws-ada");
+  await destroyComment("cmt-space", "ws-ada");
+  const spaceComment = await sql`select deleted_at from comments where id = 'cmt-space'`;
+  assert.equal(spaceComment.length, 1);
+  assert.ok(spaceComment[0].deleted_at);
+
+  assert.equal((await setSpaceBots({
+    access: await spaceAccess(ada, space.slug),
+    email: "ada@example.com",
+    slugs: ["dexter", "milo"]
+  })).ok, true);
+  assert.equal((await removeWorkspaceBot({ workspaceId: "ws-ada" }, "milo")).ok, true);
+  await sql`update bots set removed_at = null where workspace_id = 'ws-ada' and slug = 'milo'`;
+  assert.equal((await spaceAccess(adaMilo, space.slug)).status, 404);
+  const inherited = await sql`select 1 from space_bots where workspace_id = 'ws-ada' and bot_slug = 'milo'`;
+  assert.equal(inherited.length, 0);
+
+  assert.equal((await removeSpaceBot({
+    access: await spaceAccess(ada, space.slug),
+    session: freshSession("ada@example.com"),
+    email: "ada@example.com",
+    workspaceId: "ws-bea",
+    slug: "dexter"
+  })).ok, true);
+  const blockedAdd = await setSpaceBots({
+    access: await spaceAccess(bea, space.slug),
+    email: "bea@example.com",
+    slugs: ["dexter"]
+  });
+  assert.equal(blockedAdd.ok, false);
+  assert.match(blockedAdd.error, /removed this bot/);
+  assert.equal((await liftSpaceBotBlock({
+    access: await spaceAccess(ada, space.slug),
+    session: freshSession("ada@example.com"),
+    email: "ada@example.com",
+    workspaceId: "ws-bea",
+    slug: "dexter"
+  })).ok, true);
+  assert.equal((await setSpaceBots({
+    access: await spaceAccess(bea, space.slug),
+    email: "bea@example.com",
+    slugs: ["dexter"]
+  })).ok, true);
+
+  const duplicate = await addSpaceBotPost({
+    bot: beaDexter,
+    space: { id: space.id, slug: space.slug },
+    post: {
+      id: "named",
+      type: "message",
+      from: "dexter",
+      to: null,
+      text: "same id",
+      createdAt: "2026-11-14T02:00:00Z",
+      status: null,
+      media: null,
+      reactions: {}
+    }
+  });
+  assert.equal(duplicate.status, 409);
+  const namedRows = await sql`select workspace_id from posts where space_id = ${space.id} and id = 'named'`;
+  assert.deepEqual(namedRows.map((row) => row.workspace_id), ["ws-ada"]);
+
+  assert.equal((await spaceAccess(ada, space.id)).status, 404);
+  assert.equal((await spaceAccess(ada, space.id, { byId: true })).ok, true);
+  const spoof = await createSpace({
+    workspaceId: "ws-ada",
+    email: "ada@example.com",
+    role: "owner",
+    name: space.id
+  });
+  assert.equal(spoof.ok, true, spoof.error);
+  assert.equal(spoof.space.slug === space.id, false);
+  assert.equal(/^spc-/.test(spoof.space.slug), false);
+  await sql`delete from space_workspaces where space_id = ${spoof.space.id}`;
+  await sql`delete from spaces where id = ${spoof.space.id}`;
+
+  const ignored = await addSpaceBotPost({
+    bot: beaDexter,
+    space: { id: space.id, slug: space.slug },
+    post: {
+      id: "ignore-at",
+      type: "message",
+      from: "dexter",
+      to: null,
+      text: "hello @nobody",
+      createdAt: "2026-11-14T02:01:00Z",
+      status: null,
+      media: null,
+      reactions: {}
+    }
+  });
+  assert.equal(ignored.ok, true, ignored.error);
+
+  assert.equal((await removeSpaceWorkspace({
+    access: await spaceAccess(ada, space.slug),
+    session: freshSession("ada@example.com"),
+    email: "ada@example.com",
+    workspaceId: "ws-bea"
+  })).ok, true);
+  assert.equal((await acceptSpaceInvite({
+    inviteId: staleLink.inviteId,
+    workspaceId: "ws-bea",
+    email: "bea@example.com",
+    role: "owner"
+  })).status, 404);
+  const revokedInvite = await sql`select status from space_invites where id = ${staleLink.inviteId}`;
+  assert.equal(revokedInvite[0].status, "revoked");
+
+  const mismatch = await POST(new Request(`http://local/api/posts?space=other-space`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${tokens.bea}`, "content-type": "application/json" },
+    body: JSON.stringify({ id: "mismatch-1", type: "message", text: "nope", space: space.slug })
+  }));
+  assert.equal(mismatch.status, 400);
 
   const cap = await createSpace({ workspaceId: "ws-ada", email: "ada@example.com", role: "member", name: "Nope" });
   assert.equal(cap.status, 404);

@@ -54,6 +54,12 @@ async function applyStatements(sql, statements) {
   }
 }
 
+export function bundledStatements() {
+  return ["migrate.sql", "migrate-spaces.sql"].flatMap((name) =>
+    splitStatements(readFileSync(new URL(`./${name}`, import.meta.url), "utf8"))
+  );
+}
+
 export async function applySchemaOnce(sql, source) {
   await sql.query(`
     create table if not exists schema_migrations (
@@ -87,13 +93,16 @@ async function main() {
     return;
   }
   const sql = createSql(url);
-  const source = readFileSync(new URL("./migrate.sql", import.meta.url), "utf8");
-  const result = await applySchemaOnce(sql, source);
-  if (!result.applied) {
-    console.log(`Schema ${result.version} is already applied.`);
-    return;
+  const files = ["migrate.sql", "migrate-spaces.sql"];
+  for (const name of files) {
+    const source = readFileSync(new URL(`./${name}`, import.meta.url), "utf8");
+    const result = await applySchemaOnce(sql, source);
+    if (!result.applied) {
+      console.log(`${name} ${result.version} is already applied.`);
+      continue;
+    }
+    console.log(`Applied ${result.statements} statements from ${name}. Recorded ${result.version}.`);
   }
-  console.log(`Applied ${result.statements} statements. Recorded ${result.version}.`);
 }
 
 const invoked = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

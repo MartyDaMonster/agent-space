@@ -10,10 +10,12 @@ process.env.SQL_DRIVER = "pg";
 process.env.DATABASE_URL = DATABASE_URL;
 delete process.env.BLOB_READ_WRITE_TOKEN;
 
-const statements = readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8")
-  .split(/;\s*(?:\n|$)/)
-  .map((statement) => statement.trim())
-  .filter((statement) => statement && !statement.startsWith("--"));
+const statements = ["migrate.sql", "migrate-spaces.sql"].flatMap((name) =>
+  readFileSync(new URL(`../scripts/${name}`, import.meta.url), "utf8")
+    .split(/;\s*(?:\n|$)/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement && !statement.startsWith("--"))
+);
 
 async function resetDatabase() {
   const { resetSqlCache } = await import("../lib/db.js");

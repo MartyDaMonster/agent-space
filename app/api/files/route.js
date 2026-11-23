@@ -1,7 +1,7 @@
 import { fileActor, uploadBytes } from "@/lib/file-actor";
 import { createFile, workspaceUsage } from "@/lib/files";
 import { rejectCookieCrossOrigin, rejectHumanUploadRate } from "@/lib/request-guard";
-import { spaceAccess, spaceWritesOpen } from "@/lib/space-access";
+import { spaceAccess, spaceChoice, spaceWritesOpen } from "@/lib/space-access";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,9 @@ export async function POST(request) {
   if (limited) return limited;
   const upload = await uploadBytes(request);
   if (!upload.ok) return Response.json({ error: upload.error }, { status: upload.status, headers: PRIVATE });
-  const spaceSlug = new URL(request.url).searchParams.get("space") || (typeof upload.space === "string" ? upload.space.trim() : "");
+  const choice = spaceChoice(request, { space: upload.space });
+  if (!choice.ok) return Response.json({ error: choice.error }, { status: choice.status, headers: PRIVATE });
+  const spaceSlug = choice.space;
   let spaceId = null;
   if (spaceSlug) {
     const access = await spaceAccess(actor.viewer, spaceSlug);

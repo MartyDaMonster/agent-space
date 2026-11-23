@@ -5,7 +5,7 @@ import { rememberMentions } from "@/lib/mention-store";
 import { commentAuthorFromBot } from "@/lib/mentions";
 import { insertComment, postExists, publicId } from "@/lib/posts";
 import { addSpaceBotComment, findSpacePost } from "@/lib/space-feed";
-import { spaceAccess, spaceWritesOpen } from "@/lib/space-access";
+import { spaceAccess, spaceChoice, spaceWritesOpen } from "@/lib/space-access";
 import { utcStamp } from "@/scripts/schema.js";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +22,9 @@ export async function POST(request, { params }) {
   }
   const text = cleanComment(body?.text);
   if (!text.ok) return Response.json({ error: text.error }, { status: 400 });
-  const spaceSlug = new URL(request.url).searchParams.get("space") || (typeof body?.space === "string" ? body.space.trim() : "");
+  const choice = spaceChoice(request, body);
+  if (!choice.ok) return Response.json({ error: choice.error }, { status: choice.status });
+  const spaceSlug = choice.space;
   if (spaceSlug) {
     const access = await spaceAccess(
       { kind: "bot", workspaceId: authResult.bot.workspaceId, slug: authResult.bot.slug },

@@ -7,8 +7,8 @@ import { decodeCursor, encodeCursor } from "@/lib/activity";
 import { botSlugs, insertPost, listActivity, listBots, listPosts, parseFeedQuery, sweepExpiredDeletes, threadFor } from "@/lib/posts";
 import { countReactionRows, namesForReactions, slugsForReactions } from "@/lib/reactions";
 import { projectBySlug } from "@/lib/projects";
-import { listSpacePosts, spaceFiles, spaceThread, addSpaceBotPost } from "@/lib/space-feed";
-import { spaceAccess, spaceWritesOpen } from "@/lib/space-access";
+import { listSpacePosts, spaceFiles, spacePostKey, spaceThread, addSpaceBotPost } from "@/lib/space-feed";
+import { spaceAccess, spaceChoice, spaceWritesOpen } from "@/lib/space-access";
 import { spaceParticipants } from "@/lib/spaces";
 import { utcStamp, validateApiPost } from "@/scripts/schema.js";
 
@@ -30,17 +30,24 @@ export async function GET(request) {
     const posts = await listSpacePosts(access.space.id, { limit: parsed.limit });
     const thread = await spaceThread(posts.map((post) => post.id), access.space.id);
     const people = await spaceParticipants(access.space.id);
-    const grouped = await spaceFiles(posts.map((post) => post.id), access.space.id, { kind: "bot", id: authResult.bot.slug });
-    const withThread = posts.map((post) => ({
-      ...post,
-      comments: thread.comments[post.id] || [],
-      reactions: slugsForReactions(thread.reactions[post.id] || []),
-      reactionNames: namesForReactions(thread.reactions[post.id] || [], {
-        bots: people.bots.map((bot) => ({ slug: bot.qualified, name: bot.name })),
-        humans: []
-      }),
-      files: grouped.posts[post.id] || []
-    }));
+    const grouped = await spaceFiles(posts.map((post) => post.id), access.space.id, {
+      kind: "bot",
+      id: authResult.bot.slug,
+      workspaceId: authResult.bot.workspaceId
+    });
+    const withThread = posts.map((post) => {
+      const key = spacePostKey(post.workspaceId, post.id);
+      return {
+        ...post,
+        comments: thread.comments[key] || [],
+        reactions: slugsForReactions(thread.reactions[key] || []),
+        reactionNames: namesForReactions(thread.reactions[key] || [], {
+          bots: people.bots.map((bot) => ({ slug: bot.qualified, name: bot.name })),
+          humans: []
+        }),
+        files: grouped.posts[key] || []
+      };
+    });
     return Response.json({ posts: withThread, space: access.space.slug });
   }
   let projectId = null;
@@ -84,7 +91,7 @@ export async function GET(request) {
     withThread,
     await listMentionIndex(withThread.map((post) => post.id), authResult.bot.workspaceId)
   );
-  const viewer = { kind: "bot", id: authResult.bot.slug };
+  const viewer = { kind: "bot", id: authResult.bot.slug, workspaceId: authResult.bot.workspaceId };
   const grouped = await filesForPosts(mentioned.map((post) => post.id), authResult.bot.workspaceId, viewer);
   const withFiles = mentioned.map((post) => ({
     ...post,
@@ -107,7 +114,9 @@ export async function POST(request) {
   } catch {
     return Response.json({ error: "Post body must be a JSON object." }, { status: 400 });
   }
-  const spaceSlug = typeof body.space === "string" ? body.space.trim() : "";
+  const choice = spaceChoice(request, body);
+  if (!choice.ok) return Response.json({ error: choice.error }, { status: choice.status });
+  const spaceSlug = choice.space;
   if (spaceSlug) {
     const access = await spaceAccess(botViewer(authResult.bot), spaceSlug);
     if (!access.ok) return Response.json({ error: "Not found." }, { status: 404 });

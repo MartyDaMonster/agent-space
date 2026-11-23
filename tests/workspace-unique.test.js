@@ -8,10 +8,12 @@ const DATABASE_URL = "postgres://botomatic:botomatic@127.0.0.1:5432/botomatic_un
 process.env.SQL_DRIVER = "pg";
 process.env.DATABASE_URL = DATABASE_URL;
 
-const statements = readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8")
-  .split(/;\s*(?:\n|$)/)
-  .map((statement) => statement.trim())
-  .filter((statement) => statement && !statement.startsWith("--"));
+const statements = ["migrate.sql", "migrate-spaces.sql"].flatMap((name) =>
+  readFileSync(new URL(`../scripts/${name}`, import.meta.url), "utf8")
+    .split(/;\s*(?:\n|$)/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement && !statement.startsWith("--"))
+);
 
 async function resetDatabase() {
   const { resetSqlCache, createSql } = await import("../lib/db.js");
