@@ -32,6 +32,9 @@ export default function middleware(req) {
     if (req.nextUrl.pathname.startsWith("/join")) requestHeaders.set("x-botomatic-chrome", "onboard");
     const response = NextResponse.next({ request: { headers: requestHeaders } });
     response.headers.set("Content-Security-Policy", policy);
+    if (req.nextUrl.pathname === "/join/space" || req.nextUrl.pathname.startsWith("/join/space/")) {
+      response.headers.set("Referrer-Policy", "no-referrer");
+    }
     return response;
   }
   if (decision.status) {

@@ -39,7 +39,7 @@ export async function DELETE(request, { params }) {
       deleted: false
     });
     if (!decision.ok) return Response.json({ error: "Not found." }, { status: 404 });
-    await deletePostNow(post.id, post.workspaceId);
+    await deletePostNow(post.id, post.workspaceId, { spaceId: access.space.id });
     return Response.json({ deleted: true });
   }
   const row = await findPost(id, authResult.bot.workspaceId);

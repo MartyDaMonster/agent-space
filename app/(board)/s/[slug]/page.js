@@ -20,6 +20,7 @@ import {
   ownBotsForSpace,
   pendingSpaceInvites,
   selectedBotSlugs,
+  spaceDocumentTitle,
   spaceParticipants,
   viewerFromSession
 } from "@/lib/spaces";
@@ -29,7 +30,11 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  return { title: slug };
+  const session = await auth();
+  const workspaceId = await workspaceIdForSession(session);
+  const role = await workspaceRole(session, workspaceId);
+  const title = await spaceDocumentTitle(viewerFromSession(session, workspaceId, role), slug);
+  return { title };
 }
 
 export default async function SpacePage({ params, searchParams }) {
@@ -89,7 +94,7 @@ export default async function SpacePage({ params, searchParams }) {
             <form key={invite.id} action={revokeSpaceInviteAction} className="space-row">
               <input type="hidden" name="slug" value={access.space.slug} />
               <input type="hidden" name="inviteId" value={invite.id} />
-              <p className="space-link">{invite.path}</p>
+              <p className="space-note">Pending invite</p>
               <button className="btn btn-secondary" type="submit">Revoke</button>
             </form>
           ))}

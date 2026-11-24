@@ -109,8 +109,12 @@ export default async function RootLayout({ children }) {
             <a className="brandosx-link" href="/terms">Terms</a>
           </footer>
         )}
-        <Analytics />
-        <SpeedInsights />
+        {path.startsWith("/join/space") ? null : (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
       </body>
     </html>
   );
