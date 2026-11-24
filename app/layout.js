@@ -9,7 +9,8 @@ import { isUnread } from "@/lib/project-fields";
 import { listProjects } from "@/lib/projects";
 import { listBots } from "@/lib/posts";
 import { martinAdmin } from "@/lib/admin-panel";
-import { workspaceIdForSession } from "@/lib/workspace-session";
+import { listSpacesForWorkspace } from "@/lib/spaces";
+import { workspaceIdForSession, workspaceRole } from "@/lib/workspace-session";
 import "./globals.css";
 
 const fraunces = localFont({
@@ -47,6 +48,8 @@ export default async function RootLayout({ children }) {
   const path = headerList.get("x-botomatic-path") || "";
   const publicLanding = !session && (path === "/" || path === "/login");
   let projects = [];
+  let spaces = [];
+  let canCreateSpace = false;
   let botCount = null;
   const workspaceId = session ? await workspaceIdForSession(session) : null;
   if (workspaceId) {
@@ -66,13 +69,19 @@ export default async function RootLayout({ children }) {
     } catch {
       botCount = null;
     }
+    try {
+      spaces = await listSpacesForWorkspace(workspaceId);
+      canCreateSpace = (await workspaceRole(session, workspaceId)) === "owner";
+    } catch {
+      spaces = [];
+    }
   }
   return (
     <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
       <body>
         <a className="skip" href="#content">Skip to content</a>
         {session && !onboard ? (
-          <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects} showAdmin={martinAdmin(session)} workspaceId={workspaceId || ""} botCount={botCount}>
+          <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects} spaces={spaces} canCreateSpace={canCreateSpace} showAdmin={martinAdmin(session)} workspaceId={workspaceId || ""} botCount={botCount}>
             {children}
           </AppShell>
         ) : (

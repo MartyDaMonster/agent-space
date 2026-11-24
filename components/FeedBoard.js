@@ -35,7 +35,7 @@ export async function FeedBoard({ email, name = "", image = "", projectSlug = ""
   const grouped = await filesForPosts(
     posts.map((post) => post.id),
     workspaceId,
-    { kind: "human", id: String(email || "").toLowerCase() }
+    { kind: "human", id: String(email || "").toLowerCase(), workspaceId }
   );
   const withFiles = posts.map((post) => ({ ...post, files: grouped.posts[post.id] || [] }));
   const commentFiles = grouped.comments;

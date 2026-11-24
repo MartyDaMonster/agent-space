@@ -10,10 +10,12 @@ process.env.SQL_DRIVER = "pg";
 process.env.DATABASE_URL = DATABASE_URL;
 process.env.ALLOWED_EMAILS = "marty.hungerford3181@gmail.com,marty.j.hungerford@gmail.com";
 
-const statements = readFileSync(new URL("../scripts/migrate.sql", import.meta.url), "utf8")
-  .split(/;\s*(?:\n|$)/)
-  .map((statement) => statement.trim())
-  .filter((statement) => statement && !statement.startsWith("--"));
+const statements = ["migrate.sql", "migrate-spaces.sql"].flatMap((name) =>
+  readFileSync(new URL(`../scripts/${name}`, import.meta.url), "utf8")
+    .split(/;\s*(?:\n|$)/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement && !statement.startsWith("--"))
+);
 
 const martin = {
   user: {

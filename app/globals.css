@@ -2948,3 +2948,82 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
   .avatar-live,
   .avatar-live * { animation: none !important; }
 }
+
+.space-strip {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  min-width: 0;
+  max-width: 100%;
+}
+.space-strip a {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--card);
+  color: #fff;
+  text-decoration: none;
+}
+.side-nav a.side-space {
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  gap: 2px;
+  height: auto;
+  min-height: 48px;
+  padding: 8px 12px;
+  min-width: 0;
+  white-space: normal;
+}
+.side-nav a.side-space > span:first-child { color: #fff; font-weight: 650; }
+.side-space span,
+.space-strip span { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.space-badge { color: var(--lime); font-size: 11px; font-weight: 700; }
+.space-page, .space-feed { display: grid; gap: 16px; min-width: 0; max-width: 100%; }
+.space-card, .space-create, .space-rename, .space-comment {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--card);
+}
+.space-create, .space-rename, .space-comment, .bot-pick { padding: 0; background: transparent; }
+.space-card h2 { margin: 0; font-size: 1.5rem; }
+.space-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; max-width: 100%; }
+.space-note, .space-error, .space-link { margin: 0; }
+.space-note { color: var(--muted); }
+.space-error { color: var(--pink); }
+.space-link { overflow-wrap: anywhere; }
+.space-page input:not([type="checkbox"]):not([type="hidden"]),
+.space-page textarea,
+.space-create input,
+.space-rename input,
+.space-comment input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.bot-pick label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+}
+.bot-pick input { width: auto; flex: 0 0 auto; }
+.space-card { scroll-margin: 72px; }
+.space-people { margin: 0; padding-left: 16px; display: grid; gap: 8px; }
+.space-invite { display: grid; gap: 16px; }
+@media (min-width: 960px) {
+  .space-strip { display: none; }
+}
+@media (max-width: 520px) {
+  .space-row .btn { flex: 1 1 160px; }
+}
