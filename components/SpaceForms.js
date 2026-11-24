@@ -44,6 +44,10 @@ export function SpaceInviteForm({ slug }) {
   return (
     <form action={action}>
       <input type="hidden" name="slug" value={slug} />
+      <label>
+        Only this workspace
+        <input name="target" placeholder="Workspace slug, optional" />
+      </label>
       <button className="btn" type="submit" disabled={pending}>Create invite link</button>
       {state?.error ? <p className="space-error">{state.error}</p> : null}
       {state?.path ? <p className="space-link">Invite link: {state.path}</p> : null}

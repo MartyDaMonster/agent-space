@@ -19,6 +19,7 @@ import {
   archiveSpace,
   createSpace,
   createSpaceInvite,
+  hashInviteToken,
   liftSpaceBotBlock,
   removeSpaceBot,
   removeSpaceWorkspace,
@@ -35,7 +36,7 @@ const DATABASE_URL = "postgres://botomatic:botomatic@127.0.0.1:5432/botomatic_sp
 process.env.SQL_DRIVER = "pg";
 process.env.DATABASE_URL = DATABASE_URL;
 
-const statements = ["migrate.sql", "migrate-spaces.sql"].flatMap((name) =>
+const statements = ["migrate.sql", "migrate-spaces.sql", "migrate-space-invites.sql"].flatMap((name) =>
   readFileSync(new URL(`../scripts/${name}`, import.meta.url), "utf8")
     .split(/;\s*(?:\n|$)/)
     .map((statement) => statement.trim())
@@ -387,7 +388,7 @@ test("shared spaces stay off the private board and reject outsiders", async () =
     session: freshSession("ada@example.com"),
     email: "ada@example.com"
   });
-  await sql`update space_invites set expires_at = now() - interval '1 hour' where id = ${expired.inviteId}`;
+  await sql`update space_invites set expires_at = now() - interval '1 hour' where token_hash = ${hashInviteToken(expired.inviteId)}`;
   assert.equal((await acceptSpaceInvite({
     inviteId: expired.inviteId,
     workspaceId: "ws-bea",
@@ -644,7 +645,7 @@ test("shared spaces stay off the private board and reject outsiders", async () =
     email: "bea@example.com",
     role: "owner"
   })).status, 404);
-  const revokedInvite = await sql`select status from space_invites where id = ${staleLink.inviteId}`;
+  const revokedInvite = await sql`select status from space_invites where token_hash = ${hashInviteToken(staleLink.inviteId)}`;
   assert.equal(revokedInvite[0].status, "revoked");
 
   const mismatch = await POST(new Request(`http://local/api/posts?space=other-space`, {

@@ -22,11 +22,10 @@ import {
   setSpacePostHidden,
   viewerFromSession
 } from "@/lib/spaces";
-import { addSpaceHumanPost, addSpaceReaction, findSpacePost } from "@/lib/space-feed";
+import { addSpaceHumanPost, addSpaceReaction, findSpacePost, prepareSpaceWrite, rememberSpaceMentions } from "@/lib/space-feed";
 import { deletePostNow } from "@/lib/posts";
 import { publicId } from "@/lib/posts";
 import { insertComment } from "@/lib/posts";
-import { prepareSpaceWrite } from "@/lib/space-feed";
 import { utcStamp } from "@/scripts/schema.js";
 
 async function person() {
@@ -94,7 +93,12 @@ export async function inviteSpaceAction(_previous, formData) {
   const actor = await person();
   if (!actor) return { error: "You need to be signed in." };
   const access = await spaceAccess(viewer(actor), String(formData.get("slug") || ""));
-  const invited = await createSpaceInvite({ access, session: actor.session, email: actor.email });
+  const invited = await createSpaceInvite({
+    access,
+    session: actor.session,
+    email: actor.email,
+    targetSlug: formData.get("target")
+  });
   if (!invited.ok) return { error: invited.error || "That invite could not be created." };
   revalidatePath(`/s/${access.space.slug}`);
   return { path: invited.path };
@@ -218,8 +222,9 @@ export async function publishSpaceComment(_previous, formData) {
   if (!post) return { error: "That post is gone." };
   const prepared = await prepareSpaceWrite({ spaceId: access.space.id, text: text.text });
   if (!prepared.ok) return { error: prepared.error };
+  const commentId = publicId("cmt");
   await insertComment({
-    id: publicId("cmt"),
+    id: commentId,
     postId: post.id,
     workspaceId: post.workspaceId,
     authorKind: "human",
@@ -230,6 +235,7 @@ export async function publishSpaceComment(_previous, formData) {
     spaceId: access.space.id,
     authorWorkspaceId: actor.workspaceId
   });
+  await rememberSpaceMentions("comment", commentId, post.workspaceId, prepared.mentions);
   revalidatePath(`/s/${access.space.slug}`);
   return { ok: true };
 }
@@ -271,13 +277,13 @@ export async function deleteOwnSpacePost(formData) {
     allowlist: process.env.ALLOWED_EMAILS
   });
   if (rows[0].author_kind !== "human" || !allowed) bounce(slug, { error: "You can only delete your own posts." });
-  await deletePostNow(postId, rows[0].workspace_id);
+  await deletePostNow(postId, rows[0].workspace_id, { spaceId: access.space.id });
   revalidatePath(`/s/${slug}`);
 }
 
 export async function acceptSpaceInviteAction(formData) {
   const session = await auth();
-  const workspaceId = await workspaceIdForSession(session);
+  const workspaceId = String(formData.get("workspaceId") || "");
   const role = workspaceId ? await workspaceRole(session, workspaceId) : null;
   const email = String(session?.user?.email || "").trim().toLowerCase();
   const result = await acceptSpaceInvite({
