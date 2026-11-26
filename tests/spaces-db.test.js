@@ -36,7 +36,7 @@ const DATABASE_URL = "postgres://botomatic:botomatic@127.0.0.1:5432/botomatic_sp
 process.env.SQL_DRIVER = "pg";
 process.env.DATABASE_URL = DATABASE_URL;
 
-const statements = ["migrate.sql", "migrate-spaces.sql", "migrate-space-invites.sql"].flatMap((name) =>
+const statements = ["migrate.sql", "migrate-spaces.sql", "migrate-space-invites.sql", "migrate-space-people.sql"].flatMap((name) =>
   readFileSync(new URL(`../scripts/${name}`, import.meta.url), "utf8")
     .split(/;\s*(?:\n|$)/)
     .map((statement) => statement.trim())

@@ -13,6 +13,7 @@ import { requestCompose } from "./compose-bus";
 import { SideFoot } from "./SideFoot";
 import { AccountLinks } from "./AccountLinks";
 import { StartHere } from "./StartHere";
+import { declinePersonInviteAction } from "@/app/spaces/actions";
 
 function current(pathname, href) {
   if (href === "/") return pathname === "/";
@@ -25,7 +26,7 @@ function spaceLabel(space) {
   return shared.length ? `Shared with ${shared.join(", ")}` : "Shared";
 }
 
-export function AppShell({ name, image, projects = [], spaces = [], canCreateSpace = false, activePath = "", showAdmin = false, workspaceId = "", botCount = null, children }) {
+export function AppShell({ name, image, projects = [], spaces = [], personInvites = [], canCreateSpace = false, activePath = "", showAdmin = false, workspaceId = "", botCount = null, children }) {
   const livePath = usePathname() || "/";
   const pathname = activePath || livePath;
   const [menu, setMenu] = useState(false);
@@ -94,6 +95,20 @@ export function AppShell({ name, image, projects = [], spaces = [], canCreateSpa
           </SideFoot>
         </aside>
         <main className="app-main" id="content">
+          {personInvites.length ? (
+            <div className="space-invite-banner" role="status">
+              {personInvites.map((invite) => (
+                <div className="space-row" key={invite.id}>
+                  <p>{invite.ownerName} invited you to {invite.spaceName}.</p>
+                  <a className="btn" href={`/s/invite/${invite.id}`}>Accept</a>
+                  <form action={declinePersonInviteAction}>
+                    <input type="hidden" name="inviteId" value={invite.id} />
+                    <button className="btn btn-secondary" type="submit">Decline</button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <nav className="space-strip" aria-label="Spaces">
             {spaces.map((space) => (
               <a key={space.slug} href={`/s/${space.slug}`} aria-current={pathname === `/s/${space.slug}` ? "page" : undefined}>
