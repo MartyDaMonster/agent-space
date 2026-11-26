@@ -9,6 +9,13 @@ import { canManageContent } from "@/lib/moderation";
 import { boardAccess, workspaceIdForSession, workspaceRole } from "@/lib/workspace-session";
 import { spaceAccess, spaceWritesOpen } from "@/lib/space-access";
 import {
+  acceptPersonInvite,
+  createPersonInvite,
+  declinePersonInvite,
+  removeSpacePerson,
+  searchSpacePeople
+} from "@/lib/space-people";
+import {
   acceptSpaceInvite,
   archiveSpace,
   createSpace,
@@ -279,6 +286,72 @@ export async function deleteOwnSpacePost(formData) {
   if (rows[0].author_kind !== "human" || !allowed) bounce(slug, { error: "You can only delete your own posts." });
   await deletePostNow(postId, rows[0].workspace_id, { spaceId: access.space.id });
   revalidatePath(`/s/${slug}`);
+}
+
+export async function searchSpacePeopleAction(_previous, formData) {
+  const actor = await person();
+  if (!actor) return { error: "You need to be signed in.", people: [] };
+  const access = await spaceAccess(viewer(actor), String(formData.get("slug") || ""));
+  const found = await searchSpacePeople({ access, query: formData.get("q") });
+  const query = String(formData.get("q") || "");
+  if (!found.ok) return { error: "That space could not be found.", people: [], searched: true, query };
+  return { people: found.people, searched: true, query };
+}
+
+export async function invitePersonAction(_previous, formData) {
+  const actor = await person();
+  if (!actor) return { error: "You need to be signed in." };
+  const access = await spaceAccess(viewer(actor), String(formData.get("slug") || ""));
+  const invited = await createPersonInvite({
+    access,
+    session: actor.session,
+    email: actor.email,
+    subject: formData.get("subject")
+  });
+  if (!invited.ok) return { error: invited.error || "That invite could not be created." };
+  if (access.ok) revalidatePath(`/s/${access.space.slug}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function declinePersonInviteAction(formData) {
+  const session = await auth();
+  await declinePersonInvite({ session, inviteId: String(formData.get("inviteId") || "") });
+  revalidatePath("/");
+  redirect("/");
+}
+
+export async function acceptPersonInviteAction(formData) {
+  const session = await auth();
+  const inviteId = String(formData.get("inviteId") || "");
+  const result = await acceptPersonInvite({
+    inviteId,
+    session,
+    workspaceId: String(formData.get("workspaceId") || ""),
+    asSelf: formData.get("asSelf") === "1"
+  });
+  if (!result.ok) {
+    const message = result.error || "That invite is closed.";
+    redirect(`/s/invite/${inviteId}?notice=${encodeURIComponent(message)}`);
+  }
+  revalidatePath("/");
+  redirect(`/s/${result.slug}`);
+}
+
+export async function removePersonAction(formData) {
+  const slug = String(formData.get("slug") || "");
+  const actor = await person();
+  if (!actor) bounce(slug, { error: "You need to be signed in." });
+  const access = await spaceAccess(viewer(actor), slug);
+  const result = await removeSpacePerson({
+    access,
+    session: actor.session,
+    email: actor.email,
+    subject: String(formData.get("subject") || "")
+  });
+  if (!result?.ok) bounce(slug, result);
+  revalidatePath(`/s/${slug}`);
+  revalidatePath("/");
 }
 
 export async function acceptSpaceInviteAction(formData) {

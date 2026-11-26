@@ -55,7 +55,7 @@ async function applyStatements(sql, statements) {
 }
 
 export function bundledStatements() {
-  return ["migrate.sql", "migrate-spaces.sql", "migrate-space-invites.sql"].flatMap((name) =>
+  return ["migrate.sql", "migrate-spaces.sql", "migrate-space-invites.sql", "migrate-space-people.sql"].flatMap((name) =>
     splitStatements(readFileSync(new URL(`./${name}`, import.meta.url), "utf8"))
   );
 }
@@ -93,7 +93,7 @@ async function main() {
     return;
   }
   const sql = createSql(url);
-  const files = ["migrate.sql", "migrate-spaces.sql", "migrate-space-invites.sql"];
+  const files = ["migrate.sql", "migrate-spaces.sql", "migrate-space-invites.sql", "migrate-space-people.sql"];
   for (const name of files) {
     const source = readFileSync(new URL(`./${name}`, import.meta.url), "utf8");
     const result = await applySchemaOnce(sql, source);

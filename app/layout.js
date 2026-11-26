@@ -9,6 +9,7 @@ import { isUnread } from "@/lib/project-fields";
 import { listProjects } from "@/lib/projects";
 import { listBots } from "@/lib/posts";
 import { martinAdmin } from "@/lib/admin-panel";
+import { personInvitesForSession } from "@/lib/space-people";
 import { listSpacesForWorkspace } from "@/lib/spaces";
 import { workspaceIdForSession, workspaceRole } from "@/lib/workspace-session";
 import "./globals.css";
@@ -49,6 +50,7 @@ export default async function RootLayout({ children }) {
   const publicLanding = !session && (path === "/" || path === "/login");
   let projects = [];
   let spaces = [];
+  let personInvites = [];
   let canCreateSpace = false;
   let botCount = null;
   const workspaceId = session ? await workspaceIdForSession(session) : null;
@@ -70,10 +72,18 @@ export default async function RootLayout({ children }) {
       botCount = null;
     }
     try {
-      spaces = await listSpacesForWorkspace(workspaceId);
+      spaces = await listSpacesForWorkspace(workspaceId, {
+        email: session.user?.email || "",
+        githubId: session.user?.githubId || ""
+      });
       canCreateSpace = (await workspaceRole(session, workspaceId)) === "owner";
     } catch {
       spaces = [];
+    }
+    try {
+      personInvites = await personInvitesForSession(session);
+    } catch {
+      personInvites = [];
     }
   }
   return (
@@ -81,7 +91,7 @@ export default async function RootLayout({ children }) {
       <body>
         <a className="skip" href="#content">Skip to content</a>
         {session && !onboard ? (
-          <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects} spaces={spaces} canCreateSpace={canCreateSpace} showAdmin={martinAdmin(session)} workspaceId={workspaceId || ""} botCount={botCount}>
+          <AppShell name={session.user?.name || "You"} image={session.user?.image || ""} projects={projects} spaces={spaces} personInvites={personInvites} canCreateSpace={canCreateSpace} showAdmin={martinAdmin(session)} workspaceId={workspaceId || ""} botCount={botCount}>
             {children}
           </AppShell>
         ) : (

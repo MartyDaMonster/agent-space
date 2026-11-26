@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { REACTION_EMOJI } from "@/lib/compose";
-import { SpaceBotPicker, SpaceCommentForm, SpaceComposer, SpaceInviteForm, SpaceRenameForm } from "@/components/SpaceForms";
+import { AddPeopleForm, SpaceBotPicker, SpaceCommentForm, SpaceComposer, SpaceInviteForm, SpaceRenameForm } from "@/components/SpaceForms";
 import {
   archiveSpaceAction,
   deleteOwnSpacePost,
@@ -9,11 +9,13 @@ import {
   liftSpaceBotAction,
   reactSpacePost,
   removeBotAction,
+  removePersonAction,
   removeWorkspaceAction,
   revokeSpaceInviteAction
 } from "@/app/spaces/actions";
 import { namesForReactions } from "@/lib/reactions";
 import { spaceAccess } from "@/lib/space-access";
+import { pendingPersonInvites, spacePeople } from "@/lib/space-people";
 import { listSpacePosts, spaceFiles, spacePostKey, spaceThread } from "@/lib/space-feed";
 import {
   blockedSpaceBots,
@@ -46,14 +48,27 @@ export default async function SpacePage({ params, searchParams }) {
   const role = await workspaceRole(session, workspaceId);
   const access = await spaceAccess(viewerFromSession(session, workspaceId, role), slug);
   if (!access.ok) notFound();
-  const [posts, people, invites, mine, chosen, blocked] = await Promise.all([
+  const [posts, people, mine, chosen, blocked] = await Promise.all([
     listSpacePosts(access.space.id, { includeHidden: access.canModerate }),
     spaceParticipants(access.space.id),
-    access.canModerate ? pendingSpaceInvites(access.space.id) : Promise.resolve([]),
     role === "owner" ? ownBotsForSpace(workspaceId) : Promise.resolve([]),
     role === "owner" ? selectedBotSlugs(access.space.id, workspaceId) : Promise.resolve([]),
     access.canModerate ? blockedSpaceBots(access.space.id) : Promise.resolve([])
   ]);
+  let invites = [];
+  let personInvites = [];
+  let individuals = [];
+  if (access.canModerate) {
+    try {
+      [invites, personInvites, individuals] = await Promise.all([
+        pendingSpaceInvites(access.space.id),
+        pendingPersonInvites(access.space.id),
+        spacePeople(access.space.id)
+      ]);
+    } catch (error) {
+      if (error?.code !== "42P01" && error?.code !== "42703") throw error;
+    }
+  }
   const thread = await spaceThread(posts.map((post) => post.id), access.space.id);
   const files = await spaceFiles(posts.map((post) => post.id), access.space.id, {
     kind: "human",
@@ -88,8 +103,25 @@ export default async function SpacePage({ params, searchParams }) {
       {access.canModerate ? (
         <section className="space-card" aria-label="Owner controls">
           <h2>Owner controls</h2>
+          <AddPeopleForm slug={access.space.slug} />
           <SpaceRenameForm slug={access.space.slug} name={access.space.name} />
           <SpaceInviteForm slug={access.space.slug} />
+          {personInvites.map((invite) => (
+            <form key={invite.id} action={revokeSpaceInviteAction} className="space-row">
+              <input type="hidden" name="slug" value={access.space.slug} />
+              <input type="hidden" name="inviteId" value={invite.id} />
+              <p className="space-note">Pending invite for {invite.label}</p>
+              <button className="btn btn-secondary" type="submit">Revoke</button>
+            </form>
+          ))}
+          {individuals.map((person) => (
+            <form key={person.subject} action={removePersonAction} className="space-row">
+              <input type="hidden" name="slug" value={access.space.slug} />
+              <input type="hidden" name="subject" value={person.subject} />
+              <span>{person.label}</span>
+              <button className="btn btn-secondary" type="submit">Remove</button>
+            </form>
+          ))}
           {invites.map((invite) => (
             <form key={invite.id} action={revokeSpaceInviteAction} className="space-row">
               <input type="hidden" name="slug" value={access.space.slug} />

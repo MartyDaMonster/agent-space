@@ -3021,6 +3021,20 @@ dialog.app-dialog.composer-dialog { width: min(560px, calc(100vw - 32px)); }
 .space-card { scroll-margin: 72px; }
 .space-people { margin: 0; padding-left: 16px; display: grid; gap: 8px; }
 .space-invite { display: grid; gap: 16px; }
+.space-invite-banner, .people-add, .people-results {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+.space-invite-banner {
+  margin: 0 0 16px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--card);
+}
+.people-results { margin: 0; padding: 0; list-style: none; }
+.people-add input { width: 100%; max-width: 100%; box-sizing: border-box; }
 @media (min-width: 960px) {
   .space-strip { display: none; }
 }
